@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(HPCCG_1_0)
+project(HPCCG_RHT)
 
 #set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
 set(CMAKE_BUILD_TYPE Debug) # optimizations, but debuging is not allowed
@@ -28,18 +28,18 @@ set(SOURCE_FILES main.cpp
         YAML_Doc.cpp YAML_Doc.h
         YAML_Element.cpp YAML_Element.h
         SyncQueue.cpp SyncQueue.h)
-add_executable(HPCCG_1_0 ${SOURCE_FILES})
+add_executable(HPCCG_RHT ${SOURCE_FILES})
 
-target_link_libraries(HPCCG_1_0 ${MPI_LIBRARIES})
+target_link_libraries(HPCCG_RHT ${MPI_LIBRARIES})
 
-target_link_libraries(HPCCG_1_0 pthread)
+target_link_libraries(HPCCG_RHT pthread)
 
 if(MPI_COMPILE_FLAGS)
-    set_target_properties(HPCCG_1_0 PROPERTIES
+    set_target_properties(HPCCG_RHT PROPERTIES
             COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
 endif()
 
 if(MPI_LINK_FLAGS)
-    set_target_properties(HPCCG_1_0 PROPERTIES
+    set_target_properties(HPCCG_RHT PROPERTIES
             LINK_FLAGS "${MPI_LINK_FLAGS}")
 endif()

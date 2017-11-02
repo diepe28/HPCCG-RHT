@@ -459,10 +459,6 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    // replicated them
-    size = (int) SyncQueue_Consume();
-    rank = (int) SyncQueue_Consume();
-
     //  if (size < 100) cout << "Process "<<rank<<" of "<<size<<" is alive." <<endl;
 
 #else
