@@ -25,7 +25,7 @@ SyncQueue SyncQueue_Init(){
     return syncQueue;
 }
 
-void SyncQueue_Simple_Produce(double value){
+void SyncQueue_Produce_Simple(double value){
     int nextEnq = (globaQueue.enqPtr + 1) % SYNC_QUEUE_SIZE;
 
     while(globaQueue.content[nextEnq] != ALREADY_CONSUMED){
@@ -34,7 +34,35 @@ void SyncQueue_Simple_Produce(double value){
 
     globaQueue.content[globaQueue.enqPtr] = value;
     globaQueue.enqPtr = nextEnq;
-    //producerCount++;
+    producerCount++;
+}
+
+void SyncQueue_Produce_Volatile(double value){
+
+    globaQueue.volatileValue = value;
+    globaQueue.checkState = 0;
+    while (globaQueue.checkState == 0) {
+        asm("pause");
+    }
+
+    // After this, the value has been validated
+}
+
+double SyncQueue_Consume() {
+    double value = globaQueue.content[globaQueue.deqPtr];
+
+    if (value == ALREADY_CONSUMED) {
+        //printf("There was a des sync of the queue \n");
+        do {
+            asm("pause");
+        } while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED);
+    }
+
+    value = globaQueue.content[globaQueue.deqPtr];
+    globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
+    globaQueue.deqPtr = (globaQueue.deqPtr + 1) % SYNC_QUEUE_SIZE;
+    consumerCount++;
+    return value;
 }
 
 void SyncQueue_Consume_Check(double currentValue){
@@ -63,24 +91,25 @@ void SyncQueue_Consume_Check(double currentValue){
     }else{
         globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
         globaQueue.deqPtr = (globaQueue.deqPtr + 1) % SYNC_QUEUE_SIZE;
-        //consumerCount++;
+        consumerCount++;
     }
 }
 
-double SyncQueue_Consume() {
-    double value = globaQueue.content[globaQueue.deqPtr];
+void SyncQueue_Consume_Volatile(double currentValue) {
 
-    if (value == ALREADY_CONSUMED) {
-        //printf("There was a des sync of the queue \n");
-        do {
-            asm("pause");
-        } while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED);
+    while (globaQueue.checkState == 1) {
+        asm("pause");
     }
 
-    value = globaQueue.content[globaQueue.deqPtr];
-    globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
-    globaQueue.deqPtr = (globaQueue.deqPtr + 1) % SYNC_QUEUE_SIZE;
-    return value;
+    if (currentValue != globaQueue.volatileValue){
+        printf("\n\n SOFT ERROR DETECTED AT VOLATILE ACCESS PARAMETER, %f vs %f Producer: %ld -- Consumer: %ld, diff: %ld \n",
+               currentValue, globaQueue.volatileValue, producerCount, consumerCount, producerCount - consumerCount);
+        exit(1);
+    }
+
+    globaQueue.checkState = 1;
+
+    // After this, the value has been validated
 }
 
 void createConsumerThreads(int numThreads){

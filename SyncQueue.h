@@ -23,13 +23,17 @@ typedef struct{
     double padding2[15];
     volatile int checkState;
     double padding3[15];
-    volatile long volatileValue;
+    volatile double volatileValue;
 }SyncQueue;
 
 SyncQueue SyncQueue_Init();
-void SyncQueue_Simple_Produce(double value);
-void SyncQueue_Consume_Check(double currentValue);
+void SyncQueue_Produce_Simple(double value);
+void SyncQueue_Produce_Volatile(double value);
+
 double SyncQueue_Consume();
+void SyncQueue_Consume_Check(double currentValue);
+void SyncQueue_Consume_Volatile(double currentValue);
+
 
 void Replication_Init(int numThreads);
 void Replication_Finish();

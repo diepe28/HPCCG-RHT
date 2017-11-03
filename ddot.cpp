@@ -40,7 +40,8 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include "ddot.h"
-int ddot (const int n, const double * const x, const double * const y, 
+
+int ddot (const int n, const double * const x, const double * const y,
 	  double * const result, double & time_allreduce) {
     double local_result = 0.0;
     if (y == x)
@@ -66,5 +67,84 @@ int ddot (const int n, const double * const x, const double * const y,
     *result = local_result;
 #endif
 
+    return (0);
+}
+
+int ddot_producer (const int n, const double * const x, const double * const y,
+          double * const result, double & time_allreduce) {
+    double local_result = 0.0;
+    if (y == x)
+#ifdef USING_OMP
+#pragma omp parallel for reduction (+:local_result)
+#endif
+        for (int i = 0; i < n; i++) {
+            local_result += x[i] * x[i];
+            /*-- RHT -- */ SyncQueue_Produce_Simple(local_result);
+        }
+    else
+#ifdef USING_OMP
+#pragma omp parallel for reduction (+:local_result)
+#endif
+        for (int i = 0; i < n; i++) {
+            local_result += x[i] * y[i];
+            /*-- RHT -- */ SyncQueue_Produce_Simple(local_result);
+        }
+
+#ifdef USING_MPI
+    // Use MPI's reduce function to collect all partial sums
+    double t0 = mytimer();
+    double global_result = 0.0;
+
+    /*-- RHT Volatile -- */ SyncQueue_Produce_Volatile(global_result);
+    MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    /*-- RHT -- */ SyncQueue_Produce_Simple(global_result);
+
+    *result = global_result;
+
+    time_allreduce += mytimer() - t0;
+#else
+    *result = local_result;
+#endif
+
+    /*-- RHT -- */ SyncQueue_Produce_Simple(*result);
+    return (0);
+}
+
+int ddot_consumer (const int n, const double * const x, const double * const y,
+                   double * const result, double & time_allreduce) {
+    double local_result = 0.0;
+    if (y == x)
+#ifdef USING_OMP
+#pragma omp parallel for reduction (+:local_result)
+#endif
+        for (int i = 0; i < n; i++) {
+            local_result += x[i] * x[i];
+            /*-- RHT -- */ SyncQueue_Consume_Check(local_result);
+        }
+    else
+#ifdef USING_OMP
+#pragma omp parallel for reduction (+:local_result)
+#endif
+        for (int i = 0; i < n; i++) {
+            local_result += x[i] * y[i];
+            /*-- RHT -- */ SyncQueue_Consume_Check(local_result);
+        }
+
+#ifdef USING_MPI
+    // Use MPI's reduce function to collect all partial sums
+    double t0 = mytimer();
+    double global_result = 0.0;
+
+    /*-- RHT Volatile -- */ SyncQueue_Consume_Volatile(global_result);
+    /*-- RHT Not replicated -- */// MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    global_result = SyncQueue_Consume();
+
+    *result = global_result;
+    time_allreduce += mytimer() - t0;
+#else
+    *result = local_result;
+#endif
+
+    /*-- RHT -- */ SyncQueue_Consume_Check(*result);
     return (0);
 }

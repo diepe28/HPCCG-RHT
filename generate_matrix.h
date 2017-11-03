@@ -37,6 +37,6 @@
 
 void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact);
 void generate_matrix_producer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact);
-void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact, int size, int rank);
+void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact);
 
 #endif

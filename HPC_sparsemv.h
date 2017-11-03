@@ -33,8 +33,10 @@
 #ifdef USING_MPI
 #include <mpi.h> // If this routine is compiled with -DUSING_MPI
                  // then include mpi.h
+#include "SyncQueue.h"
 #endif
 
-int HPC_sparsemv( HPC_Sparse_Matrix *hpc_sparse_matrix,
-		 const double * const x, double * const y);
+int HPC_sparsemv( HPC_Sparse_Matrix *hpc_sparse_matrix, const double * const x, double * const y);
+int HPC_sparsemv_producer( HPC_Sparse_Matrix *hpc_sparse_matrix, const double * const x, double * const y);
+int HPC_sparsemv_consumer( HPC_Sparse_Matrix *hpc_sparse_matrix, const double * const x, double * const y);
 #endif

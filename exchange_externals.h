@@ -33,5 +33,9 @@
 #include <mpi.h>
 #endif
 #include "HPC_Sparse_Matrix.h"
+#include "SyncQueue.h"
+
 void exchange_externals(HPC_Sparse_Matrix *A, const double *x);
+void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x);
+void exchange_externals_consumer(HPC_Sparse_Matrix *A, const double *x);
 #endif

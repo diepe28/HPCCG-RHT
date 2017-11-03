@@ -45,6 +45,7 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include "waxpby.h"
+#include "SyncQueue.h"
 
 int waxpby (const int n, const double alpha, const double * const x, 
 	    const double beta, const double * const y, 
@@ -64,6 +65,70 @@ int waxpby (const int n, const double alpha, const double * const x,
 #pragma omp parallel for
 #endif
         for (int i = 0; i < n; i++) w[i] = alpha * x[i] + beta * y[i];
+    }
+
+    return (0);
+}
+
+int waxpby_producer (const int n, const double alpha, const double * const x,
+            const double beta, const double * const y,
+            double * const w) {
+    if (alpha == 1.0) {
+#ifdef USING_OMP
+#pragma omp parallel for
+#endif
+        for (int i = 0; i < n; i++){
+            w[i] = x[i] + beta * y[i];
+            /*-- RHT -- */ SyncQueue_Produce_Simple(w[i]);
+        }
+    } else if (beta == 1.0) {
+#ifdef USING_OMP
+#pragma omp parallel for
+#endif
+        for (int i = 0; i < n; i++) {
+            w[i] = alpha * x[i] + y[i];
+            /*-- RHT -- */ SyncQueue_Produce_Simple(w[i]);
+        }
+    } else {
+#ifdef USING_OMP
+#pragma omp parallel for
+#endif
+        for (int i = 0; i < n; i++) {
+            w[i] = alpha * x[i] + beta * y[i];
+            /*-- RHT -- */ SyncQueue_Produce_Simple(w[i]);
+        }
+    }
+
+    return (0);
+}
+
+int waxpby_consumer (const int n, const double alpha, const double * const x,
+                     const double beta, const double * const y,
+                     double * const w) {
+    if (alpha == 1.0) {
+#ifdef USING_OMP
+#pragma omp parallel for
+#endif
+        for (int i = 0; i < n; i++){
+            w[i] = x[i] + beta * y[i];
+            /*-- RHT -- */ SyncQueue_Consume_Check(w[i]);
+        }
+    } else if (beta == 1.0) {
+#ifdef USING_OMP
+#pragma omp parallel for
+#endif
+        for (int i = 0; i < n; i++) {
+            w[i] = alpha * x[i] + y[i];
+            /*-- RHT -- */ SyncQueue_Consume_Check(w[i]);
+        }
+    } else {
+#ifdef USING_OMP
+#pragma omp parallel for
+#endif
+        for (int i = 0; i < n; i++) {
+            w[i] = alpha * x[i] + beta * y[i];
+            /*-- RHT -- */ SyncQueue_Consume_Check(w[i]);
+        }
     }
 
     return (0);
