@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
     if(replicated) {
         printf("************************** REPLICATED VERSION ************************** \n\n");
 
-        Replication_Init(1);
+        RHT_Replication_Init(1);
 
         ConsumerParams *consumerParams = (ConsumerParams *) (malloc(sizeof(ConsumerParams)));
         int local_nrow = nx * ny * nz; // This is the size of our subblock
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
 
         /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
         delete x2;
-        Replication_Finish();
+        RHT_Replication_Finish();
     }else {
         ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
     }

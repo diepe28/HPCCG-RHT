@@ -171,8 +171,8 @@ void generate_matrix_producer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
     int size, rank; // Number of MPI processes, My process ID
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    /*-- RHT -- */ SyncQueue_Produce_Simple(size);
-    /*-- RHT -- */ SyncQueue_Produce_Simple(rank);
+    /*-- RHT -- */ RHT_Produce(size);
+    /*-- RHT -- */ RHT_Produce(rank);
 #else
     int size = 1; // Serial case (not using MPI)
     int rank = 0;
@@ -185,26 +185,26 @@ void generate_matrix_producer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
 
     // Set this bool to true if you want a 7-pt stencil instead of a 27 pt stencil
     bool use_7pt_stencil = false;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) use_7pt_stencil);
+    /*-- RHT -- */ RHT_Produce((double) use_7pt_stencil);
 
     int local_nrow = nx * ny * nz; // This is the size of our subblock
     assert(local_nrow > 0); // Must have something to work with
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) local_nrow);
+    /*-- RHT -- */ RHT_Produce((double) local_nrow);
 
     int local_nnz = 27 * local_nrow; // Approximately 27 nonzeros per row (except for boundary nodes)
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) local_nnz);
+    /*-- RHT -- */ RHT_Produce((double) local_nnz);
 
     int total_nrow = local_nrow * size; // Total number of grid points in mesh
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) total_nrow);
+    /*-- RHT -- */ RHT_Produce((double) total_nrow);
 
     long long total_nnz = 27 * (long long) total_nrow; // Approximately 27 nonzeros per row (except for boundary nodes)
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) total_nnz);
+    /*-- RHT -- */ RHT_Produce((double) total_nnz);
 
     int start_row = local_nrow * rank; // Each processor gets a section of a chimney stack domain
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) start_row);
+    /*-- RHT -- */ RHT_Produce((double) start_row);
 
     int stop_row = start_row + local_nrow - 1;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) stop_row);
+    /*-- RHT -- */ RHT_Produce((double) stop_row);
 
     // TODO, what about these?
     // Allocate arrays that are of length local_nrow
@@ -229,13 +229,13 @@ void generate_matrix_producer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
         for (int iy = 0; iy < ny; iy++) {
             for (int ix = 0; ix < nx; ix++) {
                 int curlocalrow = iz * nx * ny + iy * nx + ix;
-                /*-- RHT -- */ SyncQueue_Produce_Simple((double) curlocalrow);
+                /*-- RHT -- */ RHT_Produce((double) curlocalrow);
 
                 int currow = start_row + iz * nx * ny + iy * nx + ix;
-                /*-- RHT -- */ SyncQueue_Produce_Simple((double) currow);
+                /*-- RHT -- */ RHT_Produce((double) currow);
 
                 int nnzrow = 0;
-                /*-- RHT -- */ SyncQueue_Produce_Simple((double) nnzrow);
+                /*-- RHT -- */ RHT_Produce((double) nnzrow);
 
                 // TODO, should it be checked?, they are arrays
                 (*A)->ptr_to_vals_in_row[curlocalrow] = curvalptr;
@@ -245,7 +245,7 @@ void generate_matrix_producer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
                     for (int sy = -1; sy <= 1; sy++) {
                         for (int sx = -1; sx <= 1; sx++) {
                             int curcol = currow + sz * nx * ny + sy * nx + sx;
-                            /*-- RHT -- */ SyncQueue_Produce_Simple((double) curcol);
+                            /*-- RHT -- */ RHT_Produce((double) curcol);
 
 //            Since we have a stack of nx by ny by nz domains , stacking in the z direction, we check to see
 //            if sx and sy are reaching outside of the domain, while the check for the curcol being valid
@@ -261,32 +261,32 @@ void generate_matrix_producer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
                                         *curvalptr++ = -1.0;
                                     }
                                     // TODO, what about the ++, also should we check for the result of the if?
-                                    /*-- RHT -- */ SyncQueue_Produce_Simple((double) *curvalptr - 1);
+                                    /*-- RHT -- */ RHT_Produce((double) *curvalptr - 1);
 
                                     *curindptr++ = curcol;
-                                    /*-- RHT -- */ SyncQueue_Produce_Simple((double) *curindptr - 1);
+                                    /*-- RHT -- */ RHT_Produce((double) *curindptr - 1);
 
                                     nnzrow++;
-                                    /*-- RHT -- */ SyncQueue_Produce_Simple((double) *curindptr - 1);
+                                    /*-- RHT -- */ RHT_Produce((double) *curindptr - 1);
                                 }
                             }
                         } // end sx loop
                     } // end sy loop
                 } // end sz loop
                 (*A)->nnz_in_row[curlocalrow] = nnzrow;
-                /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*A)->nnz_in_row[curlocalrow]);
+                /*-- RHT -- */ RHT_Produce((double) (*A)->nnz_in_row[curlocalrow]);
 
                 nnzglobal += nnzrow;
-                /*-- RHT -- */ SyncQueue_Produce_Simple((double) nnzglobal);
+                /*-- RHT -- */ RHT_Produce((double) nnzglobal);
 
                 (*x)[curlocalrow] = 0.0;
-                /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*x)[curlocalrow]);
+                /*-- RHT -- */ RHT_Produce((double) (*x)[curlocalrow]);
 
                 (*b)[curlocalrow] = 27.0 - ((double) (nnzrow - 1));
-                /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*b)[curlocalrow]);
+                /*-- RHT -- */ RHT_Produce((double) (*b)[curlocalrow]);
 
                 (*xexact)[curlocalrow] = 1.0;
-                /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*xexact)[curlocalrow]);
+                /*-- RHT -- */ RHT_Produce((double) (*xexact)[curlocalrow]);
             } // end ix loop
         } // end iy loop
     } // end iz loop
@@ -301,25 +301,25 @@ void generate_matrix_producer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
              << " has " << local_nnz << " nonzeros." << endl;
 
     (*A)->start_row = start_row;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*A)->start_row);
+    /*-- RHT -- */ RHT_Produce((double) (*A)->start_row);
 
     (*A)->stop_row = stop_row;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*A)->stop_row);
+    /*-- RHT -- */ RHT_Produce((double) (*A)->stop_row);
 
     (*A)->total_nrow = total_nrow;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*A)->total_nrow);
+    /*-- RHT -- */ RHT_Produce((double) (*A)->total_nrow);
 
     (*A)->total_nnz = total_nnz;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*A)->total_nnz);
+    /*-- RHT -- */ RHT_Produce((double) (*A)->total_nnz);
 
     (*A)->local_nrow = local_nrow;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*A)->local_nrow);
+    /*-- RHT -- */ RHT_Produce((double) (*A)->local_nrow);
 
     (*A)->local_ncol = local_nrow;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*A)->local_ncol);
+    /*-- RHT -- */ RHT_Produce((double) (*A)->local_ncol);
 
     (*A)->local_nnz = local_nnz;
-    /*-- RHT -- */ SyncQueue_Produce_Simple((double) (*A)->local_nnz);
+    /*-- RHT -- */ RHT_Produce((double) (*A)->local_nnz);
 
     return;
 }
@@ -334,8 +334,8 @@ void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
 
 #ifdef USING_MPI
     int size, rank; // Number of MPI processes, My process ID
-    size = SyncQueue_Consume();
-    rank = SyncQueue_Consume();
+    size = RHT_Consume();
+    rank = RHT_Consume();
 #else
     int size = 1; // Serial case (not using MPI)
     int rank = 0;
@@ -348,26 +348,26 @@ void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
 
     // Set this bool to true if you want a 7-pt stencil instead of a 27 pt stencil
     bool use_7pt_stencil = false;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) use_7pt_stencil);
+    /*-- RHT -- */ RHT_Consume_Check((double) use_7pt_stencil);
 
     int local_nrow = nx * ny * nz; // This is the size of our subblock
     assert(local_nrow > 0); // Must have something to work with
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) local_nrow);
+    /*-- RHT -- */ RHT_Consume_Check((double) local_nrow);
 
     int local_nnz = 27 * local_nrow; // Approximately 27 nonzeros per row (except for boundary nodes)
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) local_nnz);
+    /*-- RHT -- */ RHT_Consume_Check((double) local_nnz);
 
     int total_nrow = local_nrow * size; // Total number of grid points in mesh
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) total_nrow);
+    /*-- RHT -- */ RHT_Consume_Check((double) total_nrow);
 
     long long total_nnz = 27 * (long long) total_nrow; // Approximately 27 nonzeros per row (except for boundary nodes)
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) total_nnz);
+    /*-- RHT -- */ RHT_Consume_Check((double) total_nnz);
 
     int start_row = local_nrow * rank; // Each processor gets a section of a chimney stack domain
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) start_row);
+    /*-- RHT -- */ RHT_Consume_Check((double) start_row);
 
     int stop_row = start_row + local_nrow - 1;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) stop_row);
+    /*-- RHT -- */ RHT_Consume_Check((double) stop_row);
 
     // TODO, what about these?
     // Allocate arrays that are of length local_nrow
@@ -392,13 +392,13 @@ void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
         for (int iy = 0; iy < ny; iy++) {
             for (int ix = 0; ix < nx; ix++) {
                 int curlocalrow = iz * nx * ny + iy * nx + ix;
-                /*-- RHT -- */ SyncQueue_Consume_Check((double) curlocalrow);
+                /*-- RHT -- */ RHT_Consume_Check((double) curlocalrow);
 
                 int currow = start_row + iz * nx * ny + iy * nx + ix;
-                /*-- RHT -- */ SyncQueue_Consume_Check((double) currow);
+                /*-- RHT -- */ RHT_Consume_Check((double) currow);
 
                 int nnzrow = 0;
-                /*-- RHT -- */ SyncQueue_Consume_Check((double) nnzrow);
+                /*-- RHT -- */ RHT_Consume_Check((double) nnzrow);
 
                 // TODO, should it be checked?, they are arrays
                 (*A)->ptr_to_vals_in_row[curlocalrow] = curvalptr;
@@ -408,7 +408,7 @@ void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
                     for (int sy = -1; sy <= 1; sy++) {
                         for (int sx = -1; sx <= 1; sx++) {
                             int curcol = currow + sz * nx * ny + sy * nx + sx;
-                            /*-- RHT -- */ SyncQueue_Consume_Check((double) curcol);
+                            /*-- RHT -- */ RHT_Consume_Check((double) curcol);
 
 //            Since we have a stack of nx by ny by nz domains , stacking in the z direction, we check to see
 //            if sx and sy are reaching outside of the domain, while the check for the curcol being valid
@@ -424,32 +424,32 @@ void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
                                         *curvalptr++ = -1.0;
                                     }
                                     // TODO, what about the ++, also should we check for the result of the if?
-                                    /*-- RHT -- */ SyncQueue_Consume_Check((double) *curvalptr-1);
+                                    /*-- RHT -- */ RHT_Consume_Check((double) *curvalptr - 1);
 
                                     *curindptr++ = curcol;
-                                    /*-- RHT -- */ SyncQueue_Consume_Check((double) *curindptr-1);
+                                    /*-- RHT -- */ RHT_Consume_Check((double) *curindptr - 1);
 
                                     nnzrow++;
-                                    /*-- RHT -- */ SyncQueue_Consume_Check((double) *curindptr-1);
+                                    /*-- RHT -- */ RHT_Consume_Check((double) *curindptr - 1);
                                 }
                             }
                         } // end sx loop
                     } // end sy loop
                 } // end sz loop
                 (*A)->nnz_in_row[curlocalrow] = nnzrow;
-                /*-- RHT -- */ SyncQueue_Consume_Check((double) (*A)->nnz_in_row[curlocalrow]);
+                /*-- RHT -- */ RHT_Consume_Check((double) (*A)->nnz_in_row[curlocalrow]);
 
                 nnzglobal += nnzrow;
-                /*-- RHT -- */ SyncQueue_Consume_Check((double) nnzglobal);
+                /*-- RHT -- */ RHT_Consume_Check((double) nnzglobal);
 
                 (*x)[curlocalrow] = 0.0;
-                /*-- RHT -- */ SyncQueue_Consume_Check((double) (*x)[curlocalrow]);
+                /*-- RHT -- */ RHT_Consume_Check((double) (*x)[curlocalrow]);
 
                 (*b)[curlocalrow] = 27.0 - ((double) (nnzrow - 1));
-                /*-- RHT -- */ SyncQueue_Consume_Check((double) (*b)[curlocalrow]);
+                /*-- RHT -- */ RHT_Consume_Check((double) (*b)[curlocalrow]);
 
                 (*xexact)[curlocalrow] = 1.0;
-                /*-- RHT -- */ SyncQueue_Consume_Check((double) (*xexact)[curlocalrow]);
+                /*-- RHT -- */ RHT_Consume_Check((double) (*xexact)[curlocalrow]);
             } // end ix loop
         } // end iy loop
     } // end iz loop
@@ -464,25 +464,25 @@ void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
              << " has " << local_nnz << " nonzeros." << endl;
 
     (*A)->start_row = start_row;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) (*A)->start_row);
+    /*-- RHT -- */ RHT_Consume_Check((double) (*A)->start_row);
 
     (*A)->stop_row = stop_row;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) (*A)->stop_row);
+    /*-- RHT -- */ RHT_Consume_Check((double) (*A)->stop_row);
 
     (*A)->total_nrow = total_nrow;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) (*A)->total_nrow);
+    /*-- RHT -- */ RHT_Consume_Check((double) (*A)->total_nrow);
 
     (*A)->total_nnz = total_nnz;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) (*A)->total_nnz);
+    /*-- RHT -- */ RHT_Consume_Check((double) (*A)->total_nnz);
 
     (*A)->local_nrow = local_nrow;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) (*A)->local_nrow);
+    /*-- RHT -- */ RHT_Consume_Check((double) (*A)->local_nrow);
 
     (*A)->local_ncol = local_nrow;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) (*A)->local_ncol);
+    /*-- RHT -- */ RHT_Consume_Check((double) (*A)->local_ncol);
 
     (*A)->local_nnz = local_nnz;
-    /*-- RHT -- */ SyncQueue_Consume_Check((double) (*A)->local_nnz);
+    /*-- RHT -- */ RHT_Consume_Check((double) (*A)->local_nnz);
 
     return;
 }

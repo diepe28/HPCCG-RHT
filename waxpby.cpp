@@ -79,7 +79,7 @@ int waxpby_producer (const int n, const double alpha, const double * const x,
 #endif
         for (int i = 0; i < n; i++){
             w[i] = x[i] + beta * y[i];
-            /*-- RHT -- */ SyncQueue_Produce_Simple(w[i]);
+            /*-- RHT -- */ RHT_Produce(w[i]);
         }
     } else if (beta == 1.0) {
 #ifdef USING_OMP
@@ -87,7 +87,7 @@ int waxpby_producer (const int n, const double alpha, const double * const x,
 #endif
         for (int i = 0; i < n; i++) {
             w[i] = alpha * x[i] + y[i];
-            /*-- RHT -- */ SyncQueue_Produce_Simple(w[i]);
+            /*-- RHT -- */ RHT_Produce(w[i]);
         }
     } else {
 #ifdef USING_OMP
@@ -95,7 +95,7 @@ int waxpby_producer (const int n, const double alpha, const double * const x,
 #endif
         for (int i = 0; i < n; i++) {
             w[i] = alpha * x[i] + beta * y[i];
-            /*-- RHT -- */ SyncQueue_Produce_Simple(w[i]);
+            /*-- RHT -- */ RHT_Produce(w[i]);
         }
     }
 
@@ -111,7 +111,7 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
 #endif
         for (int i = 0; i < n; i++){
             w[i] = x[i] + beta * y[i];
-            /*-- RHT -- */ SyncQueue_Consume_Check(w[i]);
+            /*-- RHT -- */ RHT_Consume_Check(w[i]);
 
         }
 
@@ -121,7 +121,7 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
 #endif
         for (int i = 0; i < n; i++) {
             w[i] = alpha * x[i] + y[i];
-            /*-- RHT -- */ SyncQueue_Consume_Check(w[i]);
+            /*-- RHT -- */ RHT_Consume_Check(w[i]);
         }
     } else {
 #ifdef USING_OMP
@@ -129,7 +129,7 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
 #endif
         for (int i = 0; i < n; i++) {
             w[i] = alpha * x[i] + beta * y[i];
-            /*-- RHT -- */ SyncQueue_Consume_Check(w[i]);
+            /*-- RHT -- */ RHT_Consume_Check(w[i]);
         }
     }
 

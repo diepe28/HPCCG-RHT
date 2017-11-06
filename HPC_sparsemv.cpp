@@ -79,33 +79,33 @@ int HPC_sparsemv_producer( HPC_Sparse_Matrix *hpc_sparse_matrix,
                   const double * const x, double * const y) {
 
     const int nrow = (const int) hpc_sparse_matrix->local_nrow;
-    /*-- RHT -- */ SyncQueue_Produce_Simple(nrow);
+    /*-- RHT -- */ RHT_Produce(nrow);
 
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
     for (int i = 0; i < nrow; i++) {
         double sum = 0.0;
-        /*-- RHT -- */ SyncQueue_Produce_Simple(sum);
+        /*-- RHT -- */ RHT_Produce(sum);
 
         const double *const cur_vals = (const double *const) hpc_sparse_matrix->ptr_to_vals_in_row[i];
-        /*-- RHT -- */ SyncQueue_Produce_Simple(*cur_vals);
+        /*-- RHT -- */ RHT_Produce(*cur_vals);
 
         const int *const cur_inds = (const int *const) hpc_sparse_matrix->ptr_to_inds_in_row[i];
-        /*-- RHT -- */ SyncQueue_Produce_Simple(*cur_inds);
+        /*-- RHT -- */ RHT_Produce(*cur_inds);
 
         const int cur_nnz = (const int) hpc_sparse_matrix->nnz_in_row[i];
-        /*-- RHT -- */ SyncQueue_Produce_Simple(cur_nnz);
+        /*-- RHT -- */ RHT_Produce(cur_nnz);
 
         //printf("Producer before inner loop...\n");
 
         for (int j = 0; j < cur_nnz; j++) {
             sum += cur_vals[j] * x[cur_inds[j]];
-            /*-- RHT -- */ SyncQueue_Produce_Simple(sum);
+            /*-- RHT -- */ RHT_Produce(sum);
         }
 
         y[i] = sum;
-        /*-- RHT -- */ SyncQueue_Produce_Simple(y[i]);
+        /*-- RHT -- */ RHT_Produce(y[i]);
     }
     return (0);
 }
@@ -114,31 +114,31 @@ int HPC_sparsemv_consumer( HPC_Sparse_Matrix *hpc_sparse_matrix,
                            const double * const x, double * const y) {
 
     const int nrow = (const int) hpc_sparse_matrix->local_nrow;
-    /*-- RHT -- */ SyncQueue_Consume_Check(nrow);
+    /*-- RHT -- */ RHT_Consume_Check(nrow);
 
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
     for (int i = 0; i < nrow; i++) {
         double sum = 0.0;
-        /*-- RHT -- */ SyncQueue_Consume_Check(sum);
+        /*-- RHT -- */ RHT_Consume_Check(sum);
 
         const double *const cur_vals = (const double *const) hpc_sparse_matrix->ptr_to_vals_in_row[i];
-        /*-- RHT -- */ SyncQueue_Consume_Check(*cur_vals);
+        /*-- RHT -- */ RHT_Consume_Check(*cur_vals);
 
         const int *const cur_inds = (const int *const) hpc_sparse_matrix->ptr_to_inds_in_row[i];
-        /*-- RHT -- */ SyncQueue_Consume_Check(*cur_inds);
+        /*-- RHT -- */ RHT_Consume_Check(*cur_inds);
 
         const int cur_nnz = (const int) hpc_sparse_matrix->nnz_in_row[i];
-        /*-- RHT -- */ SyncQueue_Consume_Check(cur_nnz);
+        /*-- RHT -- */ RHT_Consume_Check(cur_nnz);
 
         for (int j = 0; j < cur_nnz; j++) {
             sum += cur_vals[j] * x[cur_inds[j]];
-            /*-- RHT -- */ SyncQueue_Consume_Check(sum);
+            /*-- RHT -- */ RHT_Consume_Check(sum);
         }
 
         y[i] = sum;
-        /*-- RHT -- */ SyncQueue_Consume_Check(y[i]);
+        /*-- RHT -- */ RHT_Consume_Check(y[i]);
     }
     return (0);
 }

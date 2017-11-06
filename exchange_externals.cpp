@@ -122,10 +122,10 @@ void exchange_externals_producer(HPC_Sparse_Matrix * A, const double *x) {
     // Extract Matrix pieces
 
     int local_nrow = A->local_nrow;
-    /*-- RHT -- */ SyncQueue_Produce_Simple(local_nrow);
+    /*-- RHT -- */ RHT_Produce(local_nrow);
 
     int num_neighbors = A->num_send_neighbors;
-    /*-- RHT -- */ SyncQueue_Produce_Simple(num_neighbors);
+    /*-- RHT -- */ RHT_Produce(num_neighbors);
 
     /// TODO what to do with arrays
     int *recv_length = A->recv_length;
@@ -134,15 +134,15 @@ void exchange_externals_producer(HPC_Sparse_Matrix * A, const double *x) {
     double *send_buffer = A->send_buffer;
 
     int total_to_be_sent = A->total_to_be_sent;
-    /*-- RHT -- */ SyncQueue_Produce_Simple(total_to_be_sent);
+    /*-- RHT -- */ RHT_Produce(total_to_be_sent);
 
     int *elements_to_send = A->elements_to_send;
 
     int size, rank; // Number of MPI processes, My process ID
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    /*-- RHT -- */ SyncQueue_Produce_Simple(size);
-    /*-- RHT -- */ SyncQueue_Produce_Simple(rank);
+    /*-- RHT -- */ RHT_Produce(size);
+    /*-- RHT -- */ RHT_Produce(rank);
 
     //
     //  first post receives, these are immediate receives
@@ -151,7 +151,7 @@ void exchange_externals_producer(HPC_Sparse_Matrix * A, const double *x) {
     //
 
     int MPI_MY_TAG = 99;
-    /*-- RHT -- */ SyncQueue_Produce_Simple(MPI_MY_TAG);
+    /*-- RHT -- */ RHT_Produce(MPI_MY_TAG);
 
     MPI_Request *request = new MPI_Request[num_neighbors];
 
@@ -159,20 +159,20 @@ void exchange_externals_producer(HPC_Sparse_Matrix * A, const double *x) {
     // Externals are at end of locals
     //
     double *x_external = (double *) x + local_nrow;
-    /*-- RHT -- */ SyncQueue_Produce_Simple(*x_external);
+    /*-- RHT -- */ RHT_Produce(*x_external);
 
     // Post receives first
     for (i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
-        /*-- RHT -- */ SyncQueue_Produce_Simple(n_recv);
-        /*-- RHT Volatile -- */ SyncQueue_Produce_Volatile(neighbors[i]);
+        /*-- RHT -- */ RHT_Produce(n_recv);
+        /*-- RHT Volatile -- */ RHT_Produce_Volatile(neighbors[i]);
         /// TODO what to with last parameter? is a user def type
         MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
                   MPI_COMM_WORLD, request + i);
 
 
         x_external += n_recv;
-        /*-- RHT -- */ SyncQueue_Produce_Simple(*x_external);
+        /*-- RHT -- */ RHT_Produce(*x_external);
     }
 
 
@@ -188,12 +188,12 @@ void exchange_externals_producer(HPC_Sparse_Matrix * A, const double *x) {
 
     for (i = 0; i < num_neighbors; i++) {
         int n_send = send_length[i];
-        /*-- RHT -- */ SyncQueue_Produce_Simple(n_send);
-        /*-- RHT Volatile -- */ SyncQueue_Produce_Volatile(neighbors[i]);
+        /*-- RHT -- */ RHT_Produce(n_send);
+        /*-- RHT Volatile -- */ RHT_Produce_Volatile(neighbors[i]);
         MPI_Send(send_buffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
                  MPI_COMM_WORLD);
         send_buffer += n_send;
-        /*-- RHT -- */ SyncQueue_Produce_Simple(n_send);
+        /*-- RHT -- */ RHT_Produce(n_send);
     }
 
     //
@@ -221,10 +221,10 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     // Extract Matrix pieces
 
     int local_nrow = A->local_nrow;
-    /*-- RHT -- */ SyncQueue_Consume_Check(local_nrow);
+    /*-- RHT -- */ RHT_Consume_Check(local_nrow);
 
     int num_neighbors = A->num_send_neighbors;
-    /*-- RHT -- */ SyncQueue_Consume_Check(num_neighbors);
+    /*-- RHT -- */ RHT_Consume_Check(num_neighbors);
 
     /// TODO what to do with arrays
     int *recv_length = A->recv_length;
@@ -233,13 +233,13 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     double *send_buffer = A->send_buffer;
 
     int total_to_be_sent = A->total_to_be_sent;
-    /*-- RHT -- */ SyncQueue_Consume_Check(total_to_be_sent);
+    /*-- RHT -- */ RHT_Consume_Check(total_to_be_sent);
 
     int *elements_to_send = A->elements_to_send;
 
     int size, rank; // Number of MPI processes, My process ID
-    /*-- RHT -- */ size = SyncQueue_Consume();
-    /*-- RHT -- */ rank = SyncQueue_Consume();
+    /*-- RHT -- */ size = RHT_Consume();
+    /*-- RHT -- */ rank = RHT_Consume();
 
     //
     //  first post receives, these are immediate receives
@@ -248,7 +248,7 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     //
 
     int MPI_MY_TAG = 99;
-    /*-- RHT -- */ SyncQueue_Consume_Check(MPI_MY_TAG);
+    /*-- RHT -- */ RHT_Consume_Check(MPI_MY_TAG);
 
     MPI_Request *request = new MPI_Request[num_neighbors];
 
@@ -256,20 +256,20 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     // Externals are at end of locals
     //
     double *x_external = (double *) x + local_nrow;
-    /*-- RHT -- */ SyncQueue_Consume_Check(*x_external);
+    /*-- RHT -- */ RHT_Consume_Check(*x_external);
 
     // Post receives first
     for (i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
-        /*-- RHT -- */ SyncQueue_Consume_Check(n_recv);
-        /*-- RHT Volatile -- */ SyncQueue_Consume_Volatile(neighbors[i]);
+        /*-- RHT -- */ RHT_Consume_Check(n_recv);
+        /*-- RHT Volatile -- */ RHT_Consume_Volatile(neighbors[i]);
         /// TODO what to with last parameter? is a user def type
         /*-- RHT Volatile Not replicated -- */// MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
         // MPI_COMM_WORLD, request + i);
 
 
         x_external += n_recv;
-        /*-- RHT -- */ SyncQueue_Consume_Check(*x_external);
+        /*-- RHT -- */ RHT_Consume_Check(*x_external);
     }
 
 
@@ -285,11 +285,11 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
 
     for (i = 0; i < num_neighbors; i++) {
         int n_send = send_length[i];
-        /*-- RHT -- */ SyncQueue_Consume_Check(n_send);
-        /*-- RHT Volatile -- */ SyncQueue_Consume_Volatile(neighbors[i]);
+        /*-- RHT -- */ RHT_Consume_Check(n_send);
+        /*-- RHT Volatile -- */ RHT_Consume_Volatile(neighbors[i]);
         /*-- RHT Volatile Not replicated -- */// MPI_Send(send_buffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
         send_buffer += n_send;
-        /*-- RHT -- */ SyncQueue_Consume_Check(n_send);
+        /*-- RHT -- */ RHT_Consume_Check(n_send);
     }
 
     //

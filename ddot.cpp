@@ -79,7 +79,7 @@ int ddot_producer (const int n, const double * const x, const double * const y,
 #endif
         for (int i = 0; i < n; i++) {
             local_result += x[i] * x[i];
-            /*-- RHT -- */ SyncQueue_Produce_Simple(local_result);
+            /*-- RHT -- */ RHT_Produce(local_result);
         }
     else
 #ifdef USING_OMP
@@ -87,7 +87,7 @@ int ddot_producer (const int n, const double * const x, const double * const y,
 #endif
         for (int i = 0; i < n; i++) {
             local_result += x[i] * y[i];
-            /*-- RHT -- */ SyncQueue_Produce_Simple(local_result);
+            /*-- RHT -- */ RHT_Produce(local_result);
         }
 
 #ifdef USING_MPI
@@ -95,9 +95,9 @@ int ddot_producer (const int n, const double * const x, const double * const y,
     double t0 = mytimer();
     double global_result = 0.0;
 
-    /*-- RHT Volatile -- */ SyncQueue_Produce_Volatile(global_result);
+    /*-- RHT Volatile -- */ RHT_Produce_Volatile(global_result);
     MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    /*-- RHT -- */ SyncQueue_Produce_Simple(global_result);
+    /*-- RHT -- */ RHT_Produce(global_result);
 
     *result = global_result;
 
@@ -106,7 +106,7 @@ int ddot_producer (const int n, const double * const x, const double * const y,
     *result = local_result;
 #endif
 
-    /*-- RHT -- */ SyncQueue_Produce_Simple(*result);
+    /*-- RHT -- */ RHT_Produce(*result);
     return (0);
 }
 
@@ -119,7 +119,7 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
 #endif
         for (int i = 0; i < n; i++) {
             local_result += x[i] * x[i];
-            /*-- RHT -- */ SyncQueue_Consume_Check(local_result);
+            /*-- RHT -- */ RHT_Consume_Check(local_result);
         }
     else
 #ifdef USING_OMP
@@ -127,7 +127,7 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
 #endif
         for (int i = 0; i < n; i++) {
             local_result += x[i] * y[i];
-            /*-- RHT -- */ SyncQueue_Consume_Check(local_result);
+            /*-- RHT -- */ RHT_Consume_Check(local_result);
         }
 
 #ifdef USING_MPI
@@ -135,9 +135,9 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
     double t0 = mytimer();
     double global_result = 0.0;
 
-    /*-- RHT Volatile -- */ SyncQueue_Consume_Volatile(global_result);
+    /*-- RHT Volatile -- */ RHT_Consume_Volatile(global_result);
     /*-- RHT Not replicated -- */// MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    global_result = SyncQueue_Consume();
+    global_result = RHT_Consume();
 
     *result = global_result;
     time_allreduce += mytimer() - t0;
@@ -145,6 +145,6 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
     *result = local_result;
 #endif
 
-    /*-- RHT -- */ SyncQueue_Consume_Check(*result);
+    /*-- RHT -- */ RHT_Consume_Check(*result);
     return (0);
 }

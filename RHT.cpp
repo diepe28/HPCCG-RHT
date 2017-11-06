@@ -4,7 +4,7 @@
 
 #include "RHT.h"
 
-SyncQueue globaQueue;
+RHT_Queue globaQueue;
 
 volatile long producerCount;
 volatile long consumerCount;
@@ -25,11 +25,11 @@ void SetThreadAffinity(int threadId) {
     }
 }
 
-SyncQueue SyncQueue_Init(){
-    SyncQueue syncQueue;
+RHT_Queue Queue_Init(){
+    RHT_Queue syncQueue;
     int i = 0;
-    syncQueue.content = (double*) (malloc(sizeof(double) * SYNC_QUEUE_SIZE));
-    for(; i < SYNC_QUEUE_SIZE; i++){
+    syncQueue.content = (double*) (malloc(sizeof(double) * RHT_QUEUE_SIZE));
+    for(; i < RHT_QUEUE_SIZE; i++){
         syncQueue.content[i] = ALREADY_CONSUMED;
     }
     syncQueue.volatileValue = ALREADY_CONSUMED;
@@ -38,20 +38,44 @@ SyncQueue SyncQueue_Init(){
     return syncQueue;
 }
 
-void SyncQueue_Produce_Simple(double value){
-    int nextEnq = (globaQueue.enqPtr + 1) % SYNC_QUEUE_SIZE;
+void createConsumerThreads(int numThreads){
+    int i;
 
-    while(globaQueue.content[nextEnq] != ALREADY_CONSUMED){
-        asm("pause");
-    }
+    NUM_CONSUMER_THREADS = numThreads;
+    consumerThreads = (pthread_t **) malloc(sizeof(pthread_t*) * NUM_CONSUMER_THREADS);
 
-    globaQueue.content[globaQueue.enqPtr] = value;
-    globaQueue.enqPtr = nextEnq;
-    producerCount++;
+    for (i = 0; i < NUM_CONSUMER_THREADS; i++)
+        consumerThreads[i] = (pthread_t*) malloc(sizeof(pthread_t));
 }
 
-void SyncQueue_Produce_Volatile(double value){
+void RHT_Replication_Init(int numThreads){
+    createConsumerThreads(numThreads);
+    globaQueue = Queue_Init();
+}
 
+void RHT_Replication_Finish(){
+    if(globaQueue.content)
+        free( (void*) globaQueue.content);
+    int i = 0;
+
+    for (i = 0; i < NUM_CONSUMER_THREADS; i++)
+        free(consumerThreads[i]);
+    free(consumerThreads);
+}
+
+//////////// QUEUE METHODS //////////////////
+static inline void AlreadyConsumed_Produce(double value);
+static inline double AlreadyConsumed_Consume();
+static inline void AlreadyConsumed_Consume_Check(double currentValue);
+
+static inline void UsingPointers_Produce(double value);
+static inline double UsingPointers_Consume();
+static inline void UsingPointers_Consume_Check(double currentValue);
+
+
+// -------- Public Methods ----------
+
+void RHT_Produce_Volatile(double value){
     globaQueue.volatileValue = value;
     globaQueue.checkState = 0;
     while (globaQueue.checkState == 0) {
@@ -61,55 +85,7 @@ void SyncQueue_Produce_Volatile(double value){
     // After this, the value has been validated
 }
 
-double SyncQueue_Consume() {
-    double value = globaQueue.content[globaQueue.deqPtr];
-
-    if (value == ALREADY_CONSUMED) {
-        //printf("There was a des sync of the queue \n");
-        do {
-            asm("pause");
-        } while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED);
-    }
-
-    value = globaQueue.content[globaQueue.deqPtr];
-    globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
-    globaQueue.deqPtr = (globaQueue.deqPtr + 1) % SYNC_QUEUE_SIZE;
-    consumerCount++;
-    return value;
-}
-
-void SyncQueue_Consume_Check(double currentValue){
-    double otherValue = globaQueue.content[globaQueue.deqPtr];
-
-    if (currentValue != otherValue) {
-        // des-sync of the queue
-        if (otherValue == ALREADY_CONSUMED) {
-            //consumerCount++;
-            //printf("There was a des sync of the queue \n");
-            do {
-                asm("pause");
-            } while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED);
-
-            otherValue = globaQueue.content[globaQueue.deqPtr];
-
-            if (currentValue == otherValue){
-                globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
-                globaQueue.deqPtr = (globaQueue.deqPtr + 1) % SYNC_QUEUE_SIZE;
-                return;
-            }
-        }
-        printf("\n\n SOFT ERROR DETECTED, Consumer: %f vs Producer: %f PCount: %ld -- CCount: %ld, diff: %ld \n",
-               currentValue, otherValue, producerCount, consumerCount, producerCount - consumerCount);
-        exit(1);
-    }else{
-        globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
-        globaQueue.deqPtr = (globaQueue.deqPtr + 1) % SYNC_QUEUE_SIZE;
-        consumerCount++;
-    }
-}
-
-void SyncQueue_Consume_Volatile(double currentValue) {
-
+void RHT_Consume_Volatile(double currentValue){
     while (globaQueue.checkState == 1) {
         asm("pause");
     }
@@ -125,27 +101,120 @@ void SyncQueue_Consume_Volatile(double currentValue) {
     // After this, the value has been validated
 }
 
-void createConsumerThreads(int numThreads){
-    int i;
 
-    NUM_CONSUMER_THREADS = numThreads;
-    consumerThreads = (pthread_t **) malloc(sizeof(pthread_t*) * NUM_CONSUMER_THREADS);
-
-    for (i = 0; i < NUM_CONSUMER_THREADS; i++)
-        consumerThreads[i] = (pthread_t*) malloc(sizeof(pthread_t));
+void RHT_Produce(double value){
+    //AlreadyConsumed_Produce(value);
+    UsingPointers_Produce(value);
 }
 
-void Replication_Init(int numThreads){
-    createConsumerThreads(numThreads);
-    globaQueue = SyncQueue_Init();
+double RHT_Consume() {
+    //AlreadyConsumed_Consume();
+    UsingPointers_Consume();
 }
 
-void Replication_Finish(){
-    if(globaQueue.content)
-        free( (void*) globaQueue.content);
-    int i = 0;
+void RHT_Consume_Check(double currentValue){
+    //AlreadyConsumed_Consume_Check(currentValue);
+    UsingPointers_Consume_Check(currentValue);
+}
 
-    for (i = 0; i < NUM_CONSUMER_THREADS; i++)
-        free(consumerThreads[i]);
-    free(consumerThreads);
+// -------- Already Consumed Approach ----------
+
+static inline void AlreadyConsumed_Produce(double value){
+    int nextEnq = (globaQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
+
+    while(globaQueue.content[nextEnq] != ALREADY_CONSUMED){
+        asm("pause");
+    }
+
+    globaQueue.content[globaQueue.enqPtr] = value;
+    globaQueue.enqPtr = nextEnq;
+    //producerCount++;
+}
+
+static inline double AlreadyConsumed_Consume() {
+    double value = globaQueue.content[globaQueue.deqPtr];
+
+    if (value == ALREADY_CONSUMED) {
+        //printf("There was a des sync of the queue \n");
+        do {
+            asm("pause");
+        } while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED);
+    }
+
+    value = globaQueue.content[globaQueue.deqPtr];
+    globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
+    globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+    //consumerCount++;
+    return value;
+}
+
+static inline void AlreadyConsumed_Consume_Check(double currentValue){
+    double otherValue = globaQueue.content[globaQueue.deqPtr];
+
+    if (currentValue != otherValue) {
+        // des-sync of the queue
+        if (otherValue == ALREADY_CONSUMED) {
+            //consumerCount++;
+            //printf("There was a des sync of the queue \n");
+            do {
+                asm("pause");
+            } while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED);
+
+            otherValue = globaQueue.content[globaQueue.deqPtr];
+
+            if (currentValue == otherValue){
+                globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
+                globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+                return;
+            }
+        }
+        printf("\n\n SOFT ERROR DETECTED, Consumer: %f vs Producer: %f PCount: %ld -- CCount: %ld, diff: %ld \n",
+               currentValue, otherValue, producerCount, consumerCount, producerCount - consumerCount);
+        exit(1);
+    }else{
+        globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
+        globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+        consumerCount++;
+    }
+}
+
+// -------- Using Pointers Approach ----------
+
+static inline void UsingPointers_Produce(double value) {
+    int nextEnq = (globaQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
+
+    while (nextEnq == globaQueue.deqPtr){
+        asm("pause");
+    }
+
+    globaQueue.content[globaQueue.enqPtr] = value;
+    globaQueue.enqPtr = nextEnq;
+    //producerCount++;
+}
+
+static inline double UsingPointers_Consume(){
+
+    while(globaQueue.deqPtr == globaQueue.enqPtr){
+        asm("pause");
+    }
+
+    double value = globaQueue.content[globaQueue.deqPtr];
+    globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+    //consumerCount++;
+    return value;
+}
+
+static inline void UsingPointers_Consume_Check(double currentValue){
+    while(globaQueue.deqPtr == globaQueue.enqPtr){
+        asm("pause");
+    }
+
+    if(globaQueue.content[globaQueue.deqPtr] != currentValue){
+        printf("\n\n SOFT ERROR DETECTED, Consumer: %f vs Producer: %f PCount: %ld -- CCount: %ld, diff: %ld \n",
+               currentValue, globaQueue.content[globaQueue.deqPtr], producerCount, consumerCount, producerCount - consumerCount);
+        exit(1);
+    }
+
+    globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+    //consumerCount++;
 }

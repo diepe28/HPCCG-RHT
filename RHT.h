@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <pthread.h>
 
-#define SYNC_QUEUE_SIZE 1024
+#define RHT_QUEUE_SIZE 1024
 #define ALREADY_CONSUMED -2
 
 void SetThreadAffinity(int threadId);
@@ -24,24 +24,23 @@ typedef struct{
     volatile int checkState;
     double padding3[15];
     volatile double volatileValue;
-}SyncQueue;
+}RHT_Queue;
 
-SyncQueue SyncQueue_Init();
-void SyncQueue_Produce_Simple(double value);
-void SyncQueue_Produce_Volatile(double value);
+void RHT_Produce(double value);
+void RHT_Produce_Volatile(double value);
 
-double SyncQueue_Consume();
-void SyncQueue_Consume_Check(double currentValue);
-void SyncQueue_Consume_Volatile(double currentValue);
+double RHT_Consume();
+void RHT_Consume_Check(double currentValue);
+void RHT_Consume_Volatile(double currentValue);
 
-void Replication_Init(int numThreads);
-void Replication_Finish();
+void RHT_Replication_Init(int numThreads);
+void RHT_Replication_Finish();
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////// GLOBAL VARS ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-extern SyncQueue globaQueue;
+extern RHT_Queue globaQueue;
 
 extern volatile long producerCount;
 extern volatile long consumerCount;
