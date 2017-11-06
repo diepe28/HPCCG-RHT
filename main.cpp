@@ -100,8 +100,10 @@ void consumer_thread_func(void * args) {
 
     SetThreadAffinity(params->executionCore);
 
-    int ierr = HPCCG_consumer(params->A, params->b, params->x, params->max_iter,
+    HPCCG_consumer(params->A, params->b, params->x, params->max_iter,
                               params->tolerance, params->niters, params->normr, params->times);
+//    HPCCG(params->A, params->b, params->x, params->max_iter,
+//                              params->tolerance, params->niters, params->normr, params->times);
 }
 
 int main(int argc, char *argv[]) {
@@ -219,6 +221,7 @@ int main(int argc, char *argv[]) {
 
         SetThreadAffinity(producerCore);
         ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
+        //ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
 
         /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
         delete x2;

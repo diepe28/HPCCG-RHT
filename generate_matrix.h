@@ -33,7 +33,7 @@
 #include <mpi.h>
 #endif
 #include "HPC_Sparse_Matrix.h"
-#include "SyncQueue.h"
+#include "RHT.h"
 
 void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact);
 void generate_matrix_producer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact);

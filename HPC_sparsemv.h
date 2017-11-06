@@ -33,7 +33,7 @@
 #ifdef USING_MPI
 #include <mpi.h> // If this routine is compiled with -DUSING_MPI
                  // then include mpi.h
-#include "SyncQueue.h"
+#include "RHT.h"
 #endif
 
 int HPC_sparsemv( HPC_Sparse_Matrix *hpc_sparse_matrix, const double * const x, double * const y);

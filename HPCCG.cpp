@@ -54,7 +54,7 @@ using std::endl;
 #include <cmath>
 #include "mytimer.h"
 #include "HPCCG.h"
-#include "SyncQueue.h"
+#include "RHT.h"
 
 #define TICK()  t0 = mytimer() // Use TICK and TOCK to time a code section
 #define TOCK(t) t += mytimer() - t0

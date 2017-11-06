@@ -33,7 +33,7 @@
 #include <mpi.h>
 #endif
 #include "HPC_Sparse_Matrix.h"
-#include "SyncQueue.h"
+#include "RHT.h"
 
 void exchange_externals(HPC_Sparse_Matrix *A, const double *x);
 void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x);

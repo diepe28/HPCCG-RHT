@@ -27,7 +27,7 @@ set(SOURCE_FILES main.cpp
         waxpby.cpp waxpby.h
         YAML_Doc.cpp YAML_Doc.h
         YAML_Element.cpp YAML_Element.h
-        SyncQueue.cpp SyncQueue.h)
+        RHT.cpp RHT.h)
 add_executable(HPCCG_RHT ${SOURCE_FILES})
 
 target_link_libraries(HPCCG_RHT ${MPI_LIBRARIES})

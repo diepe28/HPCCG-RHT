@@ -2,7 +2,7 @@
 // Created by diego on 30/10/17.
 //
 
-#include "SyncQueue.h"
+#include "RHT.h"
 
 SyncQueue globaQueue;
 

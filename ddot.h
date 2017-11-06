@@ -31,7 +31,7 @@
 #ifdef USING_MPI
 #include <mpi.h>
 #include "mytimer.h"
-#include "SyncQueue.h"
+#include "RHT.h"
 #endif
 
 
