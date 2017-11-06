@@ -107,7 +107,6 @@ void consumer_thread_func(void * args) {
 }
 
 int main(int argc, char *argv[]) {
-
     HPC_Sparse_Matrix *A;
 
     double *x, *b, *xexact, *x2, *b2, *xexact2;

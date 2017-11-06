@@ -2,9 +2,15 @@
 // Created by diego on 30/10/17.
 //
 
+/// Try with different queues as well, so there are no castings necessary... will it be really faster?
+/// Produce with no sync and consuming with no sync --> this needs the already consume approach
+/// Produce with no sync, consuming with sync --> with just the pointers (to see of cost of writing alreadyConsumed)
+/// Make them macros
+
 #include "RHT.h"
 
 RHT_Queue globaQueue;
+int nextEnq;
 
 volatile long producerCount;
 volatile long consumerCount;
@@ -72,7 +78,6 @@ static inline void UsingPointers_Produce(double value);
 static inline double UsingPointers_Consume();
 static inline void UsingPointers_Consume_Check(double currentValue);
 
-
 // -------- Public Methods ----------
 
 void RHT_Produce_Volatile(double value){
@@ -101,20 +106,19 @@ void RHT_Consume_Volatile(double currentValue){
     // After this, the value has been validated
 }
 
-
-void RHT_Produce(double value){
-    //AlreadyConsumed_Produce(value);
-    UsingPointers_Produce(value);
-}
-
+//void RHT_Produce(double value){
+//    AlreadyConsumed_Produce(value);
+////    UsingPointers_Produce(value);
+//}
+//
 double RHT_Consume() {
-    //AlreadyConsumed_Consume();
-    UsingPointers_Consume();
+    AlreadyConsumed_Consume();
+//    UsingPointers_Consume();
 }
 
 void RHT_Consume_Check(double currentValue){
-    //AlreadyConsumed_Consume_Check(currentValue);
-    UsingPointers_Consume_Check(currentValue);
+    AlreadyConsumed_Consume_Check(currentValue);
+    //UsingPointers_Consume_Check(currentValue);
 }
 
 // -------- Already Consumed Approach ----------
@@ -139,9 +143,9 @@ static inline double AlreadyConsumed_Consume() {
         do {
             asm("pause");
         } while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED);
+        value = globaQueue.content[globaQueue.deqPtr];
     }
 
-    value = globaQueue.content[globaQueue.deqPtr];
     globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;
     globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
     //consumerCount++;
@@ -217,4 +221,19 @@ static inline void UsingPointers_Consume_Check(double currentValue){
 
     globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
     //consumerCount++;
+}
+
+// -------- New Limit Approach ----------
+
+static inline void NewLimit_Produce(double value){
+    globaQueue.content[globaQueue.enqPtr] = value;
+    globaQueue.enqPtr = (globaQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
+}
+
+static inline void NewLimit_Consume(){
+    AlreadyConsumed_Consume();
+}
+
+static inline void NewLimit_Consume_Check(double currentValue){
+    AlreadyConsumed_Consume_Check(currentValue);
 }

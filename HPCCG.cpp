@@ -172,6 +172,7 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
 
     double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;
     /*-- RHT -- */ RHT_Produce(t0);
+    /*-- RHT -- */ RHT_Produce(t1);
     /*-- RHT -- */ RHT_Produce(t2);
     /*-- RHT -- */ RHT_Produce(t3);
     /*-- RHT -- */ RHT_Produce(t4);
@@ -239,26 +240,31 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
     if (rank == 0) cout << "Initial Residual = " << normr << endl;
 
-    for (int k = 1; k < max_iter && normr > tolerance; k++) {
-        if (k == 1) {
-            TICK();
-            waxpby_producer(nrow, 1.0, r, 0.0, r, p);
-            TOCK(t2);
-        } else {
-            oldrtrans = rtrans;
-            /*-- RHT -- */ RHT_Produce(print_freq);
+    TICK();
+    waxpby_producer(nrow, 1.0, r, 0.0, r, p);
+    TOCK(t2);
 
-            TICK();
-            ddot_producer(nrow, r, r, &rtrans, t4);
-            TOCK(t1);// 2*nrow ops
+    double beta = 0;
+    int k = 2;
 
-            double beta = rtrans / oldrtrans;
-            /*-- RHT -- */ RHT_Produce(beta);
+    goto inFor;
 
-            TICK();
-            waxpby_producer(nrow, 1.0, r, beta, p, p);
-            TOCK(t2);// 2*nrow ops
-        }
+    for (; k < max_iter && normr > tolerance; k++) {
+        oldrtrans = rtrans;
+        /*-- RHT -- */ RHT_Produce(print_freq);
+
+        TICK();
+        ddot_producer(nrow, r, r, &rtrans, t4);
+        TOCK(t1);// 2*nrow ops
+
+        beta = rtrans / oldrtrans;
+        /*-- RHT -- */ RHT_Produce(beta);
+
+        TICK();
+        waxpby_producer(nrow, 1.0, r, beta, p, p);
+        TOCK(t2);// 2*nrow ops
+
+      inFor:
 
         normr = sqrt(rtrans);
         /*-- RHT -- */ RHT_Produce(k);
@@ -327,6 +333,7 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
 
     double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;
     /*-- RHT -- */ RHT_Consume_Check(t0);
+    /*-- RHT -- */ RHT_Consume_Check(t1);
     /*-- RHT -- */ RHT_Consume_Check(t2);
     /*-- RHT -- */ RHT_Consume_Check(t3);
     /*-- RHT -- */ RHT_Consume_Check(t4);
@@ -394,26 +401,31 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     /*-- RHT Volatile -- */ RHT_Consume_Volatile(normr);
     /*-- RHT Not Replicated -- */// if (rank == 0) cout << "Initial Residual = " << normr << endl;
 
-    for (int k = 1; k < max_iter && normr > tolerance; k++) {
-        if (k == 1) {
-            TICK();
-            waxpby_consumer(nrow, 1.0, r, 0.0, r, p);
-            TOCK(t2);
-        } else {
-            oldrtrans = rtrans;
-            /*-- RHT -- */ RHT_Consume_Check(print_freq);
+    TICK();
+    waxpby_consumer(nrow, 1.0, r, 0.0, r, p);
+    TOCK(t2);
 
-            TICK();
-            ddot_consumer(nrow, r, r, &rtrans, t4);
-            TOCK(t1);// 2*nrow ops
+    double beta = 0;
+    int k = 2;
 
-            double beta = rtrans / oldrtrans;
-            /*-- RHT -- */ RHT_Consume_Check(beta);
+    goto inFor;
 
-            TICK();
-            waxpby_consumer(nrow, 1.0, r, beta, p, p);
-            TOCK(t2);// 2*nrow ops
-        }
+    for (; k < max_iter && normr > tolerance; k++) {
+        oldrtrans = rtrans;
+        /*-- RHT -- */ RHT_Consume_Check(print_freq);
+
+        TICK();
+        ddot_consumer(nrow, r, r, &rtrans, t4);
+        TOCK(t1);// 2*nrow ops
+
+        beta = rtrans / oldrtrans;
+        /*-- RHT -- */ RHT_Consume_Check(beta);
+
+        TICK();
+        waxpby_consumer(nrow, 1.0, r, beta, p, p);
+        TOCK(t2);// 2*nrow ops
+
+      inFor:
 
         normr = sqrt(rtrans);
         /*-- RHT -- */ RHT_Consume_Check(k);
