@@ -12,7 +12,7 @@
 #define SYNC_QUEUE_SIZE 1024
 #define ALREADY_CONSUMED -2
 
-//void SetThreadAffinity(int threadId);
+void SetThreadAffinity(int threadId);
 
 typedef struct{
     volatile int deqPtr;
@@ -33,7 +33,6 @@ void SyncQueue_Produce_Volatile(double value);
 double SyncQueue_Consume();
 void SyncQueue_Consume_Check(double currentValue);
 void SyncQueue_Consume_Volatile(double currentValue);
-
 
 void Replication_Init(int numThreads);
 void Replication_Finish();

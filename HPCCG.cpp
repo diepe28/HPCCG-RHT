@@ -270,9 +270,6 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         if (rank == 0 && (k % print_freq == 0 || k + 1 == max_iter))
             cout << "Iteration = " << k << "   Residual = " << normr << endl;
 
-        printf("Producer is here\n");
-        return 0;
-
 #ifdef USING_MPI
         TICK();
         exchange_externals_producer(hpc_sparse_matrix, p);
@@ -289,18 +286,20 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         ddot_producer(nrow, p, Ap, &alpha, t4);
         TOCK(t1); // 2*nrow ops
 
-
         alpha = rtrans / alpha;
         /*-- RHT -- */ SyncQueue_Produce_Simple(alpha);
 
         TICK();
-        waxpby_producer(nrow, 1.0, x, alpha, p, x);// 2*nrow ops
+        waxpby_producer (nrow, 1.0, x, alpha, p, x);// 2*nrow ops
         waxpby_producer(nrow, 1.0, r, -alpha, Ap, r);
         TOCK(t2);// 2*nrow ops
 
         niters = k;
         /*-- RHT -- */ SyncQueue_Produce_Simple(niters);
     }
+
+//    printf("Producer is here\n");
+//    return 0;
 
     /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this
     /// manually we can decide what is worth replicating or not...
@@ -425,9 +424,6 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         /*-- RHT Not replicated -- */// if (rank == 0 && (k % print_freq == 0 || k + 1 == max_iter))
         // cout << "Iteration = " << k << "   Residual = " << normr << endl;
 
-        printf("Consumer is here as well \n");
-        return 0;
-
 #ifdef USING_MPI
         TICK();
         exchange_externals_consumer(hpc_sparse_matrix, p);
@@ -444,7 +440,6 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         ddot_consumer(nrow, p, Ap, &alpha, t4);
         TOCK(t1); // 2*nrow ops
 
-
         alpha = rtrans / alpha;
         /*-- RHT -- */ SyncQueue_Consume_Check(alpha);
 
@@ -456,6 +451,9 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         niters = k;
         SyncQueue_Consume_Check(niters);
     }
+
+//    printf("Consumer is here as well \n");
+//    return 0;
 
 
     /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this

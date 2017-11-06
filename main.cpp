@@ -90,13 +90,15 @@ using std::endl;
 typedef struct {
     HPC_Sparse_Matrix *A;
     double *x, *b;
-    int max_iter, niters;
+    int max_iter, niters, executionCore;
     double tolerance, normr;
     double *times;
 } ConsumerParams;
 
 void consumer_thread_func(void * args) {
     ConsumerParams *params = (ConsumerParams *) args;
+
+    SetThreadAffinity(params->executionCore);
 
     int ierr = HPCCG_consumer(params->A, params->b, params->x, params->max_iter,
                               params->tolerance, params->niters, params->normr, params->times);
@@ -114,7 +116,7 @@ int main(int argc, char *argv[]) {
     double times[7];
     double t6 = 0.0;
     int nx, ny, nz;
-    int replicated;
+    int replicated, producerCore, consumerCore;
 
 #ifdef USING_MPI
 
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    if (argc != 2 && argc != 5) { // dperez, original argc != 4
+    if (argc != 2 && argc != 7) { // dperez, original argc != 4
         if (rank == 0)
             cerr << "Usage:" << endl
                  << "Mode 1: " << argv[0] << " nx ny nz" << endl
@@ -153,11 +155,13 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if (argc == 5) { // dperez, original was 4
+    if (argc == 7) { // dperez, original was 4
         nx = atoi(argv[1]);
         ny = atoi(argv[2]);
         nz = atoi(argv[3]);
         replicated = atoi(argv[4]);
+        producerCore = atoi(argv[5]);
+        consumerCore = atoi(argv[6]);
     } else {
         read_HPC_row(argv[1], &A, &x, &b, &xexact);
     }
@@ -188,14 +192,23 @@ int main(int argc, char *argv[]) {
         Replication_Init(1);
 
         ConsumerParams *consumerParams = (ConsumerParams *) (malloc(sizeof(ConsumerParams)));
+        int local_nrow = nx * ny * nz; // This is the size of our subblock
+
+        x2 = new double[local_nrow];
+
+        for(int m = 0; m < local_nrow; m++){
+            x2[m] = x[m];
+        }
+
         consumerParams->A = A;
         consumerParams->b = b;
-        consumerParams->x = x;
+        consumerParams->x = x2;
         consumerParams->max_iter = max_iter;
         consumerParams->tolerance = tolerance;
         consumerParams->niters = niters;
         consumerParams->normr = normr;
         consumerParams->times = times;
+        consumerParams->executionCore = consumerCore;
 
         int err = pthread_create(consumerThreads[0], NULL, (void *(*)(void *)) consumer_thread_func,
                                  (void *) consumerParams);
@@ -204,9 +217,12 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
+        SetThreadAffinity(producerCore);
         ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
 
         /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
+        delete x2;
+        Replication_Finish();
     }else {
         ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
     }

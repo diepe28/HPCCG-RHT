@@ -12,6 +12,19 @@ volatile long consumerCount;
 pthread_t ** consumerThreads;
 int NUM_CONSUMER_THREADS;
 
+void SetThreadAffinity(int threadId) {
+    cpu_set_t cpuset;
+
+    CPU_ZERO(&cpuset);
+    CPU_SET(threadId, &cpuset);
+
+    /* pin the thread to a core */
+    if (pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset)) {
+        fprintf(stderr, "Thread pinning failed!\n");
+        exit(1);
+    }
+}
+
 SyncQueue SyncQueue_Init(){
     SyncQueue syncQueue;
     int i = 0;
@@ -85,7 +98,7 @@ void SyncQueue_Consume_Check(double currentValue){
                 return;
             }
         }
-        printf("\n\n SOFT ERROR DETECTED, %f vs %f Producer: %ld -- Consumer: %ld, diff: %ld \n",
+        printf("\n\n SOFT ERROR DETECTED, Consumer: %f vs Producer: %f PCount: %ld -- CCount: %ld, diff: %ld \n",
                currentValue, otherValue, producerCount, consumerCount, producerCount - consumerCount);
         exit(1);
     }else{

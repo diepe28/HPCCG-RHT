@@ -112,7 +112,9 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
         for (int i = 0; i < n; i++){
             w[i] = x[i] + beta * y[i];
             /*-- RHT -- */ SyncQueue_Consume_Check(w[i]);
+
         }
+
     } else if (beta == 1.0) {
 #ifdef USING_OMP
 #pragma omp parallel for
