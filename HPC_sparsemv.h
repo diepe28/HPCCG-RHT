@@ -37,6 +37,7 @@
 #endif
 
 int HPC_sparsemv( HPC_Sparse_Matrix *hpc_sparse_matrix, const double * const x, double * const y);
+int HPC_sparsemv_producer_no_sync( HPC_Sparse_Matrix *hpc_sparse_matrix, const double * const x, double * const y);
 int HPC_sparsemv_producer( HPC_Sparse_Matrix *hpc_sparse_matrix, const double * const x, double * const y);
 int HPC_sparsemv_consumer( HPC_Sparse_Matrix *hpc_sparse_matrix, const double * const x, double * const y);
 #endif

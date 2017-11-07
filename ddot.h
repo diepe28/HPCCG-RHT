@@ -37,6 +37,7 @@
 
 
 int ddot (const int n, const double * const x, const double * const y, double * const result, double & time_allreduce);
+int ddot_producer_no_sync (const int n, const double * const x, const double * const y, double * const result, double & time_allreduce);
 int ddot_producer (const int n, const double * const x, const double * const y, double * const result, double & time_allreduce);
 int ddot_consumer (const int n, const double * const x, const double * const y, double * const result, double & time_allreduce);
 #endif

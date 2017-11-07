@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(HPCCG_RHT)
 
-set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
-#set(CMAKE_BUILD_TYPE Debug) # optimizations, but debuging is not allowed
+#set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
+set(CMAKE_BUILD_TYPE Debug) # optimizations, but debuging is not allowed
 
 find_package(MPI REQUIRED)
 

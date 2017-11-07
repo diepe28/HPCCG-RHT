@@ -70,6 +70,21 @@ int waxpby (const int n, const double alpha, const double * const x,
     return (0);
 }
 
+int waxpby_producer_no_sync (const int n, const double alpha, const double * const x,
+                             const double beta, const double * const y,
+                             double * const w) {
+    int i;
+    if (alpha == 1.0) {
+        replicate_for_no_sync(n, i, w[i], w[i] = x[i] + beta * y[i])
+    } else if (beta == 1.0) {
+        replicate_for_no_sync(n, i, w[i], w[i] = alpha * x[i] + y[i])
+    } else {
+        replicate_for_no_sync(n, i, w[i], w[i] = alpha * x[i] + beta * y[i])
+    }
+
+    return (0);
+}
+
 int waxpby_producer (const int n, const double alpha, const double * const x,
             const double beta, const double * const y,
             double * const w) {
@@ -97,22 +112,6 @@ int waxpby_producer (const int n, const double alpha, const double * const x,
             w[i] = alpha * x[i] + beta * y[i];
             /*-- RHT -- */ RHT_Produce(w[i]);
         }
-    }
-
-    return (0);
-}
-
-int waxpby_producer_no_sync (const int n, const double alpha, const double * const x,
-                     const double beta, const double * const y,
-                     double * const w) {
-
-    int newLimit = RHT_QUEUE_SIZE, i, nextEnq, localDeq;
-    if (alpha == 1.0) {
-        replicate_newLimit(w[i], x[i] + beta * y[i])
-    } else if (beta == 1.0) {
-        replicate_newLimit(w[i], alpha * x[i] + y[i])
-    } else {
-        replicate_newLimit(w[i], alpha * x[i] + beta * y[i])
     }
 
     return (0);

@@ -334,8 +334,10 @@ void generate_matrix_consumer(int nx, int ny, int nz, HPC_Sparse_Matrix **A, dou
 
 #ifdef USING_MPI
     int size, rank; // Number of MPI processes, My process ID
-    size = RHT_Consume();
-    rank = RHT_Consume();
+  /*-- RHT -- */ RHT_Consume(size)
+  /*-- RHT -- */ RHT_Consume(rank)
+//    /*-- RHT -- */ size = RHT_Consume();
+//    /*-- RHT -- */ rank = RHT_Consume();
 #else
     int size = 1; // Serial case (not using MPI)
     int rank = 0;

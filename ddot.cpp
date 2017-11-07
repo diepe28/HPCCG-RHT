@@ -70,6 +70,37 @@ int ddot (const int n, const double * const x, const double * const y,
     return (0);
 }
 
+int ddot_producer_no_sync (const int n, const double * const x, const double * const y,
+                   double * const result, double & time_allreduce) {
+    double local_result = 0.0;
+    int i;
+    if (y == x) {
+        replicate_for_no_sync(n, i, local_result, local_result += x[i] * x[i])
+    }
+    else {
+        replicate_for_no_sync(n, i, local_result, local_result += x[i] * y[i])
+    }
+
+#ifdef USING_MPI
+    // Use MPI's reduce function to collect all partial sums
+    double t0 = mytimer();
+    double global_result = 0.0;
+
+    /*-- RHT Volatile -- */ RHT_Produce_Volatile(global_result);
+    MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    /*-- RHT -- */ RHT_Produce_Secure(global_result);
+
+    *result = global_result;
+
+    time_allreduce += mytimer() - t0;
+#else
+    *result = local_result;
+#endif
+
+    /*-- RHT -- */ RHT_Produce_Secure(*result);
+    return (0);
+}
+
 int ddot_producer (const int n, const double * const x, const double * const y,
           double * const result, double & time_allreduce) {
     double local_result = 0.0;
@@ -137,7 +168,8 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
 
     /*-- RHT Volatile -- */ RHT_Consume_Volatile(global_result);
     /*-- RHT Not replicated -- */// MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    global_result = RHT_Consume();
+    RHT_Consume(global_result)
+//    global_result = RHT_Consume();
 
     *result = global_result;
     time_allreduce += mytimer() - t0;

@@ -36,6 +36,7 @@
 #include "RHT.h"
 
 void exchange_externals(HPC_Sparse_Matrix *A, const double *x);
+void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x);
 void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x);
 void exchange_externals_consumer(HPC_Sparse_Matrix *A, const double *x);
 #endif

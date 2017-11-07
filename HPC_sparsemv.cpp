@@ -75,8 +75,42 @@ int HPC_sparsemv( HPC_Sparse_Matrix *hpc_sparse_matrix,
     return (0);
 }
 
-int HPC_sparsemv_producer( HPC_Sparse_Matrix *hpc_sparse_matrix,
+int HPC_sparsemv_producer_no_sync( HPC_Sparse_Matrix *hpc_sparse_matrix,
                   const double * const x, double * const y) {
+
+    const int nrow = (const int) hpc_sparse_matrix->local_nrow;
+    /*-- RHT -- */ RHT_Produce(nrow);
+
+#ifdef USING_OMP
+#pragma omp parallel for
+#endif
+    for (int i = 0; i < nrow; i++) {
+        double sum = 0.0;
+        /*-- RHT -- */ RHT_Produce_Secure(sum);
+
+        const double *const cur_vals = (const double *const) hpc_sparse_matrix->ptr_to_vals_in_row[i];
+        /*-- RHT -- */ RHT_Produce_Secure(*cur_vals);
+
+        const int *const cur_inds = (const int *const) hpc_sparse_matrix->ptr_to_inds_in_row[i];
+        /*-- RHT -- */ RHT_Produce_Secure(*cur_inds);
+
+        const int cur_nnz = (const int) hpc_sparse_matrix->nnz_in_row[i];
+        /*-- RHT -- */ RHT_Produce_Secure(cur_nnz);
+
+        //printf("Producer before inner loop...\n");
+
+
+        int j;
+        replicate_for_no_sync(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]])
+
+        y[i] = sum;
+        /*-- RHT -- */ RHT_Produce_Secure(y[i]);
+    }
+    return (0);
+}
+
+int HPC_sparsemv_producer( HPC_Sparse_Matrix *hpc_sparse_matrix,
+                           const double * const x, double * const y) {
 
     const int nrow = (const int) hpc_sparse_matrix->local_nrow;
     /*-- RHT -- */ RHT_Produce(nrow);

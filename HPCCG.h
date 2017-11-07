@@ -61,6 +61,10 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
 		  const double * const b, double * const x,
 		  const int max_iter, const double tolerance, int & niters, double & normr, double * times);
 
+int HPCCG_producer_no_sync(HPC_Sparse_Matrix * hpc_sparse_matrix,
+				   const double * const b, double * const x,
+				   const int max_iter, const double tolerance, int & niters, double & normr, double * times);
+
 int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
 		  const double * const b, double * const x,
 		  const int max_iter, const double tolerance, int & niters, double & normr, double * times);
