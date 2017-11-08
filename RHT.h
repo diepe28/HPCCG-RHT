@@ -1,4 +1,4 @@
-//
+    //
 // Created by diego on 30/10/17.
 //
 
@@ -11,35 +11,53 @@
 
 // -------- Macros ----------
 
-extern int nextEnq, localDeq, newLimit;
+extern int nextEnq, localDeq, newLimit, diff, diff2;
 extern double otherValue, thisValue;
 
+
 #define RHT_QUEUE_SIZE 1024
+#define MIN_PTR_DIST 200
 #define ALREADY_CONSUMED -2
 
-#define replicate_for_no_sync(numIters, iterator, value, operation)             \
-    newLimit = globaQueue.enqPtr >= localDeq ?                                  \
-                   (RHT_QUEUE_SIZE - globaQueue.enqPtr) + localDeq :            \
-                   localDeq - globaQueue.enqPtr;                                \
+//    newLimit = (globalQueue.enqPtr >= localDeq ?                            \
+//                   (RHT_QUEUE_SIZE - globalQueue.enqPtr) + localDeq :           \
+//                   localDeq - globalQueue.enqPtr)-1;                            \
+
+    //((RHT_QUEUE_SIZE-globalQueue.enqPtr + localDeq) % RHT_QUEUE_SIZE)-1; \
+
+
+/// with the -1 we make sure that the producer never really catches up to the consumer, but it might still happen
+/// the other way around
+#define replicate_forLoop_no_sync(numIters, iterator, value, operation)         \
+    do{                                                                         \
+        asm("pause");                                                           \
+        localDeq = globalQueue.deqPtr;                                          \
+        newLimit = (globalQueue.enqPtr >= localDeq ?                            \
+                   (RHT_QUEUE_SIZE - globalQueue.enqPtr) + localDeq :           \
+                   localDeq - globalQueue.enqPtr)-1;                            \
+    }                                                                           \
+    while(newLimit < MIN_PTR_DIST);                                             \
     iterator = 0;                                                               \
     while (newLimit < numIters) {                                               \
         for (; iterator < newLimit; iterator++){                                \
             operation;                                                          \
-            if(globaQueue.content[globaQueue.enqPtr] != ALREADY_CONSUMED) printf("overwriting... \n"); \
-            globaQueue.content[globaQueue.enqPtr] = value;                      \
-            globaQueue.enqPtr = (globaQueue.enqPtr + 1) % RHT_QUEUE_SIZE;       \
+            globalQueue.content[globalQueue.enqPtr] = value;                    \
+            globalQueue.enqPtr = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;     \
         }                                                                       \
-        nextEnq = (globaQueue.enqPtr + 1) % RHT_QUEUE_SIZE;                     \
-        while (globaQueue.content[nextEnq] != ALREADY_CONSUMED) asm("pause");   \
-        localDeq = globaQueue.deqPtr;                                           \
-        newLimit += globaQueue.enqPtr >= localDeq ?                             \
-                    (RHT_QUEUE_SIZE - globaQueue.enqPtr) + localDeq :           \
-                    localDeq - globaQueue.enqPtr;                               \
+        do{                                                                     \
+            asm("pause");                                                       \
+            localDeq = globalQueue.deqPtr;                                      \
+            diff = (globalQueue.enqPtr >= localDeq ?                            \
+                   (RHT_QUEUE_SIZE - globalQueue.enqPtr) + localDeq :           \
+                   localDeq - globalQueue.enqPtr)-1;                            \
+        }                                                                       \
+        while(diff < MIN_PTR_DIST);                                             \
+        newLimit += diff;                                                       \
     }                                                                           \
     for (; iterator < numIters; iterator++){                                    \
         operation;                                                              \
-        globaQueue.content[globaQueue.enqPtr] = value;                          \
-        globaQueue.enqPtr = (globaQueue.enqPtr + 1) % RHT_QUEUE_SIZE;           \
+        globalQueue.content[globalQueue.enqPtr] = value;                        \
+        globalQueue.enqPtr = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;         \
     }
 
 #define Macro_AlreadyConsumed_Produce(value)                    \
@@ -81,15 +99,15 @@ extern double otherValue, thisValue;
         globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;           \
     }
 
-#define Macro_AlreadyConsumed_Consume(value)                        \
-    value = globaQueue.content[globaQueue.deqPtr];                  \
-    if (value == ALREADY_CONSUMED) {                                \
-        do asm("pause"); while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED); \
-        value = globaQueue.content[globaQueue.deqPtr];              \
-    }                                                               \
-    /*consumerCount++;*/                                            \
-    globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;       \
-    globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+#define Macro_AlreadyConsumed_Consume(value)                         \
+    value = globalQueue.content[globalQueue.deqPtr];                 \
+    if (value == ALREADY_CONSUMED) {                                 \
+        do asm("pause"); while (globalQueue.content[globalQueue.deqPtr] == ALREADY_CONSUMED); \
+        value = globalQueue.content[globalQueue.deqPtr];             \
+    }                                                                \
+    /*consumerCount++;*/                                             \
+    globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;      \
+    globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
 
 //#define RHT_Produce(value) \
 //    /*Macro_UsingPointers_Produce(value)*/ \
@@ -123,6 +141,7 @@ typedef struct{
     volatile double volatileValue;
 }RHT_Queue;
 
+extern RHT_Queue globalQueue;
 
 void RHT_Produce_Volatile(double value);
 void RHT_Consume_Volatile(double currentValue);
@@ -133,8 +152,6 @@ void RHT_Replication_Finish();
 //////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////// GLOBAL VARS ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-
-extern RHT_Queue globaQueue;
 
 extern volatile long producerCount;
 extern volatile long consumerCount;

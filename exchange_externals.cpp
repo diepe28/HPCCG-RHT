@@ -178,7 +178,7 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
     //
     // Fill up send buffer
     //
-    replicate_for_no_sync(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
+    replicate_forLoop_no_sync(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
 
     //
     // Send to each neighbor

@@ -218,10 +218,11 @@ int HPCCG_producer_no_sync(HPC_Sparse_Matrix * hpc_sparse_matrix,
     TICK();
     waxpby_producer_no_sync(nrow, 1.0, x, 0.0, x, p);
     TOCK(t2);
-    printf("////////////////////////////////Producer... so far so god\n\n");
+
 #ifdef USING_MPI
     TICK(); exchange_externals_producer_no_sync(hpc_sparse_matrix,p); TOCK(t5);
 #endif
+
     TICK();
     HPC_sparsemv_producer_no_sync(hpc_sparse_matrix, p, Ap);
     TOCK(t3);

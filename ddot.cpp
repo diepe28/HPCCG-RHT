@@ -75,10 +75,10 @@ int ddot_producer_no_sync (const int n, const double * const x, const double * c
     double local_result = 0.0;
     int i;
     if (y == x) {
-        replicate_for_no_sync(n, i, local_result, local_result += x[i] * x[i])
+        replicate_forLoop_no_sync(n, i, local_result, local_result += x[i] * x[i])
     }
     else {
-        replicate_for_no_sync(n, i, local_result, local_result += x[i] * y[i])
+        replicate_forLoop_no_sync(n, i, local_result, local_result += x[i] * y[i])
     }
 
 #ifdef USING_MPI

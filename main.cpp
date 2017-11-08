@@ -87,6 +87,9 @@ using std::endl;
 
 #undef DEBUG
 
+//-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
+//-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
+
 typedef struct {
     HPC_Sparse_Matrix *A;
     double *x, *b;

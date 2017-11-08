@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(HPCCG_RHT)
 
-#set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
-set(CMAKE_BUILD_TYPE Debug) # optimizations, but debuging is not allowed
+set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
+#set(CMAKE_BUILD_TYPE Debug) # optimizations, but debuging is not allowed
 
 find_package(MPI REQUIRED)
 
@@ -11,6 +11,7 @@ include_directories(${MPI_INCLUDE_PATH})
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -ftree-vectorizer-verbose=2 -DUSING_MPI=1 -lm")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSING_MPI=1 -lm") # for clang
 
 set(SOURCE_FILES main.cpp
         generate_matrix.cpp generate_matrix.h
