@@ -79,6 +79,8 @@ static inline double UsingPointers_Consume();
 static inline void UsingPointers_Consume_Check(double currentValue);
 
 static inline void NewLimit_Produce(double value);
+static inline double NewLimit_Consume();
+static inline void NewLimit_Consume_Check(double currentValue);
 
 // -------- Public Methods ----------
 
@@ -108,21 +110,23 @@ void RHT_Consume_Volatile(double currentValue){
     // After this, the value has been validated
 }
 
-//void RHT_Produce(double value){
-////    AlreadyConsumed_Produce(value);
-////    UsingPointers_Produce(value);
+void RHT_Produce(double value){
+    AlreadyConsumed_Produce(value);
+//    UsingPointers_Produce(value);
 //    NewLimit_Produce(value);
-//}
+}
 
 void RHT_Consume_Check(double currentValue){
     AlreadyConsumed_Consume_Check(currentValue);
-    //UsingPointers_Consume_Check(currentValue);
+//    UsingPointers_Consume_Check(currentValue);
+//    NewLimit_Consume_Check(currentValue);
 }
 
-//double RHT_Consume() {
-//    AlreadyConsumed_Consume();
-////    UsingPointers_Consume();
-//}
+double RHT_Consume() {
+    return AlreadyConsumed_Consume();
+//    return UsingPointers_Consume();
+//    return NewLimit_Consume();
+}
 
 // -------- Already Consumed Approach ----------
 
@@ -231,6 +235,17 @@ static inline void NewLimit_Produce(double value){
     globalQueue.enqPtr = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
 }
 
+static inline double NewLimit_Consume(){
+//    return UsingPointers_Consume();
+      return AlreadyConsumed_Consume();
+}
+
+static inline void NewLimit_Consume_Check(double currentValue){
+//    UsingPointers_Consume_Check(currentValue);
+    AlreadyConsumed_Consume_Check(currentValue);
+}
+
 void RHT_Produce_Secure(double value){
+//    UsingPointers_Produce(value);
     AlreadyConsumed_Produce(value);
 }

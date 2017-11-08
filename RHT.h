@@ -102,23 +102,22 @@ extern double otherValue, thisValue;
     globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;      \
     globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
 
-#define RHT_Produce(value) \
-    /*Macro_UsingPointers_Produce(value)*/ \
-    Macro_AlreadyConsumed_Produce(value)
+//#define RHT_Produce(value) \
+//    /*Macro_UsingPointers_Produce(value)*/ \
+//    Macro_AlreadyConsumed_Produce(value)
 
 //#define RHT_Consume_Check(currentValue) \
 //   /*Macro_UsingPointers_Consume_Check(value)*/ \
 //   Macro_AlreadyConsumed_Consume_Check(currentValue)
 
-#define RHT_Consume(value) \
-    /*Macro_UsingPointers_Consume(value)*/ \
-    Macro_AlreadyConsumed_Consume(value)
+//#define RHT_Consume(value) \
+//    /*Macro_UsingPointers_Consume(value)*/ \
+//    Macro_AlreadyConsumed_Consume(value)
 
-//void RHT_Produce(double value);
+void RHT_Produce(double value);
 void RHT_Consume_Check(double currentValue);
 void RHT_Produce_Secure(double value);
-
-//double RHT_Consume();
+double RHT_Consume();
 
 void SetThreadAffinity(int threadId);
 

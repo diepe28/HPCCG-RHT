@@ -337,10 +337,10 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     int *elements_to_send = A->elements_to_send;
 
     int size, rank; // Number of MPI processes, My process ID
-    /*-- RHT -- */ RHT_Consume(size)
-    /*-- RHT -- */ RHT_Consume(rank)
-//    /*-- RHT -- */ size = (int) RHT_Consume();
-//    /*-- RHT -- */ rank = (int) RHT_Consume();
+//    /*-- RHT -- */ RHT_Consume(size)
+//    /*-- RHT -- */ RHT_Consume(rank)
+    /*-- RHT -- */ size = (int) RHT_Consume();
+    /*-- RHT -- */ rank = (int) RHT_Consume();
 
     //
     //  first post receives, these are immediate receives

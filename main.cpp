@@ -233,8 +233,8 @@ int main(int argc, char *argv[]) {
         }
 
         SetThreadAffinity(producerCore);
-//        ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
-        ierr = HPCCG_producer_no_sync(A, b, x, max_iter, tolerance, niters, normr, times);
+        ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
+//        ierr = HPCCG_producer_no_sync(A, b, x, max_iter, tolerance, niters, normr, times);
 
         /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
         delete x2;

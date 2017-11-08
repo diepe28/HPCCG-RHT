@@ -168,8 +168,8 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
 
     /*-- RHT Volatile -- */ RHT_Consume_Volatile(global_result);
     /*-- RHT Not replicated -- */// MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    RHT_Consume(global_result)
-//    global_result = RHT_Consume();
+//    RHT_Consume(global_result)
+    global_result = RHT_Consume();
 
     *result = global_result;
     time_allreduce += mytimer() - t0;

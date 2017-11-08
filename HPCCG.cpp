@@ -406,7 +406,7 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     TOCK(t2);
 
     double beta = 0;
-    int k = 2;
+    int k = 1;
 
     goto inFor;
 
@@ -465,11 +465,6 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         /*-- RHT -- */ RHT_Produce(niters);
     }
 
-//    printf("Producer is here\n");
-//    return 0;
-
-    /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this
-    /// manually we can decide what is worth replicating or not...
     // Store times
     times[1] = t1; // ddot time
     times[2] = t2; // waxpby time
@@ -523,8 +518,8 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
 
 #ifdef USING_MPI
     int rank; // Number of MPI processes, My process ID
-    /*-- RHT -- */ RHT_Consume(rank)
-//    /*-- RHT -- */ rank = (int) RHT_Consume();
+//    /*-- RHT -- */ RHT_Consume(rank)
+    /*-- RHT -- */ rank = (int) RHT_Consume();
 #else
     int rank = 0; // Serial case (not using MPI)
 #endif
@@ -543,7 +538,8 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     TOCK(t2);
 
 #ifdef USING_MPI
-    TICK(); exchange_externals_consumer(hpc_sparse_matrix,p); TOCK(t5);
+    TICK();
+    exchange_externals_consumer(hpc_sparse_matrix,p); TOCK(t5);
 #endif
     TICK();
     HPC_sparsemv_consumer(hpc_sparse_matrix, p, Ap);
@@ -568,7 +564,7 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     TOCK(t2);
 
     double beta = 0;
-    int k = 2;
+    int k = 1;
 
     goto inFor;
 
@@ -626,12 +622,7 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         RHT_Consume_Check(niters);
     }
 
-//    printf("Consumer is here as well \n");
-//    return 0;
-
-
-    /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this
-    /// manually we can decide what is worth replicating or not...
+    /// dperez, Times not needed to be replicated
     // Store times
     times[1] = t1; // ddot time
     times[2] = t2; // waxpby time
