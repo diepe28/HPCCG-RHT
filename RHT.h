@@ -11,7 +11,7 @@
 
 // -------- Macros ----------
 
-extern int nextEnq, localDeq, newLimit, diff, diff2;
+extern int nextEnq, localDeq, newLimit, diff;
 extern double otherValue, thisValue;
 
 
@@ -19,13 +19,7 @@ extern double otherValue, thisValue;
 #define MIN_PTR_DIST 200
 #define ALREADY_CONSUMED -2
 
-//    newLimit = (globalQueue.enqPtr >= localDeq ?                            \
-//                   (RHT_QUEUE_SIZE - globalQueue.enqPtr) + localDeq :           \
-//                   localDeq - globalQueue.enqPtr)-1;                            \
-
-    //((RHT_QUEUE_SIZE-globalQueue.enqPtr + localDeq) % RHT_QUEUE_SIZE)-1; \
-
-
+//((RHT_QUEUE_SIZE-globalQueue.enqPtr + localDeq) % RHT_QUEUE_SIZE)-1; \
 /// with the -1 we make sure that the producer never really catches up to the consumer, but it might still happen
 /// the other way around
 #define replicate_forLoop_no_sync(numIters, iterator, value, operation)         \
@@ -60,14 +54,13 @@ extern double otherValue, thisValue;
         globalQueue.enqPtr = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;         \
     }
 
-#define Macro_AlreadyConsumed_Produce(value)                    \
-    nextEnq = (globaQueue.enqPtr + 1) % RHT_QUEUE_SIZE;         \
-    while(globaQueue.content[nextEnq] != ALREADY_CONSUMED){     \
-        asm("pause");                                           \
-    }                                                           \
-    /*producerCount++;*                                         \
-    globaQueue.content[globaQueue.enqPtr] = value;              \
-    globaQueue.enqPtr = nextEnq;
+#define Macro_AlreadyConsumed_Produce(value)                  \
+    nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;      \
+    while(globalQueue.content[nextEnq] != ALREADY_CONSUMED)   \
+        asm("pause");                                         \
+    /*producerCount++;*/                                      \
+    globalQueue.content[globalQueue.enqPtr] = value;          \
+    globalQueue.enqPtr = nextEnq;
 
 #define Macro_Report_Soft_Error(consumerValue, producerValue) \
     printf("\n SOFT ERROR DETECTED, Consumer: %f Producer: %f -- PCount: %ld , CCount: %ld, diff: %ld \n", \
@@ -76,17 +69,17 @@ extern double otherValue, thisValue;
 
 #define Macro_AlreadyConsumed_Consume_Check(currentValue)                       \
     thisValue = (double) currentValue;                                          \
-    otherValue = globaQueue.content[globaQueue.deqPtr];                         \
+    otherValue = globalQueue.content[globalQueue.deqPtr];                         \
     if (thisValue != otherValue) {                                              \
         /* des-sync of the queue */                                             \
         if (otherValue == ALREADY_CONSUMED) {                                   \
             /*consumerCount++;*/                                                \
-            do asm("pause"); while (globaQueue.content[globaQueue.deqPtr] == ALREADY_CONSUMED); \
-            otherValue = globaQueue.content[globaQueue.deqPtr];                 \
+            do asm("pause"); while (globalQueue.content[globalQueue.deqPtr] == ALREADY_CONSUMED); \
+            otherValue = globalQueue.content[globalQueue.deqPtr];                 \
                                                                                 \
             if (thisValue == otherValue){                                       \
-                globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;       \
-                globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;   \
+                globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;       \
+                globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;   \
             }else{                                                              \
                  Macro_Report_Soft_Error(otherValue, thisValue)                 \
             }                                                                   \
@@ -95,8 +88,8 @@ extern double otherValue, thisValue;
         }                                                                       \
     }else{                                                                      \
         /*consumerCount++;*/                                                    \
-        globaQueue.content[globaQueue.deqPtr] = ALREADY_CONSUMED;               \
-        globaQueue.deqPtr = (globaQueue.deqPtr + 1) % RHT_QUEUE_SIZE;           \
+        globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;               \
+        globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;           \
     }
 
 #define Macro_AlreadyConsumed_Consume(value)                         \
@@ -109,9 +102,9 @@ extern double otherValue, thisValue;
     globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;      \
     globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
 
-//#define RHT_Produce(value) \
-//    /*Macro_UsingPointers_Produce(value)*/ \
-//    Macro_AlreadyConsumed_Produce(value)
+#define RHT_Produce(value) \
+    /*Macro_UsingPointers_Produce(value)*/ \
+    Macro_AlreadyConsumed_Produce(value)
 
 //#define RHT_Consume_Check(currentValue) \
 //   /*Macro_UsingPointers_Consume_Check(value)*/ \
@@ -121,7 +114,7 @@ extern double otherValue, thisValue;
     /*Macro_UsingPointers_Consume(value)*/ \
     Macro_AlreadyConsumed_Consume(value)
 
-void RHT_Produce(double value);
+//void RHT_Produce(double value);
 void RHT_Consume_Check(double currentValue);
 void RHT_Produce_Secure(double value);
 

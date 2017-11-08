@@ -3,16 +3,14 @@
 //
 
 /// Try with different queues as well, so there are no castings necessary... will it be really faster?
-/// Produce with no sync and consuming with no sync --> this needs the already consume approach
 /// Produce with no sync, consuming with sync --> with just the pointers (to see of cost of writing alreadyConsumed)
-/// Make them macros
 
 #include "RHT.h"
 
 RHT_Queue globalQueue;
 
-int nextEnq, localDeq, newLimit, diff, diff2;
-extern double global_otherValue, global_thisValue;
+int nextEnq, localDeq, newLimit, diff;
+double otherValue, thisValue;
 
 volatile long producerCount;
 volatile long consumerCount;
@@ -110,11 +108,11 @@ void RHT_Consume_Volatile(double currentValue){
     // After this, the value has been validated
 }
 
-void RHT_Produce(double value){
-//    AlreadyConsumed_Produce(value);
-//    UsingPointers_Produce(value);
-    NewLimit_Produce(value);
-}
+//void RHT_Produce(double value){
+////    AlreadyConsumed_Produce(value);
+////    UsingPointers_Produce(value);
+//    NewLimit_Produce(value);
+//}
 
 void RHT_Consume_Check(double currentValue){
     AlreadyConsumed_Consume_Check(currentValue);
@@ -235,12 +233,4 @@ static inline void NewLimit_Produce(double value){
 
 void RHT_Produce_Secure(double value){
     AlreadyConsumed_Produce(value);
-}
-
-static inline void NewLimit_Consume(){
-    AlreadyConsumed_Consume();
-}
-
-static inline void NewLimit_Consume_Check(double currentValue){
-    AlreadyConsumed_Consume_Check(currentValue);
 }
