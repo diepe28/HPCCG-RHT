@@ -246,7 +246,7 @@ int HPCCG_producer_no_sync(HPC_Sparse_Matrix * hpc_sparse_matrix,
     TOCK(t2);
 
     double beta = 0;
-    int k = 2;
+    int k = 1;
 
     goto inFor;
 
