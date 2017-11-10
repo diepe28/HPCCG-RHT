@@ -363,7 +363,7 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     for (i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
         /*-- RHT -- */ RHT_Consume_Check(n_recv);
-        /*-- RHT Volatile -- */ RHT_Consume_Volatile(neighbors[i]);
+        /*-- RHT Volatile -- */ RHT_Consume_Volatile((double)neighbors[i]);
         /// TODO what to with last parameter? is a user def type
         /*-- RHT Volatile Not replicated -- */// MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
         // MPI_COMM_WORLD, request + i);
@@ -389,7 +389,7 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     for (i = 0; i < num_neighbors; i++) {
         int n_send = send_length[i];
         /*-- RHT -- */ RHT_Consume_Check(n_send);
-        /*-- RHT Volatile -- */ RHT_Consume_Volatile(neighbors[i]);
+        /*-- RHT Volatile -- */ RHT_Consume_Volatile((double)neighbors[i]);
         /*-- RHT Volatile Not replicated -- */// MPI_Send(send_buffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
         send_buffer += n_send;
         /*-- RHT -- */ RHT_Consume_Check(n_send);

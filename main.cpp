@@ -100,7 +100,6 @@ using std::endl;
 //AVG   1.166948	4.67544	        4.173894
 //Rel   1	        4.0065538482	3.5767609182
 
-
 typedef struct {
     HPC_Sparse_Matrix *A;
     double *x, *b;
@@ -233,8 +232,8 @@ int main(int argc, char *argv[]) {
         }
 
         SetThreadAffinity(producerCore);
-        ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
-//        ierr = HPCCG_producer_no_sync(A, b, x, max_iter, tolerance, niters, normr, times);
+//        ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
+        ierr = HPCCG_producer_no_sync(A, b, x, max_iter, tolerance, niters, normr, times);
 
         /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
         delete x2;
@@ -352,7 +351,7 @@ int main(int argc, char *argv[]) {
     //   cout << "Difference between computed and exact  = "
     //        << residual << ".\n" << endl;
 
-
+    printf("\n Producer waiting: %ld Consumer waiting: %ld\n", producerCount, consumerCount);
     // Finish up
 #ifdef USING_MPI
     MPI_Finalize();

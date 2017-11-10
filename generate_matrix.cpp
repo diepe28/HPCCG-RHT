@@ -45,6 +45,7 @@ using std::endl;
 #include <cassert>
 #include "generate_matrix.h"
 
+
 void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact) {
 #ifdef DEBUG
     int debug = 1;

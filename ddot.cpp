@@ -86,7 +86,7 @@ int ddot_producer_no_sync (const int n, const double * const x, const double * c
     double t0 = mytimer();
     double global_result = 0.0;
 
-    /*-- RHT Volatile -- */ RHT_Produce_Volatile(global_result);
+    /*-- RHT Volatile -- */ RHT_Produce_Volatile(global_result)
     MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     /*-- RHT -- */ RHT_Produce_Secure(global_result);
 
