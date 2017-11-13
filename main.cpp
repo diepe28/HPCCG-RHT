@@ -69,6 +69,7 @@ using std::endl;
 #include <mpi.h> // If this routine is compiled with -DUSING_MPI
                  // then include mpi.h
 #include "make_local_matrix.h" // Also include this function
+#include "readerwriterqueue.h"
 #endif
 #ifdef USING_OMP
 #include <omp.h>
@@ -84,24 +85,16 @@ using std::endl;
 
 #include "YAML_Element.h"
 #include "YAML_Doc.h"
+#include "QueueStressTest.h"
 
 #undef DEBUG
 
+using namespace moodycamel;
 
-#define NUM_RUNS 5
+#define NUM_RUNS 15
 
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
-
-// Rough results of NewLimit approach (fastest)
-//      Baseline    DiffCores       HT
-//      1.17796 	4.67704	        4.21175
-//      1.16855	    4.72501	        4.16134
-//      1.1575	    4.69107	        4.142
-//      1.17383	    4.62947	        4.184
-//      1.1569  	4.65461	        4.17038
-//AVG   1.166948	4.67544	        4.173894
-//Rel   1	        4.0065538482	3.5767609182
 
 typedef struct {
     HPC_Sparse_Matrix *A;
@@ -172,6 +165,9 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+    TestQueues();
+    return 0;
+
     if (argc != 2 && argc != 7) { // dperez, original argc != 4
         if (rank == 0)
             cerr << "Usage:" << endl
@@ -232,7 +228,7 @@ int main(int argc, char *argv[]) {
 
         sdBaseline /= NUM_RUNS;
 
-        printf("************************** REPLICATED VERSION ************************** \n\n");
+        printf("\n************************** REPLICATED VERSION ************************** \n\n");
 
 
 
