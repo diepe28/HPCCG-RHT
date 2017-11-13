@@ -87,6 +87,9 @@ using std::endl;
 
 #undef DEBUG
 
+
+#define NUM_RUNS 5
+
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
 
@@ -108,6 +111,10 @@ typedef struct {
     double *times;
 } ConsumerParams;
 
+void
+PrintSummary(const HPC_Sparse_Matrix *A, const double *times, int nx, int ny, int nz, int size, int rank, int niters,
+             double normr, double t4min, double t4max, double t4avg);
+
 void consumer_thread_func(void * args) {
     ConsumerParams *params = (ConsumerParams *) args;
 
@@ -125,12 +132,18 @@ int main(int argc, char *argv[]) {
     double *x, *b, *xexact, *x2, *b2, *xexact2;
     double norm, d;
     int ierr = 0;
-    int i, j;
+    int i, j, iterator;
     int ione = 1;
     double times[7];
     double t6 = 0.0;
     int nx, ny, nz;
     int replicated, producerCore, consumerCore;
+    double t4 = times[4];
+    double t4min = 0.0;
+    double t4max = 0.0;
+    double t4avg = 0.0;
+    double timesBaseline[NUM_RUNS], meanBaseline, sdBaseline;
+    double timesRHT[NUM_RUNS], meanRHT, sdRHT;
 
 #ifdef USING_MPI
 
@@ -201,9 +214,27 @@ int main(int argc, char *argv[]) {
     double tolerance = 0.0; // Set tolerance to zero to make all runs do max_iter iterations
 
     if(replicated) {
+        printf("************************** SEQUENTIALS VERSION ************************** \n\n");
+
+        // First sequential runs
+
+        for(iterator = meanBaseline = 0; iterator < NUM_RUNS; iterator++){
+            ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
+            timesBaseline[iterator] = times[0];
+            meanBaseline += times[0];
+        }
+
+        meanBaseline /= NUM_RUNS;
+
+        for(iterator = sdBaseline = 0; iterator < NUM_RUNS; iterator++){
+            sdBaseline += fabs(meanBaseline - timesBaseline[iterator]);
+        }
+
+        sdBaseline /= NUM_RUNS;
+
         printf("************************** REPLICATED VERSION ************************** \n\n");
 
-        RHT_Replication_Init(1);
+
 
         ConsumerParams *consumerParams = (ConsumerParams *) (malloc(sizeof(ConsumerParams)));
         int local_nrow = nx * ny * nz; // This is the size of our subblock
@@ -224,20 +255,57 @@ int main(int argc, char *argv[]) {
         consumerParams->times = times;
         consumerParams->executionCore = consumerCore;
 
-        int err = pthread_create(consumerThreads[0], NULL, (void *(*)(void *)) consumer_thread_func,
-                                 (void *) consumerParams);
-        if (err) {
-            fprintf(stderr, "Failed to create thread %d\n", 1);
-            exit(1);
+        for(iterator = meanRHT = 0; iterator < NUM_RUNS; iterator++) {
+            RHT_Replication_Init(1);
+
+            int err = pthread_create(consumerThreads[0], NULL, (void *(*)(void *)) consumer_thread_func,
+                                     (void *) consumerParams);
+            if (err) {
+                fprintf(stderr, "Failed to create thread %d\n", 1);
+                exit(1);
+            }
+
+            SetThreadAffinity(producerCore);
+//        ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
+            ierr = HPCCG_producer_no_sync(A, b, x, max_iter, tolerance, niters, normr, times);
+
+            /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
+
+            timesRHT[iterator] = times[0];
+            meanRHT += times[0];
+            RHT_Replication_Finish();
+            // Finish up
+
         }
 
-        SetThreadAffinity(producerCore);
-//        ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
-        ierr = HPCCG_producer_no_sync(A, b, x, max_iter, tolerance, niters, normr, times);
+#ifdef USING_MPI
+        MPI_Finalize();
+#endif
 
-        /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
+        meanRHT /= NUM_RUNS;
+
+        for(iterator = sdRHT = 0; iterator < NUM_RUNS; iterator++){
+            sdRHT += fabs(meanRHT - timesRHT[iterator]);
+        }
+
+        sdRHT /= NUM_RUNS;
+
         delete x2;
-        RHT_Replication_Finish();
+
+        printf("\n\n-------------------------- Summary --------------------------\n");
+        for(iterator = 0; iterator < NUM_RUNS; iterator++){
+            printf("Baseline[%d]: %f seconds\n", iterator, timesBaseline[iterator]);
+        }
+
+        printf("Mean baseline %f , SD baseline %f \n\n", meanBaseline, sdBaseline);
+
+        for(iterator = 0; iterator < NUM_RUNS; iterator++){
+            printf("RHT[%d]: %f seconds\n", iterator, timesRHT[iterator]);
+        }
+
+        printf("Mean RHT %f , SD RHT %f ... Compared to baseline is %f x slower \n\n", meanRHT, sdRHT, meanRHT / meanBaseline);
+
+        return 0;
     }else {
         ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
     }
@@ -245,10 +313,10 @@ int main(int argc, char *argv[]) {
     if (ierr) cerr << "Error in call to CG: " << ierr << ".\n" << endl;
 
 #ifdef USING_MPI
-    double t4 = times[4];
-    double t4min = 0.0;
-    double t4max = 0.0;
-    double t4avg = 0.0;
+//    t4 = times[4];
+//    t4min = 0.0;
+    t4max = 0.0;
+    t4avg = 0.0;
 
     MPI_Allreduce(&t4, &t4min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(&t4, &t4max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -257,8 +325,18 @@ int main(int argc, char *argv[]) {
 
 
 #endif
+    PrintSummary(A, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
 
-// initialize YAML doc
+// Finish up
+#ifdef USING_MPI
+    MPI_Finalize();
+#endif
+
+    return 0;
+}
+
+void PrintSummary(const HPC_Sparse_Matrix *A, const double *times, int nx, int ny, int nz, int size, int rank, int niters,
+             double normr, double t4min, double t4max, double t4avg) {// initialize YAML doc
 
     if (rank == 0)  // Only PE 0 needs to compute and report timing results
     {
@@ -335,7 +413,7 @@ int main(int argc, char *argv[]) {
 #endif
 
         if (rank == 0) { // only PE 0 needs to compute and report timing results
-            std::string yaml = doc.generateYAML();
+            std::__cxx11::string yaml = doc.generateYAML();
             cout << yaml;
         }
     }
@@ -350,12 +428,4 @@ int main(int argc, char *argv[]) {
     // if (rank==0)
     //   cout << "Difference between computed and exact  = "
     //        << residual << ".\n" << endl;
-
-    printf("\n Producer waiting: %ld Consumer waiting: %ld\n", producerCount, consumerCount);
-    // Finish up
-#ifdef USING_MPI
-    MPI_Finalize();
-#endif
-
-    return 0;
 }
