@@ -74,12 +74,15 @@ extern long consumerCount;
 /// To count how many times the producer waits, but actually those "if" makes sense lol
 
 /// write inverted
-#define replicate_forLoop_newLimit222(numIters, iterator, value, operation)            \
+
+/// if def... MANDATORY
+#define replicate_forLoop_newLimit(numIters, iterator, value, operation)            \
     globalQueue.localDeq = globalQueue.deqPtr;                                      \
     globalQueue.newLimit = (globalQueue.enqPtr >= globalQueue.localDeq ?            \
                    (RHT_QUEUE_SIZE - globalQueue.enqPtr) + globalQueue.localDeq :   \
                    globalQueue.localDeq - globalQueue.enqPtr)-1;                    \
     if(globalQueue.newLimit < MIN_PTR_DIST){                                        \
+        producerCount++;                                                            \
         do{                                                                         \
             asm("pause");                                                           \
             globalQueue.localDeq = globalQueue.deqPtr;                              \
@@ -102,6 +105,7 @@ extern long consumerCount;
                    (RHT_QUEUE_SIZE - globalQueue.enqPtr) + globalQueue.localDeq :   \
                    globalQueue.localDeq - globalQueue.enqPtr)-1;                    \
         if(globalQueue.diff < MIN_PTR_DIST) {                                       \
+            producerCount++; \
             do{                                                                     \
                 asm("pause");                                                       \
                 globalQueue.localDeq = globalQueue.deqPtr;                          \
@@ -120,7 +124,7 @@ extern long consumerCount;
         globalQueue.enqPtr = globalQueue.nextEnq;                                   \
     }
 
-#define replicate_forLoop_newLimit(numIters, iterator, value, operation)             \
+#define replicate_forLoop_newLimit22(numIters, iterator, value, operation)             \
     globalQueue.localDeq = globalQueue.deqPtr;                                      \
     globalQueue.newLimit = (globalQueue.enqPtr >= globalQueue.localDeq ?            \
                    (RHT_QUEUE_SIZE - globalQueue.enqPtr) + globalQueue.localDeq :   \
@@ -294,8 +298,6 @@ static inline void AlreadyConsumed_Produce(double value) {
     globalQueue.nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
 
     while (globalQueue.content[globalQueue.nextEnq] != ALREADY_CONSUMED) {
-        printf("globalQueue.diff  %d: deq: %d enq: %d \n", globalQueue.diff, globalQueue.deqPtr, globalQueue.enqPtr);
-        sleep(1);
         asm("pause");
     }
 
@@ -423,13 +425,12 @@ static inline double WriteInvertedNewLimit_Consume() {
 
 static inline void WriteInvertedNewLimit_Consume_Check(double currentValue) {
     globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];
-    //consumerCount++;
     if (fequal(currentValue, globalQueue.otherValue)) {
         globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
     }else{
         // des-sync of the queue
         if (fequal(globalQueue.otherValue, ALREADY_CONSUMED)) {
-//            consumerCount++;
+            consumerCount++;
             do {
                 asm("pause");
             } while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED));
@@ -445,7 +446,7 @@ static inline void WriteInvertedNewLimit_Consume_Check(double currentValue) {
     }
 }
 
-static inline void WriteLineInverted_Produce_Secure(double value){
+static inline void WriteInverted_Produce_Secure(double value){
     while (globalQueue.content[globalQueue.enqPtr] != ALREADY_CONSUMED) {
         asm("pause");
     }
@@ -453,7 +454,6 @@ static inline void WriteLineInverted_Produce_Secure(double value){
     globalQueue.content[globalQueue.nextEnq] = ALREADY_CONSUMED;
     globalQueue.content[globalQueue.enqPtr] = value;
     globalQueue.enqPtr = globalQueue.nextEnq;
-//    producerCount++;
 }
 
 // -------- Moody Camel Approach ----------
@@ -469,6 +469,7 @@ static inline double MoodyCamel_Consume() {
     }
     return result;
 }
+
 
 static inline void MoodyCamel_Consume_Check(double currentValue) {
     double otherValue = MoodyCamel_Consume();

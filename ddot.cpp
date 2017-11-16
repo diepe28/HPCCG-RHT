@@ -73,6 +73,7 @@ int ddot (const int n, const double * const x, const double * const y,
 int ddot_producer_no_sync (const int n, const double * const x, const double * const y,
                    double * const result, double & time_allreduce) {
     double local_result = 0.0;
+//    printf("Producer here at %d\n", globalQueue.deqPtr);
     int i;
     if (y == x) {
         replicate_forLoop_newLimit(n, i, local_result, local_result += x[i] * x[i])
@@ -144,6 +145,7 @@ int ddot_producer (const int n, const double * const x, const double * const y,
 int ddot_consumer (const int n, const double * const x, const double * const y,
                    double * const result, double & time_allreduce) {
     double local_result = 0.0;
+//    printf("Consumer here at %d\n", globalQueue.deqPtr);
     if (y == x)
 #ifdef USING_OMP
 #pragma omp parallel for reduction (+:local_result)

@@ -164,10 +164,10 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
     return (0);
 }
 
-int HPCCG_producer_no_sync(HPC_Sparse_Matrix * hpc_sparse_matrix,
-                   const double * const b, double * const x,
-                   const int max_iter, const double tolerance, int &niters, double & normr,
-                   double * times) {
+int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
+                            const double *const b, double *const x,
+                            const int max_iter, const double tolerance, int &niters, double &normr,
+                            double *times) {
     double t_begin = mytimer();  // Start timing right away
 
     double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;

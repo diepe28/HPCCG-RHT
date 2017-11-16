@@ -96,6 +96,11 @@ using namespace moodycamel;
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
 
+// a trick to remove ALREADY_CONSUMED VALUE, have another field indicating the times it has been read, something like that
+// try instead of ASM(pause), a inner loop
+// send link reposit
+//batching, try to update the deqPtr locally, and when it reaches a threshold we update the shared variable, backoff
+
 typedef struct {
     HPC_Sparse_Matrix *A;
     double *x, *b;
@@ -262,7 +267,7 @@ int main(int argc, char *argv[]) {
 
             SetThreadAffinity(producerCore);
 //        ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
-            ierr = HPCCG_producer_no_sync(A, b, x, max_iter, tolerance, niters, normr, times);
+            ierr = HPCCG_producer_newLimit(A, b, x, max_iter, tolerance, niters, normr, times);
 
             /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
 
