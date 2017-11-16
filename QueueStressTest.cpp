@@ -2,11 +2,9 @@
 // Created by diego on 13/11/17.
 //
 
-#include <thread>
 #include "QueueStressTest.h"
 
 using namespace moodycamel;
-
 
 static void consumer_RHT(void * args) {
     SetThreadAffinity(2);
@@ -30,7 +28,7 @@ static void producer_RHT() {
 
     for(i = 0; i < MAX_ROWS; i++){
 
-        replicate_forLoop_no_sync(MAX_COLS, j, result, result = i + j)
+        replicate_forLoop_newLimit(MAX_COLS, j, result, result = i + j)
 
         //for(j = 0; j < MAX_COLS; j++){
             //result = i + j;

@@ -249,7 +249,6 @@ int HPCCG_producer_no_sync(HPC_Sparse_Matrix * hpc_sparse_matrix,
     int k = 1;
 
     goto inFor;
-
     for (; k < max_iter && normr > tolerance; k++) {
         oldrtrans = rtrans;
         /*-- RHT -- */ RHT_Produce_Secure(print_freq);
@@ -541,6 +540,7 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     TICK();
     exchange_externals_consumer(hpc_sparse_matrix,p); TOCK(t5);
 #endif
+
     TICK();
     HPC_sparsemv_consumer(hpc_sparse_matrix, p, Ap);
     TOCK(t3);

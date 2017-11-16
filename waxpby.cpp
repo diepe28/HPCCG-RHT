@@ -75,13 +75,12 @@ int waxpby_producer_no_sync (const int n, const double alpha, const double * con
                              double * const w) {
     int i;
     if (alpha == 1.0) {
-        replicate_forLoop_no_sync(n, i, w[i], w[i] = x[i] + beta * y[i])
+        replicate_forLoop_newLimit(n, i, w[i], w[i] = x[i] + beta * y[i])
     } else if (beta == 1.0) {
-        replicate_forLoop_no_sync(n, i, w[i], w[i] = alpha * x[i] + y[i])
+        replicate_forLoop_newLimit(n, i, w[i], w[i] = alpha * x[i] + y[i])
     } else {
-        replicate_forLoop_no_sync(n, i, w[i], w[i] = alpha * x[i] + beta * y[i])
+        replicate_forLoop_newLimit(n, i, w[i], w[i] = alpha * x[i] + beta * y[i])
     }
-
     return (0);
 }
 

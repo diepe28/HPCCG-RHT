@@ -91,7 +91,7 @@ using std::endl;
 
 using namespace moodycamel;
 
-#define NUM_RUNS 15
+#define NUM_RUNS 5
 
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     double t4min = 0.0;
     double t4max = 0.0;
     double t4avg = 0.0;
-    double timesBaseline[NUM_RUNS], meanBaseline, sdBaseline;
+    double timesBaseline[NUM_RUNS], meanBaseline, sdBaseline, producerMean, consumerMean;
     double timesRHT[NUM_RUNS], meanRHT, sdRHT;
 
 #ifdef USING_MPI
@@ -165,8 +165,8 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    TestQueues();
-    return 0;
+//    TestQueues();
+//    return 0;
 
     if (argc != 2 && argc != 7) { // dperez, original argc != 4
         if (rank == 0)
@@ -218,6 +218,7 @@ int main(int argc, char *argv[]) {
             ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
             timesBaseline[iterator] = times[0];
             meanBaseline += times[0];
+            printf("--- Baseline[%d]: %f seconds --- \n\n", iterator, timesBaseline[iterator]);
         }
 
         meanBaseline /= NUM_RUNS;
@@ -229,8 +230,6 @@ int main(int argc, char *argv[]) {
         sdBaseline /= NUM_RUNS;
 
         printf("\n************************** REPLICATED VERSION ************************** \n\n");
-
-
 
         ConsumerParams *consumerParams = (ConsumerParams *) (malloc(sizeof(ConsumerParams)));
         int local_nrow = nx * ny * nz; // This is the size of our subblock
@@ -270,15 +269,20 @@ int main(int argc, char *argv[]) {
             timesRHT[iterator] = times[0];
             meanRHT += times[0];
             RHT_Replication_Finish();
-            // Finish up
-
+            consumerMean += consumerCount;
+            producerMean += producerCount;
+            printf("--- RHT[%d]: %f seconds, consumerCount: %ld producerCount: %ld\n",
+                   iterator, timesRHT[iterator], consumerCount, producerCount);
         }
 
+        // Finish up
 #ifdef USING_MPI
         MPI_Finalize();
 #endif
 
         meanRHT /= NUM_RUNS;
+        consumerMean /= NUM_RUNS;
+        producerMean /= NUM_RUNS;
 
         for(iterator = sdRHT = 0; iterator < NUM_RUNS; iterator++){
             sdRHT += fabs(meanRHT - timesRHT[iterator]);
@@ -289,17 +293,10 @@ int main(int argc, char *argv[]) {
         delete x2;
 
         printf("\n\n-------------------------- Summary --------------------------\n");
-        for(iterator = 0; iterator < NUM_RUNS; iterator++){
-            printf("Baseline[%d]: %f seconds\n", iterator, timesBaseline[iterator]);
-        }
 
         printf("Mean baseline %f , SD baseline %f \n\n", meanBaseline, sdBaseline);
-
-        for(iterator = 0; iterator < NUM_RUNS; iterator++){
-            printf("RHT[%d]: %f seconds\n", iterator, timesRHT[iterator]);
-        }
-
         printf("Mean RHT %f , SD RHT %f ... Compared to baseline is %f x slower \n\n", meanRHT, sdRHT, meanRHT / meanBaseline);
+        printf("Mean consumerCount: %f  mean producerCount: %f\n", consumerMean, producerMean);
 
         return 0;
     }else {

@@ -5,8 +5,8 @@
 #ifndef HPCCG_RHT_QUEUESTRESSTEST_H
 #define HPCCG_RHT_QUEUESTRESSTEST_H
 
-#include "readerwriterqueue.h"
 #include "RHT.h"
+#include <thread>
 
 #define MAX_ROWS 30000
 #define MAX_COLS 30000

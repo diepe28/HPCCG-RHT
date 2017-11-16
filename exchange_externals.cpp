@@ -34,6 +34,7 @@ using std::endl;
 #include <cstdlib>
 #include <cstdio>
 #include "exchange_externals.h"
+#include "RHT.h"
 
 #undef DEBUG
 
@@ -119,10 +120,8 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
     int num_external = 0;
 
     // Extract Matrix pieces
-
     int local_nrow = A->local_nrow;
     /*-- RHT -- */ RHT_Produce_Secure(local_nrow);
-
     int num_neighbors = A->num_send_neighbors;
     /*-- RHT -- */ RHT_Produce_Secure(num_neighbors);
 
@@ -178,7 +177,7 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
     //
     // Fill up send buffer
     //
-    replicate_forLoop_no_sync(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
+    replicate_forLoop_newLimit(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
 
     //
     // Send to each neighbor
@@ -318,10 +317,8 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     int num_external = 0;
 
     // Extract Matrix pieces
-
     int local_nrow = A->local_nrow;
     /*-- RHT -- */ RHT_Consume_Check(local_nrow);
-
     int num_neighbors = A->num_send_neighbors;
     /*-- RHT -- */ RHT_Consume_Check(num_neighbors);
 
