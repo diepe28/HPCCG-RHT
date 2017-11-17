@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     double times[7];
     double t6 = 0.0;
     int nx, ny, nz;
-    int replicated, producerCore, consumerCore;
+    int replicated, producerCore1, consumerCore1, producerCoreHT, consumerCoreHT;
     double t4 = times[4];
     double t4min = 0.0;
     double t4max = 0.0;
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 //    TestQueues();
 //    return 0;
 
-    if (argc != 2 && argc != 7) { // dperez, original argc != 4
+    if (argc != 2 && argc != 9) { // dperez, original argc != 4
         if (rank == 0)
             cerr << "Usage:" << endl
                  << "Mode 1: " << argv[0] << " nx ny nz" << endl
@@ -183,13 +183,15 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if (argc == 7) { // dperez, original was 4
+    if (argc == 9) { // dperez, original was 4
         nx = atoi(argv[1]);
         ny = atoi(argv[2]);
         nz = atoi(argv[3]);
         replicated = atoi(argv[4]);
-        producerCore = atoi(argv[5]);
-        consumerCore = atoi(argv[6]);
+        producerCore1 = atoi(argv[5]);
+        consumerCore1 = atoi(argv[6]);
+        producerCoreHT = atoi(argv[7]);
+        consumerCoreHT = atoi(argv[8]);
     } else {
         read_HPC_row(argv[1], &A, &x, &b, &xexact);
     }
@@ -215,15 +217,12 @@ int main(int argc, char *argv[]) {
     double tolerance = 0.0; // Set tolerance to zero to make all runs do max_iter iterations
 
     if(replicated) {
-        printf("************************** SEQUENTIALS VERSION ************************** \n\n");
-
         // First sequential runs
-
         for(iterator = meanBaseline = 0; iterator < NUM_RUNS; iterator++){
             ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
             timesBaseline[iterator] = times[0];
             meanBaseline += times[0];
-            printf("--- Baseline[%d]: %f seconds --- \n\n", iterator, timesBaseline[iterator]);
+            printf("Baseline[%d]: %f seconds --- \n\n", iterator, timesBaseline[iterator]);
         }
 
         meanBaseline /= NUM_RUNS;
@@ -233,8 +232,6 @@ int main(int argc, char *argv[]) {
         }
 
         sdBaseline /= NUM_RUNS;
-
-        printf("\n************************** REPLICATED VERSION ************************** \n\n");
 
         ConsumerParams *consumerParams = (ConsumerParams *) (malloc(sizeof(ConsumerParams)));
         int local_nrow = nx * ny * nz; // This is the size of our subblock
@@ -253,8 +250,10 @@ int main(int argc, char *argv[]) {
         consumerParams->niters = niters;
         consumerParams->normr = normr;
         consumerParams->times = times;
-        consumerParams->executionCore = consumerCore;
 
+      replicationRun:
+        consumerParams->executionCore = consumerCore1;
+        printf("\n--- REPLICATED VERSION WITH CORES %d, %d \n\n", producerCore1, consumerCore1);
         for(iterator = meanRHT = 0; iterator < NUM_RUNS; iterator++) {
             RHT_Replication_Init(1);
 
@@ -265,25 +264,40 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
 
-            SetThreadAffinity(producerCore);
-//        ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
+            SetThreadAffinity(producerCore1);
+#if APPROACH_NEW_LIMIT == 1 || APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
             ierr = HPCCG_producer_newLimit(A, b, x, max_iter, tolerance, niters, normr, times);
+#else
+            ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
+#endif
 
             /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
 
             timesRHT[iterator] = times[0];
             meanRHT += times[0];
-            RHT_Replication_Finish();
             consumerMean += consumerCount;
             producerMean += producerCount;
-            printf("--- RHT[%d]: %f seconds, consumerCount: %ld producerCount: %ld\n",
-                   iterator, timesRHT[iterator], consumerCount, producerCount);
-        }
 
-        // Finish up
-#ifdef USING_MPI
-        MPI_Finalize();
+            RHT_Replication_Finish();
+
+            printf("RHT approach: ");
+
+#if APPROACH_USING_POINTERS == 1
+            printf("USING POINTERS");
+#elif APPROACH_ALREADY_CONSUMED == 1
+            printf("ALREADY CONSUMED");
+#elif APPROACH_NEW_LIMIT == 1
+    printf("NEW LIMIT & ALREADY CONSUMED");
+#elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
+    printf("NEW LIMIT & ALREADY CONSUMED INVERTED ");
+#elif APPROACH_MOODY_CAMEL == 1
+    printf("MOODY CAMEL");
 #endif
+
+//            printf(" [%d]: %f seconds, on cores: %d, %d consumerCount: %ld producerCount: %ld\n",
+//                   iterator, timesRHT[iterator], producerCore1, consumerCore1, consumerCount, producerCount);
+            printf(" [%d]: %f seconds, on cores: %d, %d\n", iterator, timesRHT[iterator], producerCore1, consumerCore1);
+        }
 
         meanRHT /= NUM_RUNS;
         consumerMean /= NUM_RUNS;
@@ -295,13 +309,37 @@ int main(int argc, char *argv[]) {
 
         sdRHT /= NUM_RUNS;
 
-        delete x2;
-
         printf("\n\n-------------------------- Summary --------------------------\n");
 
         printf("Mean baseline %f , SD baseline %f \n\n", meanBaseline, sdBaseline);
-        printf("Mean RHT %f , SD RHT %f ... Compared to baseline is %f x slower \n\n", meanRHT, sdRHT, meanRHT / meanBaseline);
-        printf("Mean consumerCount: %f  mean producerCount: %f\n", consumerMean, producerMean);
+        printf("Mean RHT approach: ");
+#if APPROACH_USING_POINTERS == 1
+        printf("USING POINTERS");
+#elif APPROACH_ALREADY_CONSUMED == 1
+        printf("ALREADY CONSUMED");
+#elif APPROACH_NEW_LIMIT == 1
+        printf("NEW LIMIT & ALREADY CONSUMED");
+#elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
+    printf("NEW LIMIT & ALREADY CONSUMED INVERTED ");
+#elif APPROACH_MOODY_CAMEL == 1
+    printf("MOODY CAMEL");
+#endif
+        printf(" on cores %d, %d: %f , SD RHT %f ... Compared to baseline is %f x slower \n\n",
+               producerCore1, consumerCore1, meanRHT, sdRHT, meanRHT / meanBaseline);
+//        printf("Mean consumerCount: %f  mean producerCount: %f\n", consumerMean, producerMean);
+
+        if(consumerCore1 != consumerCoreHT || producerCore1 != producerCoreHT) {
+            producerCore1 = producerCoreHT;
+            consumerCore1 = consumerCoreHT;
+            meanRHT = 0;
+            goto replicationRun;
+        }
+
+        // Finish up
+#ifdef USING_MPI
+        MPI_Finalize();
+#endif
+        delete x2;
 
         return 0;
     }else {

@@ -73,9 +73,7 @@ extern long consumerCount;
 
 /// To count how many times the producer waits, but actually those "if" makes sense lol
 
-/// write inverted
-
-/// if def... MANDATORY
+#if APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
 #define replicate_forLoop_newLimit(numIters, iterator, value, operation)            \
     globalQueue.localDeq = globalQueue.deqPtr;                                      \
     globalQueue.newLimit = (globalQueue.enqPtr >= globalQueue.localDeq ?            \
@@ -124,7 +122,8 @@ extern long consumerCount;
         globalQueue.enqPtr = globalQueue.nextEnq;                                   \
     }
 
-#define replicate_forLoop_newLimit22(numIters, iterator, value, operation)             \
+#else
+#define replicate_forLoop_newLimit(numIters, iterator, value, operation)             \
     globalQueue.localDeq = globalQueue.deqPtr;                                      \
     globalQueue.newLimit = (globalQueue.enqPtr >= globalQueue.localDeq ?            \
                    (RHT_QUEUE_SIZE - globalQueue.enqPtr) + globalQueue.localDeq :   \
@@ -167,6 +166,7 @@ extern long consumerCount;
         globalQueue.content[globalQueue.enqPtr] = value;                            \
         globalQueue.enqPtr = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;             \
     }
+#endif
 
 #define Report_Soft_Error(consumerValue, producerValue) \
     printf("\n SOFT ERROR DETECTED, Consumer: %f Producer: %f -- PCount: %ld , CCount: %ld\n",  \
