@@ -98,7 +98,6 @@ using namespace moodycamel;
 
 // a trick to remove ALREADY_CONSUMED VALUE, have another field indicating the times it has been read, something like that
 // try instead of ASM(pause), a inner loop
-// send link reposit
 //batching, try to update the deqPtr locally, and when it reaches a threshold we update the shared variable, backoff
 
 typedef struct {
@@ -113,19 +112,12 @@ void
 PrintSummary(const HPC_Sparse_Matrix *A, const double *times, int nx, int ny, int nz, int size, int rank, int niters,
              double normr, double t4min, double t4max, double t4avg);
 
-void consumer_thread_func(void * args) {
-    ConsumerParams *params = (ConsumerParams *) args;
+void freeMemory(HPC_Sparse_Matrix *sparseMatrix, double * x, double * b, double * xexact);
 
-    SetThreadAffinity(params->executionCore);
-
-    HPCCG_consumer(params->A, params->b, params->x, params->max_iter,
-                              params->tolerance, params->niters, params->normr, params->times);
-//    HPCCG(params->A, params->b, params->x, params->max_iter,
-//                              params->tolerance, params->niters, params->normr, params->times);
-}
+void consumer_thread_func(void * args);
 
 int main(int argc, char *argv[]) {
-    HPC_Sparse_Matrix *A;
+    HPC_Sparse_Matrix *sparseMatrix;
 
     double *x, *b, *xexact, *x2, *b2, *xexact2;
     double norm, d;
@@ -193,19 +185,19 @@ int main(int argc, char *argv[]) {
         producerCoreHT = atoi(argv[7]);
         consumerCoreHT = atoi(argv[8]);
     } else {
-        read_HPC_row(argv[1], &A, &x, &b, &xexact);
+        read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
     }
 
-    generate_matrix(nx, ny, nz, &A, &x, &b, &xexact);
+    generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
 
     bool dump_matrix = false;
-    if (dump_matrix && size <= 4) dump_matlab_matrix(A, rank);
+    if (dump_matrix && size <= 4) dump_matlab_matrix(sparseMatrix, rank);
 
 #ifdef USING_MPI
     // Transform matrix indices from global to local values.
     // Define number of columns for the local matrix.
 
-    t6 = mytimer(); make_local_matrix(A);  t6 = mytimer() - t6;
+    t6 = mytimer(); make_local_matrix(sparseMatrix);  t6 = mytimer() - t6;
     times[6] = t6;
 
 #endif
@@ -219,9 +211,13 @@ int main(int argc, char *argv[]) {
     if(replicated) {
         // First sequential runs
         for(iterator = meanBaseline = 0; iterator < NUM_RUNS; iterator++){
-            ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
+            ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
             timesBaseline[iterator] = times[0];
             meanBaseline += times[0];
+
+            freeMemory(sparseMatrix, x, b, xexact);
+            generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
+
             printf("Baseline[%d]: %f seconds --- \n\n", iterator, timesBaseline[iterator]);
         }
 
@@ -242,7 +238,7 @@ int main(int argc, char *argv[]) {
             x2[m] = x[m];
         }
 
-        consumerParams->A = A;
+        consumerParams->A = sparseMatrix;
         consumerParams->b = b;
         consumerParams->x = x2;
         consumerParams->max_iter = max_iter;
@@ -254,6 +250,7 @@ int main(int argc, char *argv[]) {
       replicationRun:
         consumerParams->executionCore = consumerCore1;
         printf("\n--- REPLICATED VERSION WITH CORES %d, %d \n\n", producerCore1, consumerCore1);
+
         for(iterator = meanRHT = 0; iterator < NUM_RUNS; iterator++) {
             RHT_Replication_Init(1);
 
@@ -266,7 +263,7 @@ int main(int argc, char *argv[]) {
 
             SetThreadAffinity(producerCore1);
 #if APPROACH_NEW_LIMIT == 1 || APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
-            ierr = HPCCG_producer_newLimit(A, b, x, max_iter, tolerance, niters, normr, times);
+            ierr = HPCCG_producer_newLimit(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
 #else
             ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
 #endif
@@ -294,8 +291,6 @@ int main(int argc, char *argv[]) {
     printf("MOODY CAMEL");
 #endif
 
-//            printf(" [%d]: %f seconds, on cores: %d, %d consumerCount: %ld producerCount: %ld\n",
-//                   iterator, timesRHT[iterator], producerCore1, consumerCore1, consumerCount, producerCount);
             printf(" [%d]: %f seconds, on cores: %d, %d\n", iterator, timesRHT[iterator], producerCore1, consumerCore1);
         }
 
@@ -343,7 +338,7 @@ int main(int argc, char *argv[]) {
 
         return 0;
     }else {
-        ierr = HPCCG(A, b, x, max_iter, tolerance, niters, normr, times);
+        ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
     }
 
     if (ierr) cerr << "Error in call to CG: " << ierr << ".\n" << endl;
@@ -361,7 +356,7 @@ int main(int argc, char *argv[]) {
 
 
 #endif
-    PrintSummary(A, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
+    PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
 
 // Finish up
 #ifdef USING_MPI
@@ -464,4 +459,22 @@ void PrintSummary(const HPC_Sparse_Matrix *A, const double *times, int nx, int n
     // if (rank==0)
     //   cout << "Difference between computed and exact  = "
     //        << residual << ".\n" << endl;
+}
+
+void freeMemory(HPC_Sparse_Matrix *sparseMatrix, double * x, double * b, double * xexact){
+    delete sparseMatrix;
+    delete x;
+    delete b;
+    delete xexact;
+}
+
+void consumer_thread_func(void * args) {
+    ConsumerParams *params = (ConsumerParams *) args;
+
+    SetThreadAffinity(params->executionCore);
+
+    HPCCG_consumer(params->A, params->b, params->x, params->max_iter,
+                   params->tolerance, params->niters, params->normr, params->times);
+//    HPCCG(params->A, params->b, params->x, params->max_iter,
+//                              params->tolerance, params->niters, params->normr, params->times);
 }

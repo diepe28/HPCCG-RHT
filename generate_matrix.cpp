@@ -46,7 +46,7 @@ using std::endl;
 #include "generate_matrix.h"
 
 
-void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact) {
+void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **sparseMatrix, double **x, double **b, double **xexact) {
 #ifdef DEBUG
     int debug = 1;
 #else
@@ -62,8 +62,8 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
     int rank = 0;
 #endif
 
-    *A = new HPC_Sparse_Matrix; // Allocate matrix struct and fill it
-    (*A)->title = 0;
+    *sparseMatrix = new HPC_Sparse_Matrix; // Allocate matrix struct and fill it
+    (*sparseMatrix)->title = 0;
 
 
     // Set this bool to true if you want a 7-pt stencil instead of a 27 pt stencil
@@ -82,10 +82,10 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
 
 
     // Allocate arrays that are of length local_nrow
-    (*A)->nnz_in_row = new int[local_nrow];
-    (*A)->ptr_to_vals_in_row = new double *[local_nrow];
-    (*A)->ptr_to_inds_in_row = new int *[local_nrow];
-    (*A)->ptr_to_diags = new double *[local_nrow];
+    (*sparseMatrix)->nnz_in_row = new int[local_nrow];
+    (*sparseMatrix)->ptr_to_vals_in_row = new double *[local_nrow];
+    (*sparseMatrix)->ptr_to_inds_in_row = new int *[local_nrow];
+    (*sparseMatrix)->ptr_to_diags = new double *[local_nrow];
 
     *x = new double[local_nrow];
     *b = new double[local_nrow];
@@ -93,11 +93,11 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
 
 
     // Allocate arrays that are of length local_nnz
-    (*A)->list_of_vals = new double[local_nnz];
-    (*A)->list_of_inds = new int[local_nnz];
+    (*sparseMatrix)->list_of_vals = new double[local_nnz];
+    (*sparseMatrix)->list_of_inds = new int[local_nnz];
 
-    double *curvalptr = (*A)->list_of_vals;
-    int *curindptr = (*A)->list_of_inds;
+    double *curvalptr = (*sparseMatrix)->list_of_vals;
+    int *curindptr = (*sparseMatrix)->list_of_inds;
 
     long long nnzglobal = 0;
     for (int iz = 0; iz < nz; iz++) {
@@ -106,8 +106,8 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
                 int curlocalrow = iz * nx * ny + iy * nx + ix;
                 int currow = start_row + iz * nx * ny + iy * nx + ix;
                 int nnzrow = 0;
-                (*A)->ptr_to_vals_in_row[curlocalrow] = curvalptr;
-                (*A)->ptr_to_inds_in_row[curlocalrow] = curindptr;
+                (*sparseMatrix)->ptr_to_vals_in_row[curlocalrow] = curvalptr;
+                (*sparseMatrix)->ptr_to_inds_in_row[curlocalrow] = curindptr;
                 for (int sz = -1; sz <= 1; sz++) {
                     for (int sy = -1; sy <= 1; sy++) {
                         for (int sx = -1; sx <= 1; sx++) {
@@ -120,7 +120,7 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
                                 if (!use_7pt_stencil || (sz * sz + sy * sy + sx * sx <=
                                                          1)) { // This logic will skip over point that are not part of a 7-pt stencil
                                     if (curcol == currow) {
-                                        (*A)->ptr_to_diags[curlocalrow] = curvalptr;
+                                        (*sparseMatrix)->ptr_to_diags[curlocalrow] = curvalptr;
                                         *curvalptr++ = 27.0;
                                     } else {
                                         *curvalptr++ = -1.0;
@@ -132,7 +132,7 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
                         } // end sx loop
                     } // end sy loop
                 } // end sz loop
-                (*A)->nnz_in_row[curlocalrow] = nnzrow;
+                (*sparseMatrix)->nnz_in_row[curlocalrow] = nnzrow;
                 nnzglobal += nnzrow;
                 (*x)[curlocalrow] = 0.0;
                 (*b)[curlocalrow] = 27.0 - ((double) (nnzrow - 1));
@@ -150,13 +150,13 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
         cout << "Process " << rank << " of " << size
              << " has " << local_nnz << " nonzeros." << endl;
 
-    (*A)->start_row = start_row;
-    (*A)->stop_row = stop_row;
-    (*A)->total_nrow = total_nrow;
-    (*A)->total_nnz = total_nnz;
-    (*A)->local_nrow = local_nrow;
-    (*A)->local_ncol = local_nrow;
-    (*A)->local_nnz = local_nnz;
+    (*sparseMatrix)->start_row = start_row;
+    (*sparseMatrix)->stop_row = stop_row;
+    (*sparseMatrix)->total_nrow = total_nrow;
+    (*sparseMatrix)->total_nnz = total_nnz;
+    (*sparseMatrix)->local_nrow = local_nrow;
+    (*sparseMatrix)->local_ncol = local_nrow;
+    (*sparseMatrix)->local_nnz = local_nnz;
 
     return;
 }
