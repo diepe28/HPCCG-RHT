@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
     double tolerance = 0.0; // Set tolerance to zero to make all runs do max_iter iterations
 
     if(replicated) {
-        // First sequential runs
+        // Sequential runs
         for(iterator = meanBaseline = 0; iterator < NUM_RUNS; iterator++){
             ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
             timesBaseline[iterator] = times[0];
@@ -234,13 +234,6 @@ int main(int argc, char *argv[]) {
 
         x2 = new double[local_nrow];
 
-        for(int m = 0; m < local_nrow; m++){
-            x2[m] = x[m];
-        }
-
-        consumerParams->A = sparseMatrix;
-        consumerParams->b = b;
-        consumerParams->x = x2;
         consumerParams->max_iter = max_iter;
         consumerParams->tolerance = tolerance;
         consumerParams->niters = niters;
@@ -254,10 +247,18 @@ int main(int argc, char *argv[]) {
         for(iterator = meanRHT = 0; iterator < NUM_RUNS; iterator++) {
             RHT_Replication_Init(1);
 
+            // Parameters that need to be reset every run
+            for(int m = 0; m < local_nrow; m++){
+                x2[m] = x[m];
+            }
+            consumerParams->A = sparseMatrix;
+            consumerParams->b = b;
+            consumerParams->x = x2;
+
             int err = pthread_create(consumerThreads[0], NULL, (void *(*)(void *)) consumer_thread_func,
                                      (void *) consumerParams);
             if (err) {
-                fprintf(stderr, "Failed to create thread %d\n", 1);
+                fprintf(stderr, "Fail creating thread %d\n", 1);
                 exit(1);
             }
 
@@ -290,7 +291,8 @@ int main(int argc, char *argv[]) {
 #elif APPROACH_MOODY_CAMEL == 1
     printf("MOODY CAMEL");
 #endif
-
+            freeMemory(sparseMatrix, x, b, xexact);
+            generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
             printf(" [%d]: %f seconds, on cores: %d, %d\n", iterator, timesRHT[iterator], producerCore1, consumerCore1);
         }
 
@@ -475,6 +477,4 @@ void consumer_thread_func(void * args) {
 
     HPCCG_consumer(params->A, params->b, params->x, params->max_iter,
                    params->tolerance, params->niters, params->normr, params->times);
-//    HPCCG(params->A, params->b, params->x, params->max_iter,
-//                              params->tolerance, params->niters, params->normr, params->times);
 }

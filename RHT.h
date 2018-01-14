@@ -325,24 +325,24 @@ static inline double AlreadyConsumed_Consume() {
 static inline void AlreadyConsumed_Consume_Check(double currentValue) {
     globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];
 
-    if (currentValue != globalQueue.otherValue) {
+    if(fequal(currentValue, globalQueue.otherValue)){
+        globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
+        globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+    } else {
         // des-sync of the queue
-        if (globalQueue.otherValue == ALREADY_CONSUMED) {
+        if(fequal(globalQueue.otherValue, ALREADY_CONSUMED)){
             consumerCount++;
-            do asm("pause"); while (globalQueue.content[globalQueue.deqPtr] == ALREADY_CONSUMED);
+            do asm("pause"); while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED));
 
             globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];
 
-            if (currentValue == globalQueue.otherValue) {
+            if(fequal(currentValue, globalQueue.otherValue)){
                 globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
                 globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
                 return;
             }
         }
         Report_Soft_Error(currentValue, globalQueue.otherValue)
-    } else {
-        globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
-        globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
     }
 }
 
