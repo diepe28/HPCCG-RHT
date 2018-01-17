@@ -218,7 +218,17 @@ int main(int argc, char *argv[]) {
             freeMemory(sparseMatrix, x, b, xexact);
             generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
 
-            printf("Baseline[%d]: %f seconds --- \n\n", iterator, timesBaseline[iterator]);
+#ifdef USING_MPI
+            // Transform matrix indices from global to local values.
+            // Define number of columns for the local matrix.
+
+            t6 = mytimer(); make_local_matrix(sparseMatrix);  t6 = mytimer() - t6;
+            times[6] = t6;
+
+#endif
+
+            if(rank == 0)
+                printf("Baseline[%d]: %f seconds --- \n\n", iterator, timesBaseline[iterator]);
         }
 
         meanBaseline /= NUM_RUNS;
@@ -242,7 +252,8 @@ int main(int argc, char *argv[]) {
 
       replicationRun:
         consumerParams->executionCore = consumerCore1;
-        printf("\n--- REPLICATED VERSION WITH CORES %d, %d \n\n", producerCore1, consumerCore1);
+        if(rank == 0)
+            printf("\n--- REPLICATED VERSION WITH CORES %d, %d \n\n", producerCore1, consumerCore1);
 
         for(iterator = meanRHT = 0; iterator < NUM_RUNS; iterator++) {
             RHT_Replication_Init(1);
@@ -464,7 +475,7 @@ void PrintSummary(const HPC_Sparse_Matrix *A, const double *times, int nx, int n
 }
 
 void freeMemory(HPC_Sparse_Matrix *sparseMatrix, double * x, double * b, double * xexact){
-    delete sparseMatrix;
+    destroyMatrix(sparseMatrix);
     delete x;
     delete b;
     delete xexact;
