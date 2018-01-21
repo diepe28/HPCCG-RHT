@@ -303,6 +303,7 @@ static inline void AlreadyConsumed_Produce(double value) {
 
     globalQueue.content[globalQueue.enqPtr] = value;
     globalQueue.enqPtr = globalQueue.nextEnq;
+    producerCount++;
 }
 
 static inline double AlreadyConsumed_Consume() {
@@ -328,10 +329,11 @@ static inline void AlreadyConsumed_Consume_Check(double currentValue) {
     if(fequal(currentValue, globalQueue.otherValue)){
         globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
         globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+        consumerCount++;
     } else {
         // des-sync of the queue
         if(fequal(globalQueue.otherValue, ALREADY_CONSUMED)){
-            consumerCount++;
+            //consumerCount++;
             do asm("pause"); while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED));
 
             globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];
@@ -484,6 +486,7 @@ static inline void MoodyCamel_Consume_Check(double currentValue) {
 extern void RHT_Produce_Secure(double value);
 extern void RHT_Produce(double value);
 extern void RHT_Consume_Check(double currentValue);
+    extern void RHT_Consume_CheckSpecial(double currentValue, int rank);
 extern double RHT_Consume();
 
 #endif //HPCCG_1_0_SYNCQUEUE_H

@@ -309,6 +309,19 @@ void exchange_externals_producer(HPC_Sparse_Matrix * A, const double *x) {
 
     delete[] request;
 
+    // In order to replicate correctly, all received data must be sent to the consumer
+    x_external = (double *) x + local_nrow;
+
+    for (i = 0; i < num_neighbors; i++) {
+        int n_recv = recv_length[i];
+
+        for(int m = 0; m < n_recv; m++){
+            RHT_Produce(x_external[m]);
+        }
+
+        x_external += n_recv;
+    }
+
     return;
 }
 
@@ -408,6 +421,23 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
 //    }
 
     delete[] request;
+
+    // In order to replicate correctly, all received data must be received from the consumer
+    x_external = (double *) x + local_nrow;
+
+    for (i = 0; i < num_neighbors; i++) {
+        int n_recv = recv_length[i];
+
+        for(int m = 0; m < n_recv; m++){
+            x_external[m] = RHT_Consume();
+        }
+
+        x_external += n_recv;
+    }
+
+//    if(rank == 1) {
+//        printf("It's already good on consumer? X[108000]: %f\n", x[108000]);
+//    }
 
     return;
 }

@@ -91,7 +91,7 @@ using std::endl;
 
 using namespace moodycamel;
 
-#define NUM_RUNS 5
+#define NUM_RUNS 1
 
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     double times[7];
     double t6 = 0.0;
     int nx, ny, nz;
-    int replicated, producerCore1, consumerCore1, producerCoreHT, consumerCoreHT;
+    int replicated, numCores, producerCore, consumerCore, *coreNumbers;
     double t4 = times[4];
     double t4min = 0.0;
     double t4max = 0.0;
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 //    TestQueues();
 //    return 0;
 
-    if (argc != 2 && argc != 9) { // dperez, original argc != 4
+    if (argc < 3) { // dperez, original argc != 4
         if (rank == 0)
             cerr << "Usage:" << endl
                  << "Mode 1: " << argv[0] << " nx ny nz" << endl
@@ -175,17 +175,28 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if (argc == 9) { // dperez, original was 4
+    if (argc == 4) { // original number
         nx = atoi(argv[1]);
         ny = atoi(argv[2]);
         nz = atoi(argv[3]);
-        replicated = atoi(argv[4]);
-        producerCore1 = atoi(argv[5]);
-        consumerCore1 = atoi(argv[6]);
-        producerCoreHT = atoi(argv[7]);
-        consumerCoreHT = atoi(argv[8]);
-    } else {
-        read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
+        replicated = 0;
+    }else {
+        if (argc > 4) { // dperez, for our purposes
+            replicated = 1;
+            nx = atoi(argv[1]);
+            ny = atoi(argv[2]);
+            nz = atoi(argv[3]);
+            numCores = atoi(argv[4]); // should be the same as -np of MPI
+            coreNumbers = (int *) malloc(sizeof(int) * numCores * 2);
+            for (int i = 0; i < numCores * 2; i++) {
+                // Each pair is the producer and consumer core for each MPI process.
+                // Example 2 0 2 1 3: means 2 MPI processes the first one runs on core 0,2 and
+                // the second one is cores 1,3. Depending on the machine config it may be HT or not.
+                coreNumbers[i] = atoi(argv[5 + i]);
+            }
+        }else {
+            read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
+        }
     }
 
     generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
@@ -209,7 +220,8 @@ int main(int argc, char *argv[]) {
     double tolerance = 0.0; // Set tolerance to zero to make all runs do max_iter iterations
 
     if(replicated) {
-        // Sequential runs
+        // --- Unprotected runs ---
+
         for(iterator = meanBaseline = 0; iterator < NUM_RUNS; iterator++){
             ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
             timesBaseline[iterator] = times[0];
@@ -221,12 +233,9 @@ int main(int argc, char *argv[]) {
 #ifdef USING_MPI
             // Transform matrix indices from global to local values.
             // Define number of columns for the local matrix.
-
             t6 = mytimer(); make_local_matrix(sparseMatrix);  t6 = mytimer() - t6;
             times[6] = t6;
-
 #endif
-
             if(rank == 0)
                 printf("Baseline[%d]: %f seconds --- \n\n", iterator, timesBaseline[iterator]);
         }
@@ -239,6 +248,8 @@ int main(int argc, char *argv[]) {
 
         sdBaseline /= NUM_RUNS;
 
+        // --- Protected runs ---
+
         ConsumerParams *consumerParams = (ConsumerParams *) (malloc(sizeof(ConsumerParams)));
         int local_nrow = nx * ny * nz; // This is the size of our subblock
 
@@ -250,10 +261,13 @@ int main(int argc, char *argv[]) {
         consumerParams->normr = normr;
         consumerParams->times = times;
 
-      replicationRun:
-        consumerParams->executionCore = consumerCore1;
-        if(rank == 0)
-            printf("\n--- REPLICATED VERSION WITH CORES %d, %d \n\n", producerCore1, consumerCore1);
+        // Assigning core numbers to each thread of each MPI process
+        producerCore = coreNumbers[rank * 2];
+        consumerCore = coreNumbers[rank * 2 +1];
+
+        consumerParams->executionCore = consumerCore;
+
+        printf("\n--- REPLICATED VERSION ON RANK %d WITH CORES %d, %d \n\n", rank, producerCore, consumerCore);
 
         for(iterator = meanRHT = 0; iterator < NUM_RUNS; iterator++) {
             RHT_Replication_Init(1);
@@ -273,11 +287,11 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
 
-            SetThreadAffinity(producerCore1);
+            SetThreadAffinity(producerCore);
 #if APPROACH_NEW_LIMIT == 1 || APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
             ierr = HPCCG_producer_newLimit(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
 #else
-            ierr = HPCCG_producer(A, b, x, max_iter, tolerance, niters, normr, times);
+            ierr = HPCCG_producer(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
 #endif
 
             /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
@@ -304,7 +318,7 @@ int main(int argc, char *argv[]) {
 #endif
             freeMemory(sparseMatrix, x, b, xexact);
             generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
-            printf(" [%d]: %f seconds, on cores: %d, %d\n", iterator, timesRHT[iterator], producerCore1, consumerCore1);
+            printf(" [%d]: %f seconds, on cores: %d, %d\n", iterator, timesRHT[iterator], producerCore, consumerCore);
         }
 
         meanRHT /= NUM_RUNS;
@@ -333,15 +347,8 @@ int main(int argc, char *argv[]) {
     printf("MOODY CAMEL");
 #endif
         printf(" on cores %d, %d: %f , SD RHT %f ... Compared to baseline is %f x slower \n\n",
-               producerCore1, consumerCore1, meanRHT, sdRHT, meanRHT / meanBaseline);
+               producerCore, consumerCore, meanRHT, sdRHT, meanRHT / meanBaseline);
 //        printf("Mean consumerCount: %f  mean producerCount: %f\n", consumerMean, producerMean);
-
-        if(consumerCore1 != consumerCoreHT || producerCore1 != producerCoreHT) {
-            producerCore1 = producerCoreHT;
-            consumerCore1 = consumerCoreHT;
-            meanRHT = 0;
-            goto replicationRun;
-        }
 
         // Finish up
 #ifdef USING_MPI
@@ -351,6 +358,7 @@ int main(int argc, char *argv[]) {
 
         return 0;
     }else {
+        // Not replicated (normal) run
         ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
     }
 
