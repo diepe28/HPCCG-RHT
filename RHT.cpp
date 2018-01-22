@@ -64,34 +64,6 @@ void RHT_Consume_Check(double currentValue) {
 #endif
 }
 
-void RHT_Consume_CheckSpecial(double currentValue, int rank) {
-
-    globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];
-
-    if(fequal(currentValue, globalQueue.otherValue)){
-        globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
-        globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
-        consumerCount++;
-    } else {
-        // des-sync of the queue
-        if(fequal(globalQueue.otherValue, ALREADY_CONSUMED)){
-            //consumerCount++;
-            do asm("pause"); while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED));
-
-            globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];
-
-            if(fequal(currentValue, globalQueue.otherValue)){
-                globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
-                globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
-                return;
-            }
-        }
-        printf("The rank %d is the one with the problem\n",rank);
-        Report_Soft_Error(currentValue, globalQueue.otherValue)
-    }
-
-}
-
 double RHT_Consume() {
 #if APPROACH_USING_POINTERS == 1
     return UsingPointers_Consume();

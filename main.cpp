@@ -91,7 +91,7 @@ using std::endl;
 
 using namespace moodycamel;
 
-#define NUM_RUNS 1
+#define NUM_RUNS 5
 
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
 
         consumerParams->executionCore = consumerCore;
 
-        printf("\n--- REPLICATED VERSION ON RANK %d WITH CORES %d, %d \n\n", rank, producerCore, consumerCore);
+        printf("\n--- REPLICATED VERSION ON RANK %d WITH CORES %d, %d\n", rank, producerCore, consumerCore);
 
         for(iterator = meanRHT = 0; iterator < NUM_RUNS; iterator++) {
             RHT_Replication_Init(1);
@@ -303,22 +303,27 @@ int main(int argc, char *argv[]) {
 
             RHT_Replication_Finish();
 
-            printf("RHT approach: ");
+            if(rank == 0) {
+                printf("RHT approach: ");
 
 #if APPROACH_USING_POINTERS == 1
-            printf("USING POINTERS");
+                printf("USING POINTERS");
 #elif APPROACH_ALREADY_CONSUMED == 1
-            printf("ALREADY CONSUMED");
+                printf("ALREADY CONSUMED");
 #elif APPROACH_NEW_LIMIT == 1
-    printf("NEW LIMIT & ALREADY CONSUMED");
-#elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
-    printf("NEW LIMIT & ALREADY CONSUMED INVERTED ");
-#elif APPROACH_MOODY_CAMEL == 1
-    printf("MOODY CAMEL");
+                printf("NEW LIMIT & ALREADY CONSUMED");
 #endif
+                printf(" [%d]: %f seconds, on cores: %d, %d\n", iterator, timesRHT[iterator], producerCore,
+                       consumerCore);
+            }
             freeMemory(sparseMatrix, x, b, xexact);
             generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
-            printf(" [%d]: %f seconds, on cores: %d, %d\n", iterator, timesRHT[iterator], producerCore, consumerCore);
+#ifdef USING_MPI
+            // Transform matrix indices from global to local values.
+            // Define number of columns for the local matrix.
+            t6 = mytimer(); make_local_matrix(sparseMatrix);  t6 = mytimer() - t6;
+            times[6] = t6;
+#endif
         }
 
         meanRHT /= NUM_RUNS;
@@ -331,25 +336,20 @@ int main(int argc, char *argv[]) {
 
         sdRHT /= NUM_RUNS;
 
-        printf("\n\n-------------------------- Summary --------------------------\n");
-
-        printf("Mean baseline %f , SD baseline %f \n\n", meanBaseline, sdBaseline);
-        printf("Mean RHT approach: ");
+        if(rank == 0) {
+            printf("\n\n-------------------------- Summary --------------------------\n");
+            printf("Mean baseline %f , SD baseline %f ---\n\n", meanBaseline, sdBaseline);
+            printf("Mean RHT approach: ");
 #if APPROACH_USING_POINTERS == 1
-        printf("USING POINTERS");
+            printf("USING POINTERS");
 #elif APPROACH_ALREADY_CONSUMED == 1
-        printf("ALREADY CONSUMED");
+            printf("ALREADY CONSUMED");
 #elif APPROACH_NEW_LIMIT == 1
-        printf("NEW LIMIT & ALREADY CONSUMED");
-#elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
-    printf("NEW LIMIT & ALREADY CONSUMED INVERTED ");
-#elif APPROACH_MOODY_CAMEL == 1
-    printf("MOODY CAMEL");
+            printf("NEW LIMIT & ALREADY CONSUMED");
 #endif
-        printf(" on cores %d, %d: %f , SD RHT %f ... Compared to baseline is %f x slower \n\n",
-               producerCore, consumerCore, meanRHT, sdRHT, meanRHT / meanBaseline);
-//        printf("Mean consumerCount: %f  mean producerCount: %f\n", consumerMean, producerMean);
-
+            printf(": %f , SD RHT %f ... Compared to baseline is %f x slower \n\n",
+                   meanRHT, sdRHT, meanRHT / meanBaseline);
+        }
         // Finish up
 #ifdef USING_MPI
         MPI_Finalize();

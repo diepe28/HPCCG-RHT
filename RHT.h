@@ -129,7 +129,7 @@ extern long consumerCount;
                    (RHT_QUEUE_SIZE - globalQueue.enqPtr) + globalQueue.localDeq :   \
                    globalQueue.localDeq - globalQueue.enqPtr)-1;                    \
     if(globalQueue.newLimit < MIN_PTR_DIST){                                        \
-        producerCount++;                                                            \
+        /*producerCount++;*/                                                            \
         do{                                                                         \
             asm("pause");                                                           \
             globalQueue.localDeq = globalQueue.deqPtr;                              \
@@ -151,7 +151,7 @@ extern long consumerCount;
                    globalQueue.localDeq - globalQueue.enqPtr)-1;                    \
         if(globalQueue.diff < MIN_PTR_DIST) {                                       \
             do{                                                                         \
-                producerCount++;                                                        \
+                /*producerCount++;*/                                                            \
                 asm("pause");                                                           \
                 globalQueue.localDeq = globalQueue.deqPtr;                              \
                 globalQueue.diff = (globalQueue.enqPtr >= globalQueue.localDeq ?        \
@@ -303,7 +303,6 @@ static inline void AlreadyConsumed_Produce(double value) {
 
     globalQueue.content[globalQueue.enqPtr] = value;
     globalQueue.enqPtr = globalQueue.nextEnq;
-    producerCount++;
 }
 
 static inline double AlreadyConsumed_Consume() {
@@ -311,7 +310,6 @@ static inline double AlreadyConsumed_Consume() {
 
     if (value == ALREADY_CONSUMED) {
         //printf("There was a des sync of the queue \n");
-        consumerCount++;
         do {
             asm("pause");
         } while (globalQueue.content[globalQueue.deqPtr] == ALREADY_CONSUMED);
@@ -329,11 +327,12 @@ static inline void AlreadyConsumed_Consume_Check(double currentValue) {
     if(fequal(currentValue, globalQueue.otherValue)){
         globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
         globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
-        consumerCount++;
     } else {
         // des-sync of the queue
+#if COUNT_QUEUE_DESYNC
+        consumerCount++;
+#endif
         if(fequal(globalQueue.otherValue, ALREADY_CONSUMED)){
-            //consumerCount++;
             do asm("pause"); while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED));
 
             globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];
@@ -408,20 +407,20 @@ static inline void WriteInvertedNewLimit_Produce(double value) {
     globalQueue.content[globalQueue.nextEnq] = ALREADY_CONSUMED;
     globalQueue.content[globalQueue.enqPtr] = value;
     globalQueue.enqPtr = globalQueue.nextEnq;
-    //producerCount++;
 }
 
 static inline double WriteInvertedNewLimit_Consume() {
     double value = globalQueue.content[globalQueue.deqPtr];
 
     if (fequal(value, ALREADY_CONSUMED)) {
-        //consumerCount++;
+#if COUNT_QUEUE_DESYNC
+        consumerCount++;
+#endif
         do asm("pause"); while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED));
         value = globalQueue.content[globalQueue.deqPtr];
     }
 
     globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
-    //consumerCount++;
     return value;
 }
 
@@ -432,7 +431,9 @@ static inline void WriteInvertedNewLimit_Consume_Check(double currentValue) {
     }else{
         // des-sync of the queue
         if (fequal(globalQueue.otherValue, ALREADY_CONSUMED)) {
+#if COUNT_QUEUE_DESYNC
             consumerCount++;
+#endif
             do {
                 asm("pause");
             } while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED));
@@ -486,7 +487,6 @@ static inline void MoodyCamel_Consume_Check(double currentValue) {
 extern void RHT_Produce_Secure(double value);
 extern void RHT_Produce(double value);
 extern void RHT_Consume_Check(double currentValue);
-    extern void RHT_Consume_CheckSpecial(double currentValue, int rank);
 extern double RHT_Consume();
 
 #endif //HPCCG_1_0_SYNCQUEUE_H
