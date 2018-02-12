@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.5)
 project(HPCCG_RHT)
 
 set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
-#set(CMAKE_BUILD_TYPE Debug) # optimizations, but debuging is not allowed
+#set(CMAKE_BUILD_TYPE Debug) # NO optimizations, debuging allowed
 
 find_package(MPI REQUIRED)
 
@@ -11,7 +11,10 @@ include_directories(${MPI_INCLUDE_PATH})
 set(CMAKE_CXX_STANDARD 11)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSING_MPI=1 -lm") # for clang
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -ftree-vectorizer-verbose=2 -lm -DUSING_MPI=1")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -ftree-vectorizer-verbose=2 -lm -DUSING_MPI=1") #just for gcc
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAPPROACH_USING_POINTERS=0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAPPROACH_ALREADY_CONSUMED=0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAPPROACH_NEW_LIMIT=1")

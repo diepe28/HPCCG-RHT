@@ -2,6 +2,9 @@
 // Created by diego on 30/10/17.
 //
 
+// -D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
+// -D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
+
 #ifndef HPCCG_1_0_SYNCQUEUE_H
 #define HPCCG_1_0_SYNCQUEUE_H
 
