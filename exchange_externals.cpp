@@ -177,7 +177,7 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
     //
     // Fill up send buffer
     //
-    replicate_forLoop_newLimit(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
+    replicate_loop_for(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
 
     //
     // Send to each neighbor
@@ -213,7 +213,7 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
 
     for (int m, i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
-        replicate_forLoop_newLimit(n_recv, m, x_external[m], ;)
+        replicate_loop_for(n_recv, m, x_external[m], ;)
         x_external += n_recv;
     }
 

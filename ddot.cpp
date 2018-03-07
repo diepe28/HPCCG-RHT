@@ -76,10 +76,10 @@ int ddot_producer_no_sync (const int n, const double * const x, const double * c
 //    printf("Producer here at %d\n", globalQueue.deqPtr);
     int i;
     if (y == x) {
-        replicate_forLoop_newLimit(n, i, local_result, local_result += x[i] * x[i])
+        replicate_loop_for(n, i, local_result, local_result += x[i] * x[i])
     }
     else {
-        replicate_forLoop_newLimit(n, i, local_result, local_result += x[i] * y[i])
+        replicate_loop_for(n, i, local_result, local_result += x[i] * y[i])
     }
 
 #ifdef USING_MPI

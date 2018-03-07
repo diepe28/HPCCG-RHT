@@ -109,7 +109,9 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
     TOCK(t1);
     normr = sqrt(rtrans);
 
+#if PRINT_OUTPUT == 1
     if (rank == 0) cout << "Initial Residual = " << normr << endl;
+#endif
 
     for (int k = 1; k < max_iter && normr > tolerance; k++) {
         if (k == 1) {
@@ -127,9 +129,10 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
             TOCK(t2);// 2*nrow ops
         }
         normr = sqrt(rtrans);
+#if PRINT_OUTPUT == 1
         if (rank == 0 && (k % print_freq == 0 || k + 1 == max_iter))
             cout << "Iteration = " << k << "   Residual = " << normr << endl;
-
+#endif
 
 #ifdef USING_MPI
             TICK(); exchange_externals(hpc_sparse_matrix,p); TOCK(t5);
@@ -239,7 +242,9 @@ int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
 
     /*-- RHT -- */ RHT_Produce_Secure(rank);
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
+#if PRINT_OUTPUT == 1
     if (rank == 0) cout << "Initial Residual = " << normr << endl;
+#endif
 
     TICK();
     waxpby_producer_no_sync(nrow, 1.0, r, 0.0, r, p);
@@ -273,8 +278,11 @@ int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
         /*-- RHT -- */ RHT_Produce_Secure(max_iter);
         /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
 
+#if PRINT_OUTPUT == 1
         if (rank == 0 && (k % print_freq == 0 || k + 1 == max_iter))
             cout << "Iteration = " << k << "   Residual = " << normr << endl;
+#endif
+
 
 #ifdef USING_MPI
         TICK();
@@ -282,9 +290,9 @@ int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
         TOCK(t5);
 #endif
         TICK();
+        //HPC_sparsemv_producer_no_sync(hpc_sparse_matrix, p, Ap);
         HPC_sparsemv_producer_no_sync(hpc_sparse_matrix, p, Ap);
         TOCK(t3); // 2*nnz ops
-
         double alpha = 0.0;
         /*-- RHT -- */ RHT_Produce_Secure(alpha);
 
@@ -398,7 +406,9 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
 
     /*-- RHT -- */ RHT_Produce(rank);
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
+#if PRINT_OUTPUT == 1
     if (rank == 0) cout << "Initial Residual = " << normr << endl;
+#endif
 
     TICK();
     waxpby_producer(nrow, 1.0, r, 0.0, r, p);
@@ -433,8 +443,10 @@ int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         /*-- RHT -- */ RHT_Produce(max_iter);
         /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
 
+#if PRINT_OUTPUT == 1
         if (rank == 0 && (k % print_freq == 0 || k + 1 == max_iter))
             cout << "Iteration = " << k << "   Residual = " << normr << endl;
+#endif
 
 #ifdef USING_MPI
         TICK();

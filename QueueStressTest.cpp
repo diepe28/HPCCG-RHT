@@ -28,7 +28,7 @@ static void producer_RHT() {
 
     for(i = 0; i < MAX_ROWS; i++){
 
-        replicate_forLoop_newLimit(MAX_COLS, j, result, result = i + j)
+        replicate_loop_for(MAX_COLS, j, result, result = i + j)
 
         //for(j = 0; j < MAX_COLS; j++){
             //result = i + j;

@@ -98,7 +98,7 @@ int HPC_sparsemv_producer_no_sync( HPC_Sparse_Matrix *hpc_sparse_matrix,
         /*-- RHT -- */ RHT_Produce_Secure(cur_nnz);
 
         int j;
-        replicate_forLoop_newLimit(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]])
+        replicate_loop_for(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]])
 
         y[i] = sum;
         /*-- RHT -- */ RHT_Produce_Secure(y[i]);

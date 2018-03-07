@@ -91,7 +91,7 @@ using std::endl;
 
 using namespace moodycamel;
 
-#define NUM_RUNS 5
+#define NUM_RUNS 300
 
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
@@ -116,7 +116,76 @@ void freeMemory(HPC_Sparse_Matrix *sparseMatrix, double * x, double * b, double 
 
 void consumer_thread_func(void * args);
 
+#define mySize 999999
+#define myTimes 100
+
+void testVectorization() throw(){
+    v4sf v1, v2 ,v3;
+    float n1[mySize], n2[mySize];
+    double t1, t2;
+
+    int i, k, m;
+    float vector1[mySize], vector2[mySize];
+
+
+    for (i = 0; i < mySize; i++) {
+        vector1[i] = vector2[i] = i;
+    }
+
+    t1 = mytimer();
+
+    while(k++ < myTimes) {
+        for (i = 0; i < mySize; i++) {
+            n1[i] = vector1[i] * 2;
+            n2[i] = vector2[i] * 2;
+
+            if (n1[i] != n2[i]) {
+                printf("SoftError...\n");
+                exit(0);
+            }
+        }
+    }
+    k = 0;
+    t1 = mytimer() - t1;
+
+    printf("Normal comparison: %f seconds. \n", t1);
+
+    t1 = mytimer();
+    while(k++ < myTimes) {
+        for (i = 0; i < mySize; i+=4) {
+            printf("v1 %f vs v2 %f\n", vector1[i], vector2[i]);
+
+            n1[i] = vector1[i] * 2;
+            n1[i+1] = vector1[i+1] * 2;
+            n1[i+2] = vector1[i+2] * 2;
+            n1[i+3] = vector1[i+3] * 2;
+
+            n2[i] = vector2[i] * 2;
+            n2[i+1] = vector2[i+1] * 2;
+            n2[i+2] = vector2[i+2] * 2;
+            n2[i+3] = vector2[i+3] * 2;
+
+            if (n1[i] != n2[i] ||
+                n1[i+1] != n2[i+1] ||
+                n1[i+2] != n2[i+2] ||
+                n1[i+3] != n2[i+3]){
+                printf("Soft Error\n");
+                exit(0);
+            }
+
+
+        }
+    }
+
+    t1 = mytimer() - t1;
+    printf("Vectorized comparison: %f seconds. \n", t1);
+
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
+    //testVectorization();
+
     HPC_Sparse_Matrix *sparseMatrix;
 
     double *x, *b, *xexact, *x2, *b2, *xexact2;
@@ -285,9 +354,11 @@ int main(int argc, char *argv[]) {
                 printf("ALREADY CONSUMED");
 #elif APPROACH_NEW_LIMIT == 1
                 printf("NEW LIMIT & ALREADY CONSUMED");
+#elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
+                printf("NEW LIMIT_WRITE_INVERTED");
 #endif
-                printf(" [%d]: %f seconds, on cores: %d, %d\n", iterator, timesRHT[iterator], producerCore,
-                       consumerCore);
+                printf(" [%d]: %f seconds, on cores: %d, %d --- ProducerWaiting: %ld, ConsumerWaiting: %ld\n",
+                       iterator, timesRHT[iterator], producerCore, consumerCore, producerCount, consumerCount);
             }
             freeMemory(sparseMatrix, x, b, xexact);
             generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
@@ -330,8 +401,8 @@ int main(int argc, char *argv[]) {
             times[6] = t6;
 #endif
             if (rank == 0) {
-                PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
-                printf("\n Baseline[%d]: %f seconds --- \n\n", iterator, timesBaseline[iterator]);
+                //PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
+                printf("Baseline[%d]: %f seconds --- \n", iterator, timesBaseline[iterator]);
             }
         }
 
@@ -364,9 +435,9 @@ int main(int argc, char *argv[]) {
 #endif
 
     if (rank == 0) {
-        printf("\n\n-------------------------- Summary --------------------------\n");
+        printf("\n-------------------------- Summary --------------------------\n");
         if (replicated == 0) {
-            printf("Mean baseline %f , SD baseline %f ---\n\n", meanBaseline, sdBaseline);
+            printf("Mean baseline %f , SD baseline %f \n\n", meanBaseline, sdBaseline);
         } else {
             printf("Mean RHT approach: ");
 #if APPROACH_USING_POINTERS == 1
@@ -375,9 +446,11 @@ int main(int argc, char *argv[]) {
             printf("ALREADY CONSUMED");
 #elif APPROACH_NEW_LIMIT == 1
             printf("NEW LIMIT & ALREADY CONSUMED");
+#elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
+            printf("NEW LIMIT_WRITE_INVERTED");
 #endif
 
-            printf(": %f , SD RHT %f \n\n", meanRHT, sdRHT);
+            printf(": %f , SD RHT %f --- PWaiting: %lf, CWaiting: %lf \n\n", meanRHT, sdRHT, producerMean, consumerMean);
         }
     }
 
