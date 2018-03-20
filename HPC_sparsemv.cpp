@@ -49,6 +49,7 @@ using std::endl;
 #include <string>
 #include <cmath>
 #include "HPC_sparsemv.h"
+#include "RHT.h"
 
 int HPC_sparsemv( HPC_Sparse_Matrix *hpc_sparse_matrix,
 		 const double * const x, double * const y) {
@@ -79,8 +80,7 @@ int HPC_sparsemv_producer_no_sync( HPC_Sparse_Matrix *hpc_sparse_matrix,
                   const double * const x, double * const y) {
 
     const int nrow = (const int) hpc_sparse_matrix->local_nrow;
-    /*-- RHT -- */ RHT_Produce(nrow);
-
+    /*-- RHT -- */ RHT_Produce_Secure(nrow);
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
@@ -98,7 +98,7 @@ int HPC_sparsemv_producer_no_sync( HPC_Sparse_Matrix *hpc_sparse_matrix,
         /*-- RHT -- */ RHT_Produce_Secure(cur_nnz);
 
         int j;
-        replicate_loop_for(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]])
+        replicate_loop_producer(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]])
 
         y[i] = sum;
         /*-- RHT -- */ RHT_Produce_Secure(y[i]);
@@ -111,7 +111,6 @@ int HPC_sparsemv_producer( HPC_Sparse_Matrix *hpc_sparse_matrix,
 
     const int nrow = (const int) hpc_sparse_matrix->local_nrow;
     /*-- RHT -- */ RHT_Produce(nrow);
-
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
@@ -142,9 +141,9 @@ int HPC_sparsemv_producer( HPC_Sparse_Matrix *hpc_sparse_matrix,
 int HPC_sparsemv_consumer( HPC_Sparse_Matrix *hpc_sparse_matrix,
                            const double * const x, double * const y) {
 
+    //printf("nrow in consumer %d: \n", hpc_sparse_matrix->local_nrow);
     const int nrow = (const int) hpc_sparse_matrix->local_nrow;
     /*-- RHT -- */ RHT_Consume_Check(nrow);
-
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
@@ -161,11 +160,15 @@ int HPC_sparsemv_consumer( HPC_Sparse_Matrix *hpc_sparse_matrix,
         const int cur_nnz = (const int) hpc_sparse_matrix->nnz_in_row[i];
         /*-- RHT -- */ RHT_Consume_Check(cur_nnz);
 
-        for (int j = 0; j < cur_nnz; j++) {
+        int j;
+#if VAR_GROUPING == 1
+        replicate_loop_consumer(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]])
+#else
+        for (j = 0; j < cur_nnz; j++) {
             sum += cur_vals[j] * x[cur_inds[j]];
             /*-- RHT -- */ RHT_Consume_Check(sum);
         }
-
+#endif
         y[i] = sum;
         /*-- RHT -- */ RHT_Consume_Check(y[i]);
     }

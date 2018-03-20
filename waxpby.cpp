@@ -75,11 +75,11 @@ int waxpby_producer_no_sync (const int n, const double alpha, const double * con
                              double * const w) {
     int i;
     if (alpha == 1.0) {
-        replicate_loop_for(n, i, w[i], w[i] = x[i] + beta * y[i])
+        replicate_loop_producer(n, i, w[i], w[i] = x[i] + beta * y[i])
     } else if (beta == 1.0) {
-        replicate_loop_for(n, i, w[i], w[i] = alpha * x[i] + y[i])
+        replicate_loop_producer(n, i, w[i], w[i] = alpha * x[i] + y[i])
     } else {
-        replicate_loop_for(n, i, w[i], w[i] = alpha * x[i] + beta * y[i])
+        replicate_loop_producer(n, i, w[i], w[i] = alpha * x[i] + beta * y[i])
     }
     return (0);
 }
@@ -119,32 +119,46 @@ int waxpby_producer (const int n, const double alpha, const double * const x,
 int waxpby_consumer (const int n, const double alpha, const double * const x,
                      const double beta, const double * const y,
                      double * const w) {
+    int i;
     if (alpha == 1.0) {
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
-        for (int i = 0; i < n; i++){
+#if VAR_GROUPING == 1
+        replicate_loop_consumer(n, i, w[i], w[i] = x[i] + beta * y[i])
+#else
+        for (i = 0; i < n; i++){
             w[i] = x[i] + beta * y[i];
             /*-- RHT -- */ RHT_Consume_Check(w[i]);
         }
+#endif
 
     } else if (beta == 1.0) {
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
-        for (int i = 0; i < n; i++) {
+#if VAR_GROUPING == 1
+        replicate_loop_consumer(n, i, w[i], w[i] = alpha * x[i] + y[i])
+#else
+        for (i = 0; i < n; i++) {
             w[i] = alpha * x[i] + y[i];
             /*-- RHT -- */ RHT_Consume_Check(w[i]);
         }
+#endif
+
     } else {
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
-        for (int i = 0; i < n; i++) {
+#if VAR_GROUPING == 1
+        replicate_loop_consumer(n, i, w[i], w[i] = alpha * x[i] + beta * y[i])
+#else
+        for (i = 0; i < n; i++) {
             w[i] = alpha * x[i] + beta * y[i];
             /*-- RHT -- */ RHT_Consume_Check(w[i]);
         }
-    }
+#endif
 
+    }
     return (0);
 }

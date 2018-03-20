@@ -54,7 +54,7 @@
 // HPCCG - CG Solver
 
 // compute_residual - Compares HPCCG solution to known solution.
-
+// dperez, I removed some OPEN MP conditional compilation flags, because it does not matter for out tests
 #include <iostream>
 using std::cout;
 using std::cerr;
@@ -91,7 +91,7 @@ using std::endl;
 
 using namespace moodycamel;
 
-#define NUM_RUNS 300
+#define NUM_RUNS 10
 
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
@@ -119,73 +119,7 @@ void consumer_thread_func(void * args);
 #define mySize 999999
 #define myTimes 100
 
-void testVectorization() throw(){
-    v4sf v1, v2 ,v3;
-    float n1[mySize], n2[mySize];
-    double t1, t2;
-
-    int i, k, m;
-    float vector1[mySize], vector2[mySize];
-
-
-    for (i = 0; i < mySize; i++) {
-        vector1[i] = vector2[i] = i;
-    }
-
-    t1 = mytimer();
-
-    while(k++ < myTimes) {
-        for (i = 0; i < mySize; i++) {
-            n1[i] = vector1[i] * 2;
-            n2[i] = vector2[i] * 2;
-
-            if (n1[i] != n2[i]) {
-                printf("SoftError...\n");
-                exit(0);
-            }
-        }
-    }
-    k = 0;
-    t1 = mytimer() - t1;
-
-    printf("Normal comparison: %f seconds. \n", t1);
-
-    t1 = mytimer();
-    while(k++ < myTimes) {
-        for (i = 0; i < mySize; i+=4) {
-            printf("v1 %f vs v2 %f\n", vector1[i], vector2[i]);
-
-            n1[i] = vector1[i] * 2;
-            n1[i+1] = vector1[i+1] * 2;
-            n1[i+2] = vector1[i+2] * 2;
-            n1[i+3] = vector1[i+3] * 2;
-
-            n2[i] = vector2[i] * 2;
-            n2[i+1] = vector2[i+1] * 2;
-            n2[i+2] = vector2[i+2] * 2;
-            n2[i+3] = vector2[i+3] * 2;
-
-            if (n1[i] != n2[i] ||
-                n1[i+1] != n2[i+1] ||
-                n1[i+2] != n2[i+2] ||
-                n1[i+3] != n2[i+3]){
-                printf("Soft Error\n");
-                exit(0);
-            }
-
-
-        }
-    }
-
-    t1 = mytimer() - t1;
-    printf("Vectorized comparison: %f seconds. \n", t1);
-
-    exit(0);
-}
-
 int main(int argc, char *argv[]) {
-    //testVectorization();
-
     HPC_Sparse_Matrix *sparseMatrix;
 
     double *x, *b, *xexact, *x2, *b2, *xexact2;

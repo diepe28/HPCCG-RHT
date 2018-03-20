@@ -177,7 +177,7 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
     //
     // Fill up send buffer
     //
-    replicate_loop_for(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
+    replicate_loop_producer(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
 
     //
     // Send to each neighbor
@@ -213,7 +213,7 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
 
     for (int m, i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
-        replicate_loop_for(n_recv, m, x_external[m], ;)
+        replicate_loop_producer_(n_recv, m, x_external[m], ;)
         x_external += n_recv;
     }
 
@@ -396,10 +396,14 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     //
     // Fill up send buffer
     //
+#if VAR_GROUPING == 1
+    replicate_loop_consumer(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
+#else
     for (i = 0; i < total_to_be_sent; i++) {
         send_buffer[i] = x[elements_to_send[i]];
         /*-- RHT -- */ RHT_Consume_Check(send_buffer[i]);
     }
+#endif
 
     //
     // Send to each neighbor
@@ -431,10 +435,10 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
 
     delete[] request;
 
-    // In order to replicate correctly, all received data must be received from the consumer
+    // In order to replicate correctly, all received data must be received from the producer
     x_external = (double *) x + local_nrow;
 
-    for (i = 0; i < num_neighbors; i++) {
+    for (int i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
 
         for(int m = 0; m < n_recv; m++){
@@ -443,10 +447,6 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
 
         x_external += n_recv;
     }
-
-//    if(rank == 1) {
-//        printf("It's already good on consumer? X[108000]: %f\n", x[108000]);
-//    }
 
     return;
 }

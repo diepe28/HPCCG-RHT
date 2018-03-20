@@ -76,10 +76,10 @@ int ddot_producer_no_sync (const int n, const double * const x, const double * c
 //    printf("Producer here at %d\n", globalQueue.deqPtr);
     int i;
     if (y == x) {
-        replicate_loop_for(n, i, local_result, local_result += x[i] * x[i])
+        replicate_loop_producer(n, i, local_result, local_result += x[i] * x[i])
     }
     else {
-        replicate_loop_for(n, i, local_result, local_result += x[i] * y[i])
+        replicate_loop_producer(n, i, local_result, local_result += x[i] * y[i])
     }
 
 #ifdef USING_MPI
@@ -146,22 +146,30 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
                    double * const result, double & time_allreduce) {
     double local_result = 0.0;
 //    printf("Consumer here at %d\n", globalQueue.deqPtr);
+
+#if VAR_GROUPING == 1
+    int i;
+    if (y == x) {
+        replicate_loop_consumer(n, i, local_result, local_result += x[i] * x[i])
+    }
+    else {
+        replicate_loop_consumer(n, i, local_result, local_result += x[i] * y[i])
+    }
+
+#else
     if (y == x)
-#ifdef USING_OMP
-#pragma omp parallel for reduction (+:local_result)
-#endif
-        for (int i = 0; i < n; i++) {
-            local_result += x[i] * x[i];
-            /*-- RHT -- */ RHT_Consume_Check(local_result);
-        }
+            for (int i = 0; i < n; i++) {
+        local_result += x[i] * x[i];
+        /*-- RHT -- */ RHT_Consume_Check(local_result);
+    }
     else
-#ifdef USING_OMP
-#pragma omp parallel for reduction (+:local_result)
+    for (int i = 0; i < n; i++) {
+        local_result += x[i] * y[i];
+        /*-- RHT -- */ RHT_Consume_Check(local_result);
+    }
 #endif
-        for (int i = 0; i < n; i++) {
-            local_result += x[i] * y[i];
-            /*-- RHT -- */ RHT_Consume_Check(local_result);
-        }
+
+
 
 #ifdef USING_MPI
     // Use MPI's reduce function to collect all partial sums

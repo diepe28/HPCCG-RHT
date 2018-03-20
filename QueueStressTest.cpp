@@ -28,7 +28,7 @@ static void producer_RHT() {
 
     for(i = 0; i < MAX_ROWS; i++){
 
-        replicate_loop_for(MAX_COLS, j, result, result = i + j)
+        replicate_loop_producer(MAX_COLS, j, result, result = i + j)
 
         //for(j = 0; j < MAX_COLS; j++){
             //result = i + j;
@@ -39,14 +39,14 @@ static void producer_RHT() {
 
 static void test_rht_queue(){
     RHT_Replication_Init(1);
-    int err = pthread_create(consumerThreads[0], NULL, (void *(*)(void *)) consumer_RHT, (void *) NULL);
+    int err = pthread_create(consumerThreads[0], nullptr, (void *(*)(void *)) consumer_RHT, (void *) nullptr);
     if (err) {
         fprintf(stderr, "Failed to create thread %d\n", 1);
         exit(1);
     }
 
     producer_RHT();
-    pthread_join(*consumerThreads[0], NULL);
+    pthread_join(*consumerThreads[0], nullptr);
     RHT_Replication_Finish();
 }
 
@@ -108,7 +108,7 @@ static void test_cameron_queue(){
         consumerThreads[i] = (pthread_t *) malloc(sizeof(pthread_t));
 
 
-    int err = pthread_create(consumerThreads[0], NULL, (void *(*)(void *)) consumer_cameron, (void *) NULL);
+    int err = pthread_create(consumerThreads[0], nullptr, (void *(*)(void *)) consumer_cameron, (void *) nullptr);
     if (err) {
         fprintf(stderr, "Failed to create thread %d\n", 1);
         exit(1);
@@ -116,7 +116,7 @@ static void test_cameron_queue(){
 
     producer_cameron();
 
-    pthread_join(*consumerThreads[0], NULL);
+    pthread_join(*consumerThreads[0], nullptr);
 
     for (i = 0; i < consumerThreadCount; i++)
         free(consumerThreads[i]);

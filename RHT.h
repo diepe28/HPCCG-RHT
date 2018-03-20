@@ -24,30 +24,12 @@ using namespace moodycamel;
 // a cache line is 64 bytes, int -> 4 bytes, double -> 8 bytes
 // so 8 doubles are 64 bytes, 16 doubles are 2 caches lines (for prefetcher)
 #define CACHE_LINE_SIZE 16
-#define RHT_QUEUE_SIZE 1024 // 512 is practically the same
-#define MIN_PTR_DIST 300 // > 200 makes no real diff
-#define ALREADY_CONSUMED -25802.89123
+#define RHT_QUEUE_SIZE 512 // > 512 make no real diff
+#define MIN_PTR_DIST 200 // > 200 makes no real diff
+#define ALREADY_CONSUMED -251802.89123
+#define GROUP_GRANULARITY 5
 
 #define INLINE inline extern __attribute__((always_inline))
-
-typedef int v4si __attribute__ ((vector_size (4*sizeof(int))));
-typedef float v4sf __attribute__ ((vector_size (4*sizeof(float))));
-
-#define INLINE inline extern __attribute__((always_inline))
-    INLINE int equal(v4sf v1, v4sf v2) {
-#if defined(__ALTIVEC__)
-        return vec_all_eq((vector int)v1,(vector int)v2);
-#elif defined(__SSE__)
-        v4sf compare = __builtin_ia32_cmpeqps(v1,v2);
-        return __builtin_ia32_movmskps(compare);
-#else
-        int * s1 = (int*)&v1;
-int * s2 = (int*)&v2;
-return (s1[0] == s2[0] && s1[1] == s2[1]
-&& s1[2] == s2[2] && s1[3] == s2[3]);
-#endif
-    }
-
 
 typedef struct { ;
     volatile int deqPtr;
@@ -66,12 +48,16 @@ typedef struct { ;
     double otherValue, thisValue;
 }RHT_QUEUE;
 
+extern int wait_var;
+extern double wait_calc;
 
 extern RHT_QUEUE globalQueue;
 extern ReaderWriterQueue<double> moodyCamelQueue;
 
-//extern int globalQueue.nextEnq, globalQueue.localDeq, globalQueue.newLimit, globalQueue.diff;
-//extern double globalQueue.otherValue, globalQueue.thisValue;
+extern double groupVarProducer;
+extern double groupVarConsumer;
+extern int groupIncompleteConsumer;
+extern int groupIncompleteProducer;
 
 static pthread_t **consumerThreads;
 static int consumerThreadCount;
@@ -79,9 +65,9 @@ static int consumerThreadCount;
 extern long producerCount;
 extern long consumerCount;
 
-#define EPSILON 0.00001
+#define EPSILON 0.000001
 
-#define fequal(a,b) fabs(a-b) < EPSILON
+#define fequal(a,b) (fabs(a-b) < EPSILON)
 
 /// ((RHT_QUEUE_SIZE-globalQueue.enqPtr + globalQueue.localDeq) % RHT_QUEUE_SIZE)-1; this would be faster and
 /// with the -1 we make sure that the producer never really catches up to the consumer, but it might still happen
@@ -91,60 +77,70 @@ extern long consumerCount;
 /// that each thread can always advance regardless of what the other is doing, when the queue is full the producer
 /// allocates more memory
 
-/// Also, we may try to implement the globalQueue.diff without spinning using globalQueue.deqPtr to avoid cache trashing, like calculate based
-/// solely on the globalQueue.enqPtr the queue entry that should be != than ALREADY_CONSUMED, but then we might me producing less
-/// that can actually be produced, because that entry might not be the last one with ALREADY_CONSUMED
-
-/// TODO the first time it actually needs to sping while is < min(MIN_PTR_DIST, numIters), also the first time we should not yield
-/// the processor without asking, the first time of each do while
-
 #define calc_new_distance(waitValue)                                            \
     globalQueue.localDeq = globalQueue.deqPtr;                                  \
     waitValue = (globalQueue.enqPtr >= globalQueue.localDeq ?                   \
                 (RHT_QUEUE_SIZE - globalQueue.enqPtr) + globalQueue.localDeq:   \
                 globalQueue.localDeq - globalQueue.enqPtr)-1;
 
-#define calc_and_move_normal(operation, value)                          \
-    operation;                                                          \
+#define write_move_normal(value)\
     globalQueue.content[globalQueue.enqPtr] = value;                    \
     globalQueue.enqPtr = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
 
-#define calc_and_move_inverted(operation, value)                        \
-    operation;                                                          \
+#define write_move_inverted(value)                        \
     globalQueue.nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;    \
     globalQueue.content[globalQueue.nextEnq] = ALREADY_CONSUMED;        \
-    asm volatile("" ::: "memory");                                      \
+    /*asm volatile("" ::: "memory");*/                                  \
     globalQueue.content[globalQueue.enqPtr] = value;                    \
     globalQueue.enqPtr = globalQueue.nextEnq;
 
 #if APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
-#define calc_and_move(operation, value) calc_and_move_inverted(operation, value)
+#define write_move(value) write_move_inverted(value)
 #else
-#define calc_and_move(operation, value) calc_and_move_normal(operation, value)
+#define write_move(value) write_move_normal(value)
 #endif
+
+#if VAR_GROUPING == 1
+#define calc_write_move(iterator, operation, value)     \
+    operation;                                          \
+    groupVarProducer += value;                          \
+    if(iterator % GROUP_GRANULARITY == 0){              \
+        write_move(groupVarProducer)                    \
+        groupVarProducer = 0;                           \
+    }
+#else
+#define calc_write_move(iterator, operation, value)     \
+    operation;                                          \
+    write_move(value)
+#endif
+
+
+#define wait_for_thread()   \
+    asm("pause");           \
+    asm("pause");
+
+#define wait_for_thread1()\
+    for(wait_var = wait_calc = 0; wait_var < 1000; wait_calc += (wait_var++ % 10));
 
 // waits until the distance between pointers is > MIN_PTR_DIST
 #define wait_enough_distance(waitValue)         \
     calc_new_distance(waitValue)                \
     if(waitValue < MIN_PTR_DIST){               \
-        /*producerCount++;*/                    \
+        producerCount++;                                                            \
         do{                                     \
-            asm("pause");                       \
-            asm("pause");                       \
+            wait_for_thread()                   \
             calc_new_distance(waitValue)        \
         }while(waitValue < MIN_PTR_DIST);       \
     }
 
-// waits until the nextEnqIndex = enq+MIN_PTR_DIST, is ALREADY_CONSUMED
+// waits until the nextEnqIndex = enq+MIN_PTR_DIST, is ALREADY_CONSUMED, only when the consumer writes
 #define wait_next_enqIndex(waitValue)                                                   \
     waitValue = MIN_PTR_DIST;                                                           \
     globalQueue.nextEnq = (globalQueue.enqPtr + MIN_PTR_DIST) % RHT_QUEUE_SIZE;         \
     if(!fequal(ALREADY_CONSUMED, globalQueue.content[globalQueue.nextEnq])){            \
-        /*producerCount++;*/                                                            \
+        producerCount++;                                                            \
         do{                                                                             \
-            asm("pause");                                                               \
-            asm("pause");                                                               \
-            asm("pause");                                                               \
+            wait_for_thread()                                                           \
         }while(!fequal(ALREADY_CONSUMED, globalQueue.content[globalQueue.nextEnq]));    \
     }
 
@@ -154,20 +150,63 @@ extern long consumerCount;
 #define wait_for_consumer(waitValue) wait_enough_distance(waitValue)
 #endif
 
-#define replicate_loop_for(numIters, iterator, value, operation)    \
-    wait_for_consumer(globalQueue.newLimit)                         \
-    iterator = 0;                                                   \
-    while (globalQueue.newLimit < numIters) {                       \
-        for (; iterator < globalQueue.newLimit; iterator++){        \
-            calc_and_move(operation, value)                         \
-        }                                                           \
-        wait_for_consumer(globalQueue.diff)                         \
-        globalQueue.newLimit += globalQueue.diff;                   \
-    }                                                               \
-    for (; iterator < numIters; iterator++){                        \
-        calc_and_move(operation, value)                             \
+// try with proportional wait
+#define replicate_loop_producer1(numIters, iterator, value, operation)   \
+    wait_for_consumer(globalQueue.newLimit)                             \
+    iterator = 0;                                                       \
+    while (globalQueue.newLimit < numIters) {                           \
+        for (; iterator < globalQueue.newLimit; iterator++){            \
+            if (iterator % 50 == 0) asm("pause");                      \
+            calc_and_move(operation, value)                             \
+        }                                                               \
+        wait_for_consumer(globalQueue.diff)                             \
+        globalQueue.newLimit += globalQueue.diff;                       \
+    }                                                                   \
+    for (; iterator < numIters; iterator++){                            \
+        calc_and_move(operation, value)                                 \
     }
 
+#define replicate_loop_producer_(numIters, iterator, value, operation)  \
+    wait_for_consumer(globalQueue.newLimit)                             \
+    iterator = 0;                                                       \
+    while (globalQueue.newLimit < numIters) {                           \
+        for (; iterator < globalQueue.newLimit; iterator++){            \
+            calc_write_move(iterator, operation, value)                 \
+        }                                                               \
+        wait_for_consumer(globalQueue.diff)                             \
+        globalQueue.newLimit += globalQueue.diff;                       \
+    }                                                                   \
+    for (; iterator < numIters; iterator++){                            \
+        calc_write_move(iterator, operation, value)                     \
+    }
+
+#if VAR_GROUPING == 1
+#define replicate_loop_producer(numIters, iterator, value, operation)   \
+    groupVarProducer = 0;                                               \
+    groupIncompleteProducer = numIters % GROUP_GRANULARITY;             \
+    replicate_loop_producer_(numIters, iterator, value, operation)      \
+    if (groupIncompleteProducer) {                                      \
+        write_move(groupVarProducer)                                    \
+    }
+#else
+    #define replicate_loop_producer(numIters, iterator, value, operation) \
+        replicate_loop_producer_(numIters, iterator, value, operation)
+#endif
+
+#define replicate_loop_consumer(numIters, iterator, value, operation)       \
+    groupIncompleteConsumer = numIters % GROUP_GRANULARITY;                 \
+    for(groupVarConsumer = iterator = 0; iterator < numIters; iterator++){  \
+        operation;                                                          \
+        groupVarConsumer += value;                                          \
+        if(iterator % GROUP_GRANULARITY == 0){                              \
+            RHT_Consume_Check(groupVarConsumer);                            \
+            groupVarConsumer = 0;                                           \
+        }                                                                   \
+    }                                                                       \
+    if (groupIncompleteConsumer) RHT_Consume_Check(groupVarConsumer);
+
+
+// must be inclosed in {}
 #define Report_Soft_Error(consumerValue, producerValue) \
     printf("\n SOFT ERROR DETECTED, Consumer: %f Producer: %f -- PCount: %ld , CCount: %ld\n",  \
             consumerValue, producerValue, producerCount, consumerCount); \
@@ -180,14 +219,14 @@ extern long consumerCount;
 
 #define RHT_Consume_Volatile(volValue)                          \
     while (globalQueue.checkState == 1) asm("pause");           \
-    if (volValue != globalQueue.volatileValue){                 \
+    if (!fequal(volValue, globalQueue.volatileValue)){                 \
         Report_Soft_Error(volValue, globalQueue.volatileValue)  \
     }                                                           \
     globalQueue.checkState = 1;
 
 #define Macro_AlreadyConsumed_Produce(value)                  \
     globalQueue.nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;      \
-    while(globalQueue.content[globalQueue.nextEnq] != ALREADY_CONSUMED)   \
+    while(!fequal(globalQueue.content[globalQueue.nextEnq], ALREADY_CONSUMED))   \
         asm("pause");                                         \
     /*producerCount++;*/                                      \
     globalQueue.content[globalQueue.enqPtr] = value;          \
@@ -196,14 +235,14 @@ extern long consumerCount;
 #define Macro_AlreadyConsumed_Consume_Check(currentValue)                       \
     globalQueue.thisValue = (double) currentValue;                                          \
     globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];                         \
-    if (globalQueue.thisValue != globalQueue.otherValue) {                                              \
+    if (!fequal(globalQueue.thisValue, globalQueue.otherValue)) {                                              \
         /* des-sync of the queue */                                             \
-        if (globalQueue.otherValue == ALREADY_CONSUMED) {                                   \
+        if (fequal(globalQueue.otherValue, ALREADY_CONSUMED)) {                                   \
             /*consumerCount++;*/                                                \
-            do asm("pause"); while (globalQueue.content[globalQueue.deqPtr] == ALREADY_CONSUMED); \
+            do asm("pause"); while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED)); \
             globalQueue.otherValue = globalQueue.content[globalQueue.deqPtr];                 \
                                                                                 \
-            if (globalQueue.thisValue == globalQueue.otherValue){                                       \
+            if (fequal(globalQueue.thisValue, globalQueue.otherValue)){                                       \
                 globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;       \
                 globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;   \
             }else{                                                              \
@@ -220,8 +259,8 @@ extern long consumerCount;
 
 #define Macro_AlreadyConsumed_Consume(value)                         \
     value = globalQueue.content[globalQueue.deqPtr];                 \
-    if (value == ALREADY_CONSUMED) {                                 \
-        do asm("pause"); while (globalQueue.content[globalQueue.deqPtr] == ALREADY_CONSUMED); \
+    if (fequal(value, ALREADY_CONSUMED)) {                                 \
+        do asm("pause"); while (fequal(globalQueue.content[globalQueue.deqPtr],  ALREADY_CONSUMED)); \
         value = globalQueue.content[globalQueue.deqPtr];             \
     }                                                                \
     /*consumerCount++;*/                                             \
@@ -297,7 +336,7 @@ static void RHT_Replication_Finish() {
 static inline void AlreadyConsumed_Produce(double value) {
     globalQueue.nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
 
-    while (globalQueue.content[globalQueue.nextEnq] != ALREADY_CONSUMED) {
+    while (!fequal(globalQueue.content[globalQueue.nextEnq],ALREADY_CONSUMED)) {
         asm("pause");
     }
 
@@ -319,7 +358,7 @@ static inline double AlreadyConsumed_Consume() {
 #endif
         do {
             asm("pause");
-        } while (globalQueue.content[globalQueue.deqPtr] == ALREADY_CONSUMED);
+        } while (fequal(globalQueue.content[globalQueue.deqPtr], ALREADY_CONSUMED));
         value = globalQueue.content[globalQueue.deqPtr];
     }
 
@@ -374,7 +413,7 @@ static inline void AlreadyConsumed_Consume_Check(double currentValue) {
 static inline void UsingPointers_Produce(double value) {
     globalQueue.nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
 
-    while (globalQueue.nextEnq == globalQueue.deqPtr) {
+    while (fequal(globalQueue.nextEnq, globalQueue.deqPtr)) {
         asm("pause");
     }
 
@@ -384,7 +423,7 @@ static inline void UsingPointers_Produce(double value) {
 
 static inline double UsingPointers_Consume() {
 
-    while (globalQueue.deqPtr == globalQueue.enqPtr) {
+    while (fequal(globalQueue.deqPtr, globalQueue.enqPtr)) {
         asm("pause");
     }
 
@@ -394,11 +433,11 @@ static inline double UsingPointers_Consume() {
 }
 
 static inline void UsingPointers_Consume_Check(double currentValue) {
-    while (globalQueue.deqPtr == globalQueue.enqPtr) {
+    while (fequal(globalQueue.deqPtr, globalQueue.enqPtr)) {
         asm("pause");
     }
 
-    if (globalQueue.content[globalQueue.deqPtr] != currentValue) {
+    if (!fequal(globalQueue.content[globalQueue.deqPtr], currentValue)) {
         Report_Soft_Error(currentValue, globalQueue.content[globalQueue.deqPtr])
     }
 
@@ -425,7 +464,7 @@ static inline void NewLimit_Consume_Check(double currentValue) {
 static inline void WriteInvertedNewLimit_Produce(double value) {
     globalQueue.nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
     globalQueue.content[globalQueue.nextEnq] = ALREADY_CONSUMED;
-    asm volatile("" ::: "memory");
+//    asm volatile("" ::: "memory");
     globalQueue.content[globalQueue.enqPtr] = value;
     globalQueue.enqPtr = globalQueue.nextEnq;
 }
@@ -492,7 +531,7 @@ static inline void WriteInvertedNewLimit_Consume_Check(double currentValue) {
 }
 
 static inline void WriteInverted_Produce_Secure(double value){
-    while (globalQueue.content[globalQueue.enqPtr] != ALREADY_CONSUMED) {
+    while (!fequal(globalQueue.content[globalQueue.enqPtr], ALREADY_CONSUMED)) {
         asm("pause");
     }
     globalQueue.nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
@@ -518,7 +557,7 @@ static inline double MoodyCamel_Consume() {
 static inline void MoodyCamel_Consume_Check(double currentValue) {
     double otherValue = MoodyCamel_Consume();
 
-    if (otherValue != currentValue) {
+    if (!fequal(otherValue, currentValue)) {
         Report_Soft_Error(currentValue, otherValue)
     }
 

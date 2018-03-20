@@ -10,6 +10,14 @@ ReaderWriterQueue<double> moodyCamelQueue(256);
 long producerCount;
 long consumerCount;
 
+int wait_var;
+double wait_calc;
+
+double groupVarProducer;
+double groupVarConsumer;
+int groupIncompleteConsumer;
+int groupIncompleteProducer;
+
 //int nextEnq, localDeq, newLimit, diff;
 //// Consumer Local
 //double otherValue, thisValue;
