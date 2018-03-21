@@ -290,7 +290,6 @@ int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
         TOCK(t5);
 #endif
         TICK();
-        //HPC_sparsemv_producer_no_sync(hpc_sparse_matrix, p, Ap);
         HPC_sparsemv_producer_no_sync(hpc_sparse_matrix, p, Ap);
         TOCK(t3); // 2*nnz ops
         double alpha = 0.0;
@@ -311,9 +310,6 @@ int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
         niters = k;
         /*-- RHT -- */ RHT_Produce_Secure(niters);
     }
-
-//    printf("Producer is here\n");
-//    return 0;
 
     /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this
     /// manually we can decide what is worth replicating or not...

@@ -141,12 +141,12 @@ int HPC_sparsemv_producer( HPC_Sparse_Matrix *hpc_sparse_matrix,
 int HPC_sparsemv_consumer( HPC_Sparse_Matrix *hpc_sparse_matrix,
                            const double * const x, double * const y) {
 
-    //printf("nrow in consumer %d: \n", hpc_sparse_matrix->local_nrow);
     const int nrow = (const int) hpc_sparse_matrix->local_nrow;
     /*-- RHT -- */ RHT_Consume_Check(nrow);
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
+
     for (int i = 0; i < nrow; i++) {
         double sum = 0.0;
         /*-- RHT -- */ RHT_Consume_Check(sum);

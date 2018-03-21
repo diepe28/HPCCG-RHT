@@ -18,11 +18,6 @@ double groupVarConsumer;
 int groupIncompleteConsumer;
 int groupIncompleteProducer;
 
-//int nextEnq, localDeq, newLimit, diff;
-//// Consumer Local
-//double otherValue, thisValue;
-
-
 void RHT_Produce_Secure(double value) {
 #if APPROACH_USING_POINTERS == 1
     UsingPointers_Produce(value);

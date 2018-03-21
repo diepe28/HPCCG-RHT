@@ -167,12 +167,9 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
         /// TODO what to with last parameter? is a user def type
         MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
                   MPI_COMM_WORLD, request + i);
-
-
         x_external += n_recv;
         /*-- RHT -- */ RHT_Produce_Secure(*x_external);
     }
-
 
     //
     // Fill up send buffer
@@ -213,7 +210,20 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
 
     for (int m, i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
-        replicate_loop_producer_(n_recv, m, x_external[m], ;)
+
+        m = 0;
+        wait_for_consumer(globalQueue.newLimit)
+        while (globalQueue.newLimit < n_recv) {
+            for (; m < globalQueue.newLimit; m++){
+                write_move(x_external[m])
+            }
+            wait_for_consumer(globalQueue.diff)
+            globalQueue.newLimit += globalQueue.diff;
+        }
+        for (; m < n_recv; m++){
+            write_move(x_external[m])
+        }
+
         x_external += n_recv;
     }
 
@@ -386,12 +396,9 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
         /// TODO what to with last parameter? is a user def type
         /*-- RHT Volatile Not replicated -- */// MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
         // MPI_COMM_WORLD, request + i);
-
-
         x_external += n_recv;
         /*-- RHT -- */ RHT_Consume_Check(*x_external);
     }
-
 
     //
     // Fill up send buffer
