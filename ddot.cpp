@@ -74,12 +74,12 @@ int ddot_producer_no_sync (const int n, const double * const x, const double * c
                    double * const result, double & time_allreduce) {
     double local_result = 0.0;
 //    printf("Producer here at %d\n", globalQueue.deqPtr);
-    int i;
+    int i = 0;
     if (y == x) {
-        replicate_loop_producer(n, i, local_result, local_result += x[i] * x[i])
+        replicate_loop_producer(n, i, local_result, local_result += x[i] * x[i], i++)
     }
     else {
-        replicate_loop_producer(n, i, local_result, local_result += x[i] * y[i])
+        replicate_loop_producer(n, i, local_result, local_result += x[i] * y[i], i++)
     }
 
 #ifdef USING_MPI
@@ -148,12 +148,12 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
 //    printf("Consumer here at %d\n", globalQueue.deqPtr);
 
 #if VAR_GROUPING == 1
-    int i;
+    int i = 0;
     if (y == x) {
-        replicate_loop_consumer(n, i, local_result, local_result += x[i] * x[i])
+        replicate_loop_consumer(n, i, local_result, local_result += x[i] * x[i], i++)
     }
     else {
-        replicate_loop_consumer(n, i, local_result, local_result += x[i] * y[i])
+        replicate_loop_consumer(n, i, local_result, local_result += x[i] * y[i], i++)
     }
 
 #else

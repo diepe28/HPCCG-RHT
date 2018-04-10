@@ -174,7 +174,8 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
     //
     // Fill up send buffer
     //
-    replicate_loop_producer(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
+    i = 0;
+    replicate_loop_producer(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]], i++)
 
     //
     // Send to each neighbor
@@ -404,7 +405,8 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     // Fill up send buffer
     //
 #if VAR_GROUPING == 1
-    replicate_loop_consumer(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
+    i = 0;
+    replicate_loop_consumer(total_to_be_sent, i, send_buffer[i], send_buffer[i] = x[elements_to_send[i]], i++)
 #else
     for (i = 0; i < total_to_be_sent; i++) {
         send_buffer[i] = x[elements_to_send[i]];

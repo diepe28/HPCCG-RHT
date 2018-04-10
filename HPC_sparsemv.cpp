@@ -97,8 +97,8 @@ int HPC_sparsemv_producer_no_sync( HPC_Sparse_Matrix *hpc_sparse_matrix,
         const int cur_nnz = (const int) hpc_sparse_matrix->nnz_in_row[i];
         /*-- RHT -- */ RHT_Produce_Secure(cur_nnz);
 
-        int j;
-        replicate_loop_producer(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]])
+        int j = 0;
+        replicate_loop_producer(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]], j++)
 
         y[i] = sum;
         /*-- RHT -- */ RHT_Produce_Secure(y[i]);
@@ -160,9 +160,9 @@ int HPC_sparsemv_consumer( HPC_Sparse_Matrix *hpc_sparse_matrix,
         const int cur_nnz = (const int) hpc_sparse_matrix->nnz_in_row[i];
         /*-- RHT -- */ RHT_Consume_Check(cur_nnz);
 
-        int j;
+        int j = 0;
 #if VAR_GROUPING == 1
-        replicate_loop_consumer(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]])
+        replicate_loop_consumer(cur_nnz, j, sum, sum += cur_vals[j] * x[cur_inds[j]], j++)
 #else
         for (j = 0; j < cur_nnz; j++) {
             sum += cur_vals[j] * x[cur_inds[j]];

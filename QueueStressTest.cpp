@@ -4,8 +4,6 @@
 
 #include "QueueStressTest.h"
 
-using namespace moodycamel;
-
 static void consumer_RHT(void * args) {
     SetThreadAffinity(2);
 
@@ -26,9 +24,9 @@ static void producer_RHT() {
     int i, j;
     long result;
 
-    for(i = 0; i < MAX_ROWS; i++){
+    for(i = j = 0; i < MAX_ROWS; i++){
 
-        replicate_loop_producer(MAX_COLS, j, result, result = i + j)
+        replicate_loop_producer(MAX_COLS, j, result, result = i + j, j++)
 
         //for(j = 0; j < MAX_COLS; j++){
             //result = i + j;
@@ -54,6 +52,7 @@ static void test_rht_queue(){
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
+/*
 BlockingReaderWriterQueue<double> q;
 ReaderWriterQueue<double> q2(100);
 
@@ -153,3 +152,5 @@ void TestQueues(){
         printf("Cameron -- Miliseconds elapsed %f \n", milliseconds_elapsed);
     }
 }
+
+ */

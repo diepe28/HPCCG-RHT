@@ -1,11 +1,11 @@
-    //
+//
 // Created by diego on 30/10/17.
 //
 
 // -D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 // -D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
 // gcc -O3 -Q --help=optimizers, to list the optimizations enabled
-
+//./toplev.py --long-desc --user mpirun -np 1 /home/diego/Documents/workspace/HPCCG-RHT/cmake-build-debug/HPCCG_RHT 70 70 40 1 1 3
 
 #ifndef HPCCG_1_0_SYNCQUEUE_H
 #define HPCCG_1_0_SYNCQUEUE_H
@@ -16,9 +16,7 @@
 #include <pthread.h>
 #include <zconf.h>
 #include <cmath>
-#include "readerwriterqueue.h"
 
-using namespace moodycamel;
 
 // -------- Macros ----------
 // a cache line is 64 bytes, int -> 4 bytes, double -> 8 bytes
@@ -53,7 +51,6 @@ extern int wait_var;
 extern double wait_calc;
 
 extern RHT_QUEUE globalQueue;
-extern ReaderWriterQueue<double> moodyCamelQueue;
 
 extern double groupVarProducer;
 extern double groupVarConsumer;
@@ -163,43 +160,42 @@ extern long consumerCount;
         calc_and_move(operation, value)                                 \
     }
 
-#define replicate_loop_producer_(numIters, iterator, value, operation)  \
-    wait_for_consumer(globalQueue.newLimit)                             \
-    iterator = 0;                                                       \
-    while (globalQueue.newLimit < numIters) {                           \
-        for (; iterator < globalQueue.newLimit; iterator++){            \
-            calc_write_move(iterator, operation, value)                 \
-        }                                                               \
-        wait_for_consumer(globalQueue.diff)                             \
-        globalQueue.newLimit += globalQueue.diff;                       \
-    }                                                                   \
-    for (; iterator < numIters; iterator++){                            \
-        calc_write_move(iterator, operation, value)                     \
+#define replicate_loop_producer_(numIters, iterator, value, operation, iterOp)  \
+    wait_for_consumer(globalQueue.newLimit)                                     \
+    while (globalQueue.newLimit < numIters) {                                   \
+        for (; iterator < globalQueue.newLimit; iterOp){                        \
+            calc_write_move(iterator, operation, value)                         \
+        }                                                                       \
+        wait_for_consumer(globalQueue.diff)                                     \
+        globalQueue.newLimit += globalQueue.diff;                               \
+    }                                                                           \
+    for (; iterator < numIters; iterOp){                                        \
+        calc_write_move(iterator, operation, value)                             \
     }
 
 #if VAR_GROUPING == 1
-#define replicate_loop_producer(numIters, iterator, value, operation)   \
-    groupVarProducer = 0;                                               \
-    groupIncompleteProducer = numIters % GROUP_GRANULARITY;             \
-    replicate_loop_producer_(numIters, iterator, value, operation)      \
-    if (groupIncompleteProducer) {                                      \
-        write_move(groupVarProducer)                                    \
+#define replicate_loop_producer(numIters, iterator, value, operation, iterOp)   \
+    groupVarProducer = 0;                                                       \
+    groupIncompleteProducer = numIters % GROUP_GRANULARITY;                     \
+    replicate_loop_producer_(numIters, iterator, value, operation, iterOp)      \
+    if (groupIncompleteProducer) {                                              \
+        write_move(groupVarProducer)                                            \
     }
 #else
-    #define replicate_loop_producer(numIters, iterator, value, operation) \
-        replicate_loop_producer_(numIters, iterator, value, operation)
+#define replicate_loop_producer(numIters, iterator, value, operation, iterOp)   \
+        replicate_loop_producer_(numIters, iterator, value, operation, iterOp)
 #endif
 
-#define replicate_loop_consumer(numIters, iterator, value, operation)       \
-    groupIncompleteConsumer = numIters % GROUP_GRANULARITY;                 \
-    for(groupVarConsumer = iterator = 0; iterator < numIters; iterator++){  \
-        operation;                                                          \
-        groupVarConsumer += value;                                          \
-        if(iterator % GROUP_GRANULARITY == 0){                              \
-            RHT_Consume_Check(groupVarConsumer);                            \
-            groupVarConsumer = 0;                                           \
-        }                                                                   \
-    }                                                                       \
+#define replicate_loop_consumer(numIters, iterator, value, operation, iterOp)   \
+    groupIncompleteConsumer = numIters % GROUP_GRANULARITY;                     \
+    for(groupVarConsumer = 0; iterator < numIters; iterOp){                     \
+        operation;                                                              \
+        groupVarConsumer += value;                                              \
+        if(iterator % GROUP_GRANULARITY == 0){                                  \
+            RHT_Consume_Check(groupVarConsumer);                                \
+            groupVarConsumer = 0;                                               \
+        }                                                                       \
+    }                                                                           \
     if (groupIncompleteConsumer) RHT_Consume_Check(groupVarConsumer);
 
 
@@ -295,7 +291,7 @@ static INLINE double AlreadyConsumed_Consume() {
 #endif
     {
 #if COUNT_QUEUE_DESYNC == 1
-         consumerCount++;
+        consumerCount++;
 #endif
         do {
             asm("pause");
@@ -314,7 +310,7 @@ static INLINE void AlreadyConsumed_Consume_Check(double currentValue) {
 #if BRANCH_HINT == 1
     if(__builtin_expect(fequal(currentValue, globalQueue.otherValue),1))
 #else
-     if(fequal(currentValue, globalQueue.otherValue))
+        if(fequal(currentValue, globalQueue.otherValue))
 #endif
     {
         globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
@@ -336,7 +332,7 @@ static INLINE void AlreadyConsumed_Consume_Check(double currentValue) {
 #if BRANCH_HINT == 1
             if (__builtin_expect(fequal(currentValue, globalQueue.otherValue), 1))
 #else
-            if (fequal(currentValue, globalQueue.otherValue))
+                if (fequal(currentValue, globalQueue.otherValue))
 #endif
             {
                 globalQueue.content[globalQueue.deqPtr] = ALREADY_CONSUMED;
@@ -436,7 +432,7 @@ static INLINE void WriteInvertedNewLimit_Consume_Check(double currentValue) {
 #if BRANCH_HINT == 1
     if (__builtin_expect(fequal(currentValue, globalQueue.otherValue), 1))
 #else
-    if (fequal(currentValue, globalQueue.otherValue))
+        if (fequal(currentValue, globalQueue.otherValue))
 #endif
     {
         globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
@@ -459,7 +455,7 @@ static INLINE void WriteInvertedNewLimit_Consume_Check(double currentValue) {
 #if BRANCH_HINT == 1
             if (__builtin_expect(fequal(currentValue, globalQueue.content[globalQueue.deqPtr]), 1))
 #else
-            if (fequal(currentValue, globalQueue.content[globalQueue.deqPtr]))
+                if (fequal(currentValue, globalQueue.content[globalQueue.deqPtr]))
 #endif
             {
                 globalQueue.deqPtr = (globalQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
@@ -481,28 +477,6 @@ static INLINE void WriteInverted_Produce_Secure(double value){
     globalQueue.enqPtr = globalQueue.nextEnq;
 }
 
-// -------- Moody Camel Approach ----------
-
-static INLINE void MoodyCamel_Produce(double value) {
-    moodyCamelQueue.enqueue(value);
-}
-
-static INLINE double MoodyCamel_Consume() {
-    double result;
-    while(!moodyCamelQueue.try_dequeue(result)){
-        asm("pause");
-    }
-    return result;
-}
-
-static INLINE void MoodyCamel_Consume_Check(double currentValue) {
-    double otherValue = MoodyCamel_Consume();
-
-    if (!fequal(otherValue, currentValue)) {
-        Report_Soft_Error(currentValue, otherValue)
-    }
-
-}
 
 //////////// 'PUBLIC' QUEUE METHODS //////////////////
 void RHT_Produce_Secure(double value);
