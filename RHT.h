@@ -162,16 +162,17 @@ extern long consumerCount;
         calc_and_move(operation, value)                                 \
     }
 
+// works for either forward or backward loop for
 #define replicate_loop_producer_(numIters, iterator, iterOp, value, operation)  \
-    wait_for_consumer(globalQueue.newLimit)                                     \
-    while (globalQueue.newLimit < numIters) {                                   \
-        for (; iterator < globalQueue.newLimit; iterOp){                        \
+    wait_for_consumer(globalQueue.diff)                                         \
+    while (globalQueue.diff < numIters) {                                       \
+        numIters -= globalQueue.diff;                                           \
+        for (; globalQueue.diff-- > 0; iterOp){                                 \
             calc_write_move(iterator, operation, value)                         \
         }                                                                       \
         wait_for_consumer(globalQueue.diff)                                     \
-        globalQueue.newLimit += globalQueue.diff;                               \
     }                                                                           \
-    for (; iterator < numIters; iterOp){                                        \
+    for (; numIters-- > 0; iterOp){                                             \
         calc_write_move(iterator, operation, value)                             \
     }
 
@@ -179,8 +180,8 @@ extern long consumerCount;
 #define replicate_loop_producer(sIndex, fIndex, iterator, iterOp, value, operation) \
     iterCountProducer = fIndex - sIndex;                                            \
     groupVarProducer = 0;                                                           \
-    groupIncompleteProducer = iterCountProducer % GROUP_GRANULARITY;                        \
-    replicate_loop_producer_(iterCountProducer, iterator, iterOp, value, operation)         \
+    groupIncompleteProducer = iterCountProducer % GROUP_GRANULARITY;                \
+    replicate_loop_producer_(iterCountProducer, iterator, iterOp, value, operation) \
     if (groupIncompleteProducer) {                                                  \
         write_move(groupVarProducer)                                                \
     }
@@ -192,8 +193,8 @@ extern long consumerCount;
 
 #define replicate_loop_consumer(sIndex, fIndex, iterator, iterOp, value, operation) \
     iterCountConsumer = fIndex - sIndex;                                            \
-    groupIncompleteConsumer = iterCountConsumer % GROUP_GRANULARITY;                        \
-    for(groupVarConsumer = 0; iterator < iterCountConsumer; iterOp){                        \
+    groupIncompleteConsumer = iterCountConsumer % GROUP_GRANULARITY;                \
+    for(groupVarConsumer = 0; iterCountConsumer-- > 0; iterOp){                     \
         operation;                                                                  \
         groupVarConsumer += value;                                                  \
         if(iterator % GROUP_GRANULARITY == 0){                                      \
