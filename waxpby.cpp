@@ -75,11 +75,11 @@ int waxpby_producer_no_sync (const int n, const double alpha, const double * con
                              double * const w) {
     int i = 0;
     if (alpha == 1.0) {
-        replicate_loop_producer(n, i, w[i], w[i] = x[i] + beta * y[i], i++)
+        replicate_loop_producer(0, n, i, i++, w[i], w[i] = x[i] + beta * y[i])
     } else if (beta == 1.0) {
-        replicate_loop_producer(n, i, w[i], w[i] = alpha * x[i] + y[i], i++)
+        replicate_loop_producer(0, n, i, i++, w[i], w[i] = alpha * x[i] + y[i])
     } else {
-        replicate_loop_producer(n, i, w[i], w[i] = alpha * x[i] + beta * y[i], i++)
+        replicate_loop_producer(0, n, i, i++, w[i], w[i] = alpha * x[i] + beta * y[i])
     }
     return (0);
 }
@@ -125,7 +125,7 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
 #pragma omp parallel for
 #endif
 #if VAR_GROUPING == 1
-        replicate_loop_consumer(n, i, w[i], w[i] = x[i] + beta * y[i], i++)
+        replicate_loop_consumer(0, n, i, i++, w[i], w[i] = x[i] + beta * y[i])
 #else
         for (i = 0; i < n; i++){
             w[i] = x[i] + beta * y[i];
@@ -138,7 +138,7 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
 #pragma omp parallel for
 #endif
 #if VAR_GROUPING == 1
-        replicate_loop_consumer(n, i, w[i], w[i] = alpha * x[i] + y[i], i++)
+        replicate_loop_consumer(0, n, i, i++, w[i], w[i] = alpha * x[i] + y[i])
 #else
         for (i = 0; i < n; i++) {
             w[i] = alpha * x[i] + y[i];
@@ -151,7 +151,7 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
 #pragma omp parallel for
 #endif
 #if VAR_GROUPING == 1
-        replicate_loop_consumer(n, i, w[i], w[i] = alpha * x[i] + beta * y[i], i++)
+        replicate_loop_consumer(0, n, i, i++, w[i], w[i] = alpha * x[i] + beta * y[i])
 #else
         for (i = 0; i < n; i++) {
             w[i] = alpha * x[i] + beta * y[i];

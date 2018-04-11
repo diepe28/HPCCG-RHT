@@ -56,6 +56,8 @@ extern double groupVarProducer;
 extern double groupVarConsumer;
 extern int groupIncompleteConsumer;
 extern int groupIncompleteProducer;
+extern __thread long iterCountProducer;
+extern __thread long iterCountConsumer;
 
 static pthread_t **consumerThreads;
 static int consumerThreadCount;
@@ -160,7 +162,7 @@ extern long consumerCount;
         calc_and_move(operation, value)                                 \
     }
 
-#define replicate_loop_producer_(numIters, iterator, value, operation, iterOp)  \
+#define replicate_loop_producer_(numIters, iterator, iterOp, value, operation)  \
     wait_for_consumer(globalQueue.newLimit)                                     \
     while (globalQueue.newLimit < numIters) {                                   \
         for (; iterator < globalQueue.newLimit; iterOp){                        \
@@ -174,28 +176,31 @@ extern long consumerCount;
     }
 
 #if VAR_GROUPING == 1
-#define replicate_loop_producer(numIters, iterator, value, operation, iterOp)   \
-    groupVarProducer = 0;                                                       \
-    groupIncompleteProducer = numIters % GROUP_GRANULARITY;                     \
-    replicate_loop_producer_(numIters, iterator, value, operation, iterOp)      \
-    if (groupIncompleteProducer) {                                              \
-        write_move(groupVarProducer)                                            \
+#define replicate_loop_producer(sIndex, fIndex, iterator, iterOp, value, operation) \
+    iterCountProducer = fIndex - sIndex;                                            \
+    groupVarProducer = 0;                                                           \
+    groupIncompleteProducer = iterCountProducer % GROUP_GRANULARITY;                        \
+    replicate_loop_producer_(iterCountProducer, iterator, iterOp, value, operation)         \
+    if (groupIncompleteProducer) {                                                  \
+        write_move(groupVarProducer)                                                \
     }
 #else
-#define replicate_loop_producer(numIters, iterator, value, operation, iterOp)   \
-        replicate_loop_producer_(numIters, iterator, value, operation, iterOp)
+#define replicate_loop_producer(sIndex, fIndex, iterator, iterOp, value, operation) \
+        iterCountProducer = fIndex - sIndex;                                        \
+        replicate_loop_producer_(iterCountProducer, iterator, iterOp, value, operation)
 #endif
 
-#define replicate_loop_consumer(numIters, iterator, value, operation, iterOp)   \
-    groupIncompleteConsumer = numIters % GROUP_GRANULARITY;                     \
-    for(groupVarConsumer = 0; iterator < numIters; iterOp){                     \
-        operation;                                                              \
-        groupVarConsumer += value;                                              \
-        if(iterator % GROUP_GRANULARITY == 0){                                  \
-            RHT_Consume_Check(groupVarConsumer);                                \
-            groupVarConsumer = 0;                                               \
-        }                                                                       \
-    }                                                                           \
+#define replicate_loop_consumer(sIndex, fIndex, iterator, iterOp, value, operation) \
+    iterCountConsumer = fIndex - sIndex;                                            \
+    groupIncompleteConsumer = iterCountConsumer % GROUP_GRANULARITY;                        \
+    for(groupVarConsumer = 0; iterator < iterCountConsumer; iterOp){                        \
+        operation;                                                                  \
+        groupVarConsumer += value;                                                  \
+        if(iterator % GROUP_GRANULARITY == 0){                                      \
+            RHT_Consume_Check(groupVarConsumer);                                    \
+            groupVarConsumer = 0;                                                   \
+        }                                                                           \
+    }                                                                               \
     if (groupIncompleteConsumer) RHT_Consume_Check(groupVarConsumer);
 
 

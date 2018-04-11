@@ -26,7 +26,7 @@ static void producer_RHT() {
 
     for(i = j = 0; i < MAX_ROWS; i++){
 
-        replicate_loop_producer(MAX_COLS, j, result, result = i + j, j++)
+        replicate_loop_producer(0, MAX_COLS, j, j++, result, result = i + j)
 
         //for(j = 0; j < MAX_COLS; j++){
             //result = i + j;
