@@ -91,8 +91,6 @@ using std::endl;
 
 using namespace moodycamel;
 
-#define NUM_RUNS 10
-
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
 
@@ -124,7 +122,7 @@ int main(int argc, char *argv[]) {
 
     double *x, *b, *xexact, *x2, *b2, *xexact2;
     double norm, d;
-    int ierr = 0;
+    int ierr = 0, numRuns = 1;
     int i, j, iterator;
     int ione = 1;
     double times[7];
@@ -135,8 +133,9 @@ int main(int argc, char *argv[]) {
     double t4min = 0.0;
     double t4max = 0.0;
     double t4avg = 0.0;
-    double timesBaseline[NUM_RUNS], meanBaseline, sdBaseline, producerMean, consumerMean;
-    double timesRHT[NUM_RUNS], meanRHT, sdRHT;
+
+    double meanBaseline, sdBaseline, producerMean, consumerMean;
+    double meanRHT, sdRHT;
 
 #ifdef USING_MPI
 
@@ -165,9 +164,6 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-//    TestQueues();
-//    return 0;
-
     if (argc < 3) { // dperez, original argc != 4
         if (rank == 0)
             cerr << "Usage:" << endl
@@ -178,29 +174,45 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if (argc == 4) { // original number
+    double *timesBaseline, *timesRHT;
+
+    if (argc == 5) { // original number
         nx = atoi(argv[1]);
         ny = atoi(argv[2]);
         nz = atoi(argv[3]);
+        numRuns = atoi(argv[4]);
         replicated = 0;
+        timesBaseline = (double*) malloc(sizeof(double) * numRuns);
     } else {
-        if (argc > 4) { // dperez, for our purposes
+        if (argc > 5) { // dperez, for our purposes
             replicated = 1;
             nx = atoi(argv[1]);
             ny = atoi(argv[2]);
             nz = atoi(argv[3]);
-            numCores = atoi(argv[4]); // should be the same as -np of MPI
+            numRuns = atoi(argv[4]);
+            numCores = atoi(argv[5]); // should be the same as -np of MPI
             coreNumbers = (int *) malloc(sizeof(int) * numCores * 2);
             for (int i = 0; i < numCores * 2; i++) {
                 // Each pair is the producer and consumer core for each MPI process.
                 // Example 2 0 2 1 3: means 2 MPI processes the first one runs on core 0,2 and
                 // the second one is cores 1,3. Depending on the machine config it may be HT or not.
-                coreNumbers[i] = atoi(argv[5 + i]);
+                coreNumbers[i] = atoi(argv[6 + i]);
             }
+            timesRHT = (double*) malloc(sizeof(double) * numRuns);
         } else {
             read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
         }
     }
+
+    printf("\n-------- Will execute %d times the %s version --------\n", numRuns,
+           replicated? "Replicated" : "Non Replicated");
+
+#if DPRINT_OUTPUT == 0
+    printf(" The print output has been disabled, check CMakeList.txt to switch on/off options\n\n");
+#else
+    printf(" The print output is enabled, check CMakeList.txt to switch on/off options\n\n");
+#endif
+
 
     generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
 
@@ -245,7 +257,7 @@ int main(int argc, char *argv[]) {
 
         printf("\n--- REPLICATED VERSION ON RANK %d WITH CORES %d, %d\n", rank, producerCore, consumerCore);
 
-        for (iterator = meanRHT = 0; iterator < NUM_RUNS; iterator++) {
+        for (iterator = meanRHT = 0; iterator < numRuns; iterator++) {
             RHT_Replication_Init(1);
 
             // Parameters that need to be reset every run
@@ -309,19 +321,20 @@ int main(int argc, char *argv[]) {
 #endif
         }
 
-        meanRHT /= NUM_RUNS;
-        consumerMean /= NUM_RUNS;
-        producerMean /= NUM_RUNS;
+        meanRHT /= numRuns;
+        consumerMean /= numRuns;
+        producerMean /= numRuns;
 
-        for (iterator = sdRHT = 0; iterator < NUM_RUNS; iterator++) {
+        for (iterator = sdRHT = 0; iterator < numRuns; iterator++) {
             sdRHT += fabs(meanRHT - timesRHT[iterator]);
         }
 
-        sdRHT /= NUM_RUNS;
+        sdRHT /= numRuns;
         delete x2;
+        delete timesRHT;
     } else {
         // Not replicated (normal) --- Unprotected runs ---
-        for (iterator = meanBaseline = 0; iterator < NUM_RUNS; iterator++) {
+        for (iterator = meanBaseline = 0; iterator < numRuns; iterator++) {
             ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
             timesBaseline[iterator] = times[0];
             meanBaseline += times[0];
@@ -343,13 +356,14 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        meanBaseline /= NUM_RUNS;
+        meanBaseline /= numRuns;
 
-        for (iterator = sdBaseline = 0; iterator < NUM_RUNS; iterator++) {
+        for (iterator = sdBaseline = 0; iterator < numRuns; iterator++) {
             sdBaseline += fabs(meanBaseline - timesBaseline[iterator]);
         }
 
-        sdBaseline /= NUM_RUNS;
+        sdBaseline /= numRuns;
+        delete timesBaseline;
     }
 
     if (ierr) cerr << "Error in call to CG: " << ierr << ".\n" << endl;
