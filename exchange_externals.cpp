@@ -206,7 +206,7 @@ void exchange_externals_producer_no_sync(HPC_Sparse_Matrix * A, const double *x)
 
     delete[] request;
 
-    // In order to replicate correctly, all received data must be sent to the consumer
+    /*-- RHT -- */ // In order to replicate correctly, all received data must be sent to the consumer
     x_external = (double *) x + local_nrow;
 
     for (int m, i = 0; i < num_neighbors; i++) {

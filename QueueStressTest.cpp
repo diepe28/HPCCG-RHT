@@ -35,19 +35,6 @@ static void producer_RHT() {
     }
 }
 
-static void test_rht_queue(){
-    RHT_Replication_Init(1);
-    int err = pthread_create(consumerThreads[0], nullptr, (void *(*)(void *)) consumer_RHT, (void *) nullptr);
-    if (err) {
-        fprintf(stderr, "Failed to create thread %d\n", 1);
-        exit(1);
-    }
-
-    producer_RHT();
-    pthread_join(*consumerThreads[0], nullptr);
-    RHT_Replication_Finish();
-}
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////

@@ -256,8 +256,11 @@ int main(int argc, char *argv[]) {
             consumerParams->b = b;
             consumerParams->x = x2;
 
-            int err = pthread_create(consumerThreads[0], NULL, (void *(*)(void *)) consumer_thread_func,
+            pthread_t consumerThread;
+
+            int err = pthread_create(&consumerThread, NULL, (void *(*)(void *)) consumer_thread_func,
                                      (void *) consumerParams);
+
             if (err) {
                 fprintf(stderr, "Fail creating thread %d\n", 1);
                 exit(1);
@@ -270,7 +273,7 @@ int main(int argc, char *argv[]) {
             ierr = HPCCG_producer(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
 #endif
 
-            /*-- RHT -- */ pthread_join(*consumerThreads[0], NULL);
+            /*-- RHT -- */ pthread_join(consumerThread, NULL);
 
             timesRHT[iterator] = times[0];
             meanRHT += times[0];
@@ -388,6 +391,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    delete coreNumbers;
     return 0;
 }
 
