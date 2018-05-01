@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
         nz = atoi(argv[3]);
         numRuns = atoi(argv[4]);
         replicated = 0;
-        timesBaseline = (double*) malloc(sizeof(double) * numRuns);
+        timesBaseline = (double *) malloc(sizeof(double) * numRuns);
     } else {
         if (argc > 5) { // dperez, for our purposes
             replicated = 1;
@@ -198,14 +198,14 @@ int main(int argc, char *argv[]) {
                 // the second one is cores 1,3. Depending on the machine config it may be HT or not.
                 coreNumbers[i] = atoi(argv[6 + i]);
             }
-            timesRHT = (double*) malloc(sizeof(double) * numRuns);
+            timesRHT = (double *) malloc(sizeof(double) * numRuns);
         } else {
             read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
         }
     }
 
     printf("\n-------- Will execute %d times the %s version --------\n", numRuns,
-           replicated? "Replicated" : "Non Replicated");
+           replicated ? "Replicated" : "Non Replicated");
 
 #if DPRINT_OUTPUT == 0
     printf(" The print output has been disabled, check CMakeList.txt to switch on/off options\n\n");
@@ -213,22 +213,8 @@ int main(int argc, char *argv[]) {
     printf(" The print output is enabled, check CMakeList.txt to switch on/off options\n\n");
 #endif
 
-
-    generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
-
     bool dump_matrix = false;
     if (dump_matrix && size <= 4) dump_matlab_matrix(sparseMatrix, rank);
-
-#ifdef USING_MPI
-    // Transform matrix indices from global to local values.
-    // Define number of columns for the local matrix.
-
-    t6 = mytimer();
-    make_local_matrix(sparseMatrix);
-    t6 = mytimer() - t6;
-    times[6] = t6;
-
-#endif
 
     double t1 = mytimer();   // Initialize it (if needed)
     int niters = 0;
@@ -240,6 +226,7 @@ int main(int argc, char *argv[]) {
         // --- Protected runs ---
         ConsumerParams *consumerParams = (ConsumerParams *) (malloc(sizeof(ConsumerParams)));
         int local_nrow = nx * ny * nz; // This is the size of our subblock
+        pthread_t consumerThread;
 
         x2 = new double[local_nrow];
 
@@ -258,6 +245,26 @@ int main(int argc, char *argv[]) {
         printf("\n--- REPLICATED VERSION ON RANK %d WITH CORES %d, %d\n", rank, producerCore, consumerCore);
 
         for (iterator = meanRHT = 0; iterator < numRuns; iterator++) {
+#if PERCENTAGE_OF_REPLICATION == 1
+            double elapsedAll = 0;
+            struct timespec startAll, endAll;
+
+            //here is where the timer of the all execution starts...
+            if (rank == 0) {
+                clock_gettime(CLOCK_MONOTONIC, &startAll);
+            }
+#endif
+
+            generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
+#ifdef USING_MPI
+            // Transform matrix indices from global to local values.
+            // Define number of columns for the local matrix.
+            t6 = mytimer();
+            make_local_matrix(sparseMatrix);
+            t6 = mytimer() - t6;
+            times[6] = t6;
+#endif
+
             RHT_Replication_Init(1);
 
             // Parameters that need to be reset every run
@@ -268,7 +275,7 @@ int main(int argc, char *argv[]) {
             consumerParams->b = b;
             consumerParams->x = x2;
 
-            pthread_t consumerThread;
+            SetThreadAffinity(producerCore);
 
             int err = pthread_create(&consumerThread, NULL, (void *(*)(void *)) consumer_thread_func,
                                      (void *) consumerParams);
@@ -278,10 +285,21 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
 
-            SetThreadAffinity(producerCore);
             ierr = HPCCG_producer_newLimit(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
 
             /*-- RHT -- */ pthread_join(consumerThread, NULL);
+
+#if PERCENTAGE_OF_REPLICATION == 1
+            //this is where all execution ends
+            if(rank == 0) {
+                clock_gettime(CLOCK_MONOTONIC, &endAll);
+
+                elapsedAll = (endAll.tv_sec - startAll.tv_sec);
+                elapsedAll += (endAll.tv_nsec - startAll.tv_nsec) / 1000000000.0;
+
+                printf("The replication is %.5f %% of all the execution\n", times[0] / elapsedAll);
+            }
+#endif
 
             timesRHT[iterator] = times[0];
             meanRHT += times[0];
@@ -305,16 +323,8 @@ int main(int argc, char *argv[]) {
                 printf(" [%d]: %f seconds, on cores: %d, %d --- ProducerWaiting: %ld, ConsumerWaiting: %ld\n",
                        iterator, timesRHT[iterator], producerCore, consumerCore, producerCount, consumerCount);
             }
+
             freeMemory(sparseMatrix, x, b, xexact);
-            generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
-#ifdef USING_MPI
-            // Transform matrix indices from global to local values.
-            // Define number of columns for the local matrix.
-            t6 = mytimer();
-            make_local_matrix(sparseMatrix);
-            t6 = mytimer() - t6;
-            times[6] = t6;
-#endif
         }
 
         meanRHT /= numRuns;
@@ -331,11 +341,6 @@ int main(int argc, char *argv[]) {
     } else {
         // Not replicated (normal) --- Unprotected runs ---
         for (iterator = meanBaseline = 0; iterator < numRuns; iterator++) {
-            ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
-            timesBaseline[iterator] = times[0];
-            meanBaseline += times[0];
-
-            freeMemory(sparseMatrix, x, b, xexact);
             generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
 
 #ifdef USING_MPI
@@ -346,6 +351,13 @@ int main(int argc, char *argv[]) {
             t6 = mytimer() - t6;
             times[6] = t6;
 #endif
+
+            ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
+            timesBaseline[iterator] = times[0];
+            meanBaseline += times[0];
+
+            freeMemory(sparseMatrix, x, b, xexact);
+
             if (rank == 0) {
                 //PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
                 printf("Baseline[%d]: %f seconds --- \n", iterator, timesBaseline[iterator]);
@@ -397,7 +409,8 @@ int main(int argc, char *argv[]) {
             printf("NEW LIMIT_WRITE_INVERTED");
 #endif
 
-            printf(": %f , SD RHT %f --- PWaiting: %lf, CWaiting: %lf \n\n", meanRHT, sdRHT, producerMean, consumerMean);
+            printf(": %f , SD RHT %f --- PWaiting: %lf, CWaiting: %lf \n\n", meanRHT, sdRHT, producerMean,
+                   consumerMean);
         }
     }
 
