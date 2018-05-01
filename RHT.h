@@ -29,7 +29,6 @@
 #define INLINE inline __attribute__((always_inline))
 #define EPSILON 0.000001
 #define fequal(a,b) (fabs(a-b) < EPSILON)
-#define TEST_NUM_RUNS 10
 
 typedef struct {
     volatile int deqPtr;
@@ -60,7 +59,7 @@ extern int groupIncompleteProducer;
 extern __thread long iterCountProducer;
 extern __thread long iterCountConsumer;
 
-//static pthread_t **consumerThreads;
+static pthread_t **consumerThreads;
 static int consumerThreadCount;
 
 extern long producerCount;
@@ -103,6 +102,8 @@ static int are_both_nan(double pValue, double cValue){
 
 #if APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
 #define write_move(value) write_move_inverted(value)
+#elif APPROACH_USING_POINTERS == 1 || APPROACH_ALREADY_CONSUMED == 1
+#define write_move(value) RHT_Produce_Secure(value);
 #else
 #define write_move(value) write_move_normal(value)
 #endif
@@ -122,9 +123,8 @@ static int are_both_nan(double pValue, double cValue){
 #endif
 
 
-#define wait_for_thread()   \
-    asm("pause");           \
-    asm("pause");
+#define wait_for_thread() asm("pause"); asm("pause");
+
 
 #define wait_for_thread1()\
     for(wait_var = wait_calc = 0; wait_var < 1000; wait_calc += (wait_var++ % 10));
@@ -174,7 +174,8 @@ static int are_both_nan(double pValue, double cValue){
     }
 
 // works for either forward or backward 'for' loops
-#define replicate_loop_producer_(numIters, iterator, iterOp, value, operation)  \
+#if APPROACH_WRITE_INVERTED_NEW_LIMIT == 1 || APPROACH_NEW_LIMIT == 1
+#define replicate_loop_work(numIters, iterator, iterOp, value, operation)  \
     wait_for_consumer(globalQueue.diff)                                         \
     while (globalQueue.diff < numIters) {                                       \
         numIters -= globalQueue.diff;                                           \
@@ -186,20 +187,26 @@ static int are_both_nan(double pValue, double cValue){
     for (; numIters-- > 0; iterOp){                                             \
         calc_write_move(iterator, operation, value)                             \
     }
+#else // we simply re-construct the loop
+#define replicate_loop_work(numIters, iterator, iterOp, value, operation)   \
+    for(; numIters-- > 0; iterOp){                                          \
+        calc_write_move(iterator, operation, value)                         \
+    }
+#endif
 
 #if VAR_GROUPING == 1
 #define replicate_loop_producer(sIndex, fIndex, iterator, iterOp, value, operation) \
     iterCountProducer = fIndex - sIndex;                                            \
     groupVarProducer = 0;                                                           \
     groupIncompleteProducer = iterCountProducer % GROUP_GRANULARITY;                \
-    replicate_loop_producer_(iterCountProducer, iterator, iterOp, value, operation) \
+    replicate_loop_work(iterCountProducer, iterator, iterOp, value, operation)      \
     if (groupIncompleteProducer) {                                                  \
         write_move(groupVarProducer)                                                \
     }
 #else
 #define replicate_loop_producer(sIndex, fIndex, iterator, iterOp, value, operation) \
     iterCountProducer = fIndex - sIndex;                                            \
-    replicate_loop_producer_(iterCountProducer, iterator, iterOp, value, operation)
+    replicate_loop_work(iterCountProducer, iterator, iterOp, value, operation)
 #endif
 
 
@@ -216,7 +223,7 @@ static int are_both_nan(double pValue, double cValue){
         }                                                                           \
     }                                                                               \
     if (groupIncompleteConsumer) RHT_Consume_Check(groupVarConsumer);
-#else
+#else // we simply re construct the loop
 #define replicate_loop_consumer(sIndex, fIndex, iterator, iterOp, value, operation) \
     iterCountConsumer = fIndex - sIndex;                                            \
     for(; iterCountConsumer-- > 0; iterOp){                                         \
@@ -274,7 +281,7 @@ static void createConsumerThreads(int numThreads) {
     //consumerThreads = (pthread_t **) malloc(sizeof(pthread_t *) * consumerThreadCount);
 
     //for (i = 0; i < consumerThreadCount; i++)
-        //consumerThreads[i] = (pthread_t *) malloc(sizeof(pthread_t));
+    //consumerThreads[i] = (pthread_t *) malloc(sizeof(pthread_t));
 }
 
 static void RHT_Replication_Init(int numThreads) {

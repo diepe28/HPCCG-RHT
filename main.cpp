@@ -279,11 +279,7 @@ int main(int argc, char *argv[]) {
             }
 
             SetThreadAffinity(producerCore);
-#if APPROACH_NEW_LIMIT == 1 || APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
             ierr = HPCCG_producer_newLimit(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
-#else
-            ierr = HPCCG_producer(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
-#endif
 
             /*-- RHT -- */ pthread_join(consumerThread, NULL);
 
