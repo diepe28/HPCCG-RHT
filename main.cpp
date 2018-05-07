@@ -204,14 +204,18 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("\n-------- Will execute %d times the %s version --------\n", numRuns,
-           replicated ? "Replicated" : "Non Replicated");
+    if(rank == 0) {
+        printf("\n-------- Will execute %d times the %s version --------\n", numRuns,
+               replicated ? "Replicated" : "Non Replicated");
+    }
 
+    if(rank == 0) {
 #if DPRINT_OUTPUT == 0
-    printf(" The print output has been disabled, check CMakeList.txt to switch on/off options\n\n");
+        printf(" The print output has been disabled, check CMakeList.txt to switch on/off options\n\n");
 #else
-    printf(" The print output is enabled, check CMakeList.txt to switch on/off options\n\n");
+        printf(" The print output is enabled, check CMakeList.txt to switch on/off options\n\n");
 #endif
+    }
 
     bool dump_matrix = false;
     if (dump_matrix && size <= 4) dump_matlab_matrix(sparseMatrix, rank);
@@ -353,24 +357,25 @@ int main(int argc, char *argv[]) {
 #endif
 
             ierr = HPCCG(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
-            timesBaseline[iterator] = times[0];
-            meanBaseline += times[0];
-
-            freeMemory(sparseMatrix, x, b, xexact);
 
             if (rank == 0) {
+                timesBaseline[iterator] = times[0];
+                meanBaseline += times[0];
                 //PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
                 printf("Baseline[%d]: %f seconds --- \n", iterator, timesBaseline[iterator]);
             }
+
+            freeMemory(sparseMatrix, x, b, xexact);
         }
 
-        meanBaseline /= numRuns;
-
-        for (iterator = sdBaseline = 0; iterator < numRuns; iterator++) {
-            sdBaseline += fabs(meanBaseline - timesBaseline[iterator]);
+        if(rank == 0) {
+            meanBaseline /= numRuns;
+            for (iterator = sdBaseline = 0; iterator < numRuns; iterator++) {
+                sdBaseline += fabs(meanBaseline - timesBaseline[iterator]);
+            }
+            sdBaseline /= numRuns;
         }
 
-        sdBaseline /= numRuns;
         delete timesBaseline;
     }
 
