@@ -84,9 +84,12 @@ static int are_both_nan(double pValue, double cValue){
 /// allocates more memory
 
 #define calc_new_distance(waitValue)                                            \
+    waitValue = (RHT_QUEUE_SIZE-(globalQueue.enqPtr+1) + globalQueue.deqPtr) % RHT_QUEUE_SIZE -1;
+
+#define calc_new_distance1(waitValue)                                            \
     globalQueue.localDeq = globalQueue.deqPtr;                                  \
     waitValue = (globalQueue.enqPtr >= globalQueue.localDeq ?                   \
-                (RHT_QUEUE_SIZE - globalQueue.enqPtr) + globalQueue.localDeq:   \
+                RHT_QUEUE_SIZE - globalQueue.enqPtr + globalQueue.localDeq:   \
                 globalQueue.localDeq - globalQueue.enqPtr)-1;
 
 #define write_move_normal(value)                                        \
