@@ -20,34 +20,45 @@ For the normal execution:
 
 For the replicated executions:
     First 3 params define the dimensions of the grid X,Y,Z (check real readme).
+    replicated?,        whether the execution will be replicated or not...
     numNums,            the number of executions
-    numRanks,           (same as mpi ranks)
     coreList,           where each pair of producer, consumer is going to be pinned
 
 
+// My Laptop, 0,2 1,3 are HyperThreads, not replicated
+mpirun -np 1 HPCCG_RHT 80 80 400 0 5
+mpirun -np 2 HPCCG_RHT 80 80 200 0 5
+mpirun -np 4 HPCCG_RHT 80 80 100 0 5
 
-// My Laptop, 0,2 1,3 are HyperThreads
-mpirun -np 1 HPCCG_RHT 80 80 400 5
-mpirun -np 2 HPCCG_RHT 80 80 200 5
-mpirun -np 4 HPCCG_RHT 80 80 100 5
+mpirun -np 1 HPCCG_RHT 80 80 400 1 5 0 1
+mpirun -np 1 HPCCG_RHT 80 80 400 1 5 0 2
 
-mpirun -np 1 HPCCG_RHT 80 80 400 5 1 0 1
-mpirun -np 1 HPCCG_RHT 80 80 400 5 1 0 2
+mpirun -np 2 HPCCG_RHT 80 80 200 1 5 0 1 2 3
+mpirun -np 2 HPCCG_RHT 80 80 200 1 5 0 2 1 3
 
-mpirun -np 2 HPCCG_RHT 80 80 200 5 2 0 1 2 3
-mpirun -np 2 HPCCG_RHT 80 80 200 5 2 0 2 1 3
+
 
 
 // Nantes - Ecotype 0,20 2,22 4,24... are hyperThreads
-mpirun -np 1 HPCCG_RHT 80 80 400 5                                              &&
-mpirun -np 1 HPCCG_RHT 80 80 400 5 1 0 2                                        &&
-mpirun -np 1 HPCCG_RHT 80 80 400 5 1 0 20                                       &&
-mpirun -np 2 HPCCG_RHT 80 80 200 5                                              &&
-mpirun -np 2 HPCCG_RHT 80 80 200 5 2 0 2 4 6                                    &&
-mpirun -np 2 HPCCG_RHT 80 80 200 5 2 0 20 2 22                                  &&
+
+mpirun -np 1 HPCCG_RHT 90 90 800 0 5 0 > salida1rank.txt                                    &&
+mpirun -np 2 HPCCG_RHT 90 90 400 0 5 0 2 > salida2rank.txt                                                   &&
+mpirun -np 4 HPCCG_RHT 90 90 200 0 5 0 2 4 8 > salida4rank.txt                                               &&
+mpirun -np 8 HPCCG_RHT 90 90 100 0 5 0 2 4 6 8 10 12 14  > salida8rank.txt                                    &&
+mpirun -np 10 HPCCG_RHT 90 90 50 0 5 0 2 4 6 8 10 12 14 16 18 > salida10rank.txt                          &&
+mpirun -np 20 HPCCG_RHT 90 90 25 0 5 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 > salida20rank.txt
+
+
+
+mpirun -np 1 HPCCG_RHT 80 80 400 1 5 1 0 2                                        &&
+mpirun -np 1 HPCCG_RHT 80 80 400 1 5 1 0 2                                        &&
+mpirun -np 1 HPCCG_RHT 80 80 400 1 5 1 0 20                                       &&
+mpirun -np 2 HPCCG_RHT 80 80 200 1 5                                              &&
+mpirun -np 2 HPCCG_RHT 80 80 200 1 5 2 0 2 4 6                                    &&
+mpirun -np 2 HPCCG_RHT 80 80 200 1 5 2 0 20 2 22                                  &&
 mpirun -np 4 HPCCG_RHT 80 80 100 5                                              &&
-mpirun -np 4 HPCCG_RHT 80 80 100 5 4 0 2 4 6 8 10 12 14                         &&
-mpirun -np 4 HPCCG_RHT 80 80 100 5 4 0 20 2 22 4 24 6 26                        &&
+mpirun -np 4 HPCCG_RHT 80 80 100 1 5 4 0 2 4 6 8 10 12 14                         &&
+mpirun -np 4 HPCCG_RHT 80 80 100 1 5 4 0 20 2 22 4 24 6 26                        &&
 mpirun -np 8 HPCCG_RHT 80 80 50 5                                               &&
 mpirun -np 8 HPCCG_RHT 80 80 50 5 8 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15       &&
 mpirun -np 8 HPCCG_RHT 80 80 50 5 8 0 20 2 22 4 24 6 26 8 28 10 30 12 32 14 34  &&

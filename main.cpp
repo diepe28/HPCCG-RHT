@@ -185,20 +185,32 @@ int main(int argc, char *argv[]) {
         timesBaseline = (double *) malloc(sizeof(double) * numRuns);
     } else {
         if (argc > 5) { // dperez, for our purposes
-            replicated = 1;
             nx = atoi(argv[1]);
             ny = atoi(argv[2]);
             nz = atoi(argv[3]);
-            numRuns = atoi(argv[4]);
-            numCores = atoi(argv[5]); // should be the same as -np of MPI
-            coreNumbers = (int *) malloc(sizeof(int) * numCores * 2);
-            for (int i = 0; i < numCores * 2; i++) {
-                // Each pair is the producer and consumer core for each MPI process.
-                // Example 2 0 2 1 3: means 2 MPI processes the first one runs on core 0,2 and
-                // the second one is cores 1,3. Depending on the machine config it may be HT or not.
-                coreNumbers[i] = atoi(argv[6 + i]);
+
+            replicated = atoi(argv[4]);
+
+            numRuns = atoi(argv[5]);
+            numCores = size; // MPI size
+
+            if(replicated) {
+                coreNumbers = (int *) malloc(sizeof(int) * numCores * 2);
+                for (int i = 0; i < numCores * 2; i++) {
+                    // Each pair is the producer and consumer core for each MPI process.
+                    // Example 2 0 2 1 3: means 2 MPI processes the first one runs on core 0,2 and
+                    // the second one is cores 1,3. Depending on the machine config it may be HT or not.
+                    coreNumbers[i] = atoi(argv[6 + i]);
+                }
+                timesRHT = (double *) malloc(sizeof(double) * numRuns);
+            }else{
+                coreNumbers = (int *) malloc(sizeof(int) * numCores);
+                for (int i = 0; i < numCores; i++) {
+                    // Core number where each mpi rank will run
+                    coreNumbers[i] = atoi(argv[6 + i]);
+                }
+                timesBaseline = (double *) malloc(sizeof(double) * numRuns);
             }
-            timesRHT = (double *) malloc(sizeof(double) * numRuns);
         } else {
             read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
         }
@@ -344,6 +356,11 @@ int main(int argc, char *argv[]) {
         delete timesRHT;
     } else {
         // Not replicated (normal) --- Unprotected runs ---
+
+        // Assigning core numbers to each MPI rank.
+        int executionCore = coreNumbers[rank];
+        SetThreadAffinity(executionCore);
+
         for (iterator = meanBaseline = 0; iterator < numRuns; iterator++) {
             generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
 
@@ -361,6 +378,7 @@ int main(int argc, char *argv[]) {
             if (rank == 0) {
                 timesBaseline[iterator] = times[0];
                 meanBaseline += times[0];
+
                 //PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
                 printf("Baseline[%d]: %f seconds --- \n", iterator, timesBaseline[iterator]);
             }
