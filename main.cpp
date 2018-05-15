@@ -67,7 +67,7 @@ using std::endl;
 #include <cmath>
 #ifdef USING_MPI
 #include <mpi.h> // If this routine is compiled with -DUSING_MPI
-                 // then include mpi.h
+// then include mpi.h
 #include "make_local_matrix.h" // Also include this function
 #include "readerwriterqueue.h"
 #endif
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     double times[7];
     double t6 = 0.0;
     int nx, ny, nz;
-    int replicated, numCores, producerCore, consumerCore, *coreNumbers;
+    int replicated, numThreads, producerCore, consumerCore, *coreNumbers;
     double t4 = times[4];
     double t4min = 0.0;
     double t4max = 0.0;
@@ -185,32 +185,20 @@ int main(int argc, char *argv[]) {
         timesBaseline = (double *) malloc(sizeof(double) * numRuns);
     } else {
         if (argc > 5) { // dperez, for our purposes
+            replicated = 1;
             nx = atoi(argv[1]);
             ny = atoi(argv[2]);
             nz = atoi(argv[3]);
-
-            replicated = atoi(argv[4]);
-
-            numRuns = atoi(argv[5]);
-            numCores = size; // MPI size
-
-            if(replicated) {
-                coreNumbers = (int *) malloc(sizeof(int) * numCores * 2);
-                for (int i = 0; i < numCores * 2; i++) {
-                    // Each pair is the producer and consumer core for each MPI process.
-                    // Example 2 0 2 1 3: means 2 MPI processes the first one runs on core 0,2 and
-                    // the second one is cores 1,3. Depending on the machine config it may be HT or not.
-                    coreNumbers[i] = atoi(argv[6 + i]);
-                }
-                timesRHT = (double *) malloc(sizeof(double) * numRuns);
-            }else{
-                coreNumbers = (int *) malloc(sizeof(int) * numCores);
-                for (int i = 0; i < numCores; i++) {
-                    // Core number where each mpi rank will run
-                    coreNumbers[i] = atoi(argv[6 + i]);
-                }
-                timesBaseline = (double *) malloc(sizeof(double) * numRuns);
+            numRuns = atoi(argv[4]);
+            numThreads = atoi(argv[5]); // should -np * 2
+            coreNumbers = (int *) malloc(sizeof(int) * numThreads);
+            for (int i = 0; i < numThreads; i++) {
+                // Each pair is the producer and consumer core for each MPI process.
+                // Example 2 0 2 1 3: means 2 MPI processes the first one runs on core 0,2 and
+                // the second one is cores 1,3. Depending on the machine config it may be HT or not.
+                coreNumbers[i] = atoi(argv[6 + i]);
             }
+            timesRHT = (double *) malloc(sizeof(double) * numRuns);
         } else {
             read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
         }
@@ -356,11 +344,6 @@ int main(int argc, char *argv[]) {
         delete timesRHT;
     } else {
         // Not replicated (normal) --- Unprotected runs ---
-
-        // Assigning core numbers to each MPI rank.
-        int executionCore = coreNumbers[rank];
-        SetThreadAffinity(executionCore);
-
         for (iterator = meanBaseline = 0; iterator < numRuns; iterator++) {
             generate_matrix(nx, ny, nz, &sparseMatrix, &x, &b, &xexact);
 
@@ -378,7 +361,6 @@ int main(int argc, char *argv[]) {
             if (rank == 0) {
                 timesBaseline[iterator] = times[0];
                 meanBaseline += times[0];
-
                 //PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
                 printf("Baseline[%d]: %f seconds --- \n", iterator, timesBaseline[iterator]);
             }
@@ -442,7 +424,7 @@ int main(int argc, char *argv[]) {
 }
 
 void PrintSummary(const HPC_Sparse_Matrix *A, const double *times, int nx, int ny, int nz, int size, int rank, int niters,
-             double normr, double t4min, double t4max, double t4avg) {// initialize YAML doc
+                  double normr, double t4min, double t4max, double t4avg) {// initialize YAML doc
 
     if (rank == 0)  // Only PE 0 needs to compute and report timing results
     {

@@ -18,22 +18,24 @@ set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2") #--profile-generate, run tests, recompile with --profile-use
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -lm -DUSING_MPI=1") #just for gcc
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSING_MPI")
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSING_OMP -fopenmp")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -lm") #just for gcc
 
 #print output to cmd
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRINT_OUTPUT=0")
+set(FLAGS_CURRENT "${CMAKE_CXX_FLAGS} -DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_ENQ_INDEX=0") # use with APPROACH_NEW_LIMIT
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DCOUNT_QUEUE_DESYNC=0")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DBRANCH_HINT=1") # should always be true
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPERCENTAGE_OF_REPLICATION=1")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAPPROACH_USING_POINTERS=0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAPPROACH_ALREADY_CONSUMED=1")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAPPROACH_NEW_LIMIT=0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAPPROACH_NEW_ENQ_INDEX=0") # use with APPROACH_NEW_LIMIT
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOUNT_QUEUE_DESYNC=0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBRANCH_HINT=1") # should always be true
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVAR_GROUPING=1")
+# Modify this flags to test different approaches
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_USING_POINTERS=0")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_ALREADY_CONSUMED=0")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_LIMIT=1")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DVAR_GROUPING=1") # it can be used with any of the below approaches
 
 set(SOURCE_FILES main.cpp
         generate_matrix.cpp generate_matrix.h
@@ -51,18 +53,56 @@ set(SOURCE_FILES main.cpp
         YAML_Doc.cpp YAML_Doc.h
         YAML_Element.cpp YAML_Element.h
         RHT.h RHT.cpp atomicops.h readerwriterqueue.h QueueStressTest.cpp QueueStressTest.h)
-add_executable(HPCCG_RHT ${SOURCE_FILES})
 
-target_link_libraries(HPCCG_RHT ${MPI_LIBRARIES})
+function(createExecutable exeName compFlags)
+    add_executable(${exeName} ${SOURCE_FILES})
+    set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS "${compFlags}")
+    target_link_libraries(${exeName} ${MPI_LIBRARIES})
+    target_link_libraries(${exeName} pthread)
+    target_link_libraries(${exeName} m) #math
+    if(MPI_COMPILE_FLAGS)
+        set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+    endif()
 
-target_link_libraries(HPCCG_RHT pthread)
+    if(MPI_LINK_FLAGS)
+        set_target_properties(${exeName} PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}")
+    endif()
+endfunction(createExecutable)
 
-if(MPI_COMPILE_FLAGS)
-    set_target_properties(HPCCG_RHT PROPERTIES
-            COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-endif()
 
-if(MPI_LINK_FLAGS)
-    set_target_properties(HPCCG_RHT PROPERTIES
-            LINK_FLAGS "${MPI_LINK_FLAGS}")
-endif()
+#current, for testing
+createExecutable("HPCCG_RHT" ${FLAGS_CURRENT})
+
+# using pointer flags
+set(FLAGS_USING_POINTERS "-DAPPROACH_USING_POINTERS=1")
+set(FLAGS_USING_POINTERS_VG " ${FLAGS_USING_POINTERS} -DVAR_GROUPING=1")
+
+# using already consumed value flags
+set(FLAGS_ALREADY_CONSUMED "-DAPPROACH_ALREADY_CONSUMED=1")
+set(FLAGS_ALREADY_CONSUMED_VG " ${FLAGS_ALREADY_CONSUMED} -DVAR_GROUPING=1")
+
+# using new limit approach
+set(FLAGS_NEW_LIMIT "-DAPPROACH_NEW_LIMIT=1")
+set(FLAGS_NEW_LIMIT_VG " ${FLAGS_NEW_LIMIT} -DVAR_GROUPING=1")
+
+# using new limit write inverted approach
+set(FLAGS_NEW_LIMIT_INVERTED "-DAPPROACH_WRITE_INVERTED_NEW_LIMIT=1")
+set(FLAGS_NEW_LIMIT_INVERTED_VG " ${FLAGS_NEW_LIMIT_INVERTED} -DVAR_GROUPING=1")
+
+# un comment the next lines to create multiple executables, with different configurations
+#using pointers
+#createExecutable("HPCCG_RHT-UP" ${FLAGS_USING_POINTERS})
+#createExecutable("HPCCG_RHT-UP-VG" ${FLAGS_USING_POINTERS_VG})
+
+# already consumed
+createExecutable("HPCCG_RHT-AC" ${FLAGS_ALREADY_CONSUMED})
+#createExecutable("HPCCG_RHT-AC-VG" ${FLAGS_ALREADY_CONSUMED_VG})
+
+# new limit
+#createExecutable("HPCCG_RHT-NL" ${FLAGS_NEW_LIMIT})
+#createExecutable("HPCCG_RHT-NL-VG" ${FLAGS_NEW_LIMIT_VG})
+
+# new limit inverted
+#createExecutable("HPCCG_RHT-NLI" ${FLAGS_NEW_LIMIT_INVERTED})
+#createExecutable("HPCCG_RHT-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED_VG})
+
