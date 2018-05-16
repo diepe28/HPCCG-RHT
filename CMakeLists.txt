@@ -33,11 +33,11 @@ set(FLAGS_CURRENT "${FLAGS_CURRENT} -DBRANCH_HINT=1") # should always be true
 # These are other approaches of the literature
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_USING_POINTERS=0")
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_ALREADY_CONSUMED=0 ")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_SRMT=0")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_SRMT=1")
 
 # These are our approaches
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_CONSUMER_NO_SYNC=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_LIMIT=1") # new limit includes the consumer no sync
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_LIMIT=0") # new limit includes the consumer no sync
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0")
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DVAR_GROUPING=0") # it can be used with any of the below approaches
 
@@ -75,7 +75,7 @@ endfunction(createExecutable)
 
 
 #current, for testing
-createExecutable("HPCCG_RHT" ${FLAGS_CURRENT})
+#createExecutable("HPCCG-current" ${FLAGS_CURRENT})
 
 # using pointer flags
 set(FLAGS_USING_POINTERS "-DAPPROACH_USING_POINTERS=1")
@@ -85,7 +85,15 @@ set(FLAGS_USING_POINTERS_VG " ${FLAGS_USING_POINTERS} -DVAR_GROUPING=1")
 set(FLAGS_ALREADY_CONSUMED "-DAPPROACH_ALREADY_CONSUMED=1")
 set(FLAGS_ALREADY_CONSUMED_VG " ${FLAGS_ALREADY_CONSUMED} -DVAR_GROUPING=1")
 
-# using new limit approach
+# using SRMT value flags
+set(FLAGS_SRMT "-DAPPROACH_SRMT=1")
+set(FLAGS_SRMT_VG " ${FLAGS_SRMT} -DVAR_GROUPING=1")
+
+# using no sync consumer approachh
+set(FLAGS_NO_SYNC_CONSUMER "-DAPPROACH_CONSUMER_NO_SYNC=1")
+set(FLAGS_NO_SYNC_CONSUMER_VG " ${FLAGS_NO_SYNC_CONSUMER} -DVAR_GROUPING=1")
+
+# using new limit approach (includes the previous)
 set(FLAGS_NEW_LIMIT "-DAPPROACH_NEW_LIMIT=1")
 set(FLAGS_NEW_LIMIT_VG " ${FLAGS_NEW_LIMIT} -DVAR_GROUPING=1")
 
@@ -95,18 +103,28 @@ set(FLAGS_NEW_LIMIT_INVERTED_VG " ${FLAGS_NEW_LIMIT_INVERTED} -DVAR_GROUPING=1")
 
 # un comment the next lines to create multiple executables, with different configurations
 #using pointers
-#createExecutable("HPCCG_RHT-UP" ${FLAGS_USING_POINTERS})
-#createExecutable("HPCCG_RHT-UP-VG" ${FLAGS_USING_POINTERS_VG})
+#createExecutable("HPCCG-UP" ${FLAGS_USING_POINTERS})
+#createExecutable("HPCCG-UP-VG" ${FLAGS_USING_POINTERS_VG})
 
 # already consumed
-createExecutable("HPCCG_RHT-AC" ${FLAGS_ALREADY_CONSUMED})
-#createExecutable("HPCCG_RHT-AC-VG" ${FLAGS_ALREADY_CONSUMED_VG})
+createExecutable("HPCCG-AC" ${FLAGS_ALREADY_CONSUMED})
+#createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED_VG})
+
+# SRMT
+createExecutable("HPCCG-SRMT" ${FLAGS_SRMT})
+#createExecutable("HPCCG-SRMT-VG" ${FLAGS_SRMT_VG})
+
+# no sync consumer
+#createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
+#createExecutable("HPCCG-NSC-VG" ${FLAGS_NO_SYNC_CONSUMER_VG})
 
 # new limit
-#createExecutable("HPCCG_RHT-NL" ${FLAGS_NEW_LIMIT})
-#createExecutable("HPCCG_RHT-NL-VG" ${FLAGS_NEW_LIMIT_VG})
+#createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT})
+#createExecutable("HPCCG-NL-VG" ${FLAGS_NEW_LIMIT_VG})
 
 # new limit inverted
-#createExecutable("HPCCG_RHT-NLI" ${FLAGS_NEW_LIMIT_INVERTED})
-#createExecutable("HPCCG_RHT-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED_VG})
+#createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED})
+#createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED_VG})
 
+# Best approach
+createExecutable("HPCCG-RHT" ${FLAGS_NEW_LIMIT_VG})
