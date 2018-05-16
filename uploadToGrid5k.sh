@@ -5,7 +5,7 @@
 #chmod +x executable, to give permission
 
 #Example of use: ./uploadToGrid5K.sh
-#It assumes is at the root of /miniXyce_RHT repo
+#It assumes is at the root of /HPCCG repo
 
 folder="${PWD##*/}"
 newFolder=$folder-Clean
@@ -30,18 +30,18 @@ echo "Copying files to Lyon..."
 scp $newFolder.tar.gz dperez@access.grid5000.fr:lyon/public
 echo "Files copied to Grid5K Storage"
 echo "Removing zip file"
-rm HPCCG-RHT-Clean.tar.gz
+rm $newFolder.tar.gz
 echo "Success!!"
 
 # remove previous folders
 #rm -f -r nantes/public/HPCCG-RHT-Clean/ && rm -f -r nancy/public/HPCCG-RHT-Clean/
 
 # Inside a node (if tar.gz was copied into public/ with appriate file structure)
-# If name of folder is miniXyce_RHT (my machine)
+# If name of folder is HPCCG-RHT-Clean (my machine)
 #cd public/ && tar -xzvf HPCCG-RHT-Clean.tar.gz && rm HPCCG-RHT-Clean.tar.gz && cd HPCCG-RHT-Clean/cmake-build-debug/ && cmake .. && make
 
-# If name of folder is miniXyce_RHT-master (directly from git)
-#cd public/ && tar -xzvf HPCCG-RHT-Clean-master.tar.gz && rm HPCCG-RHT-Clean-master.tar.gz && cd HPCCG-RHT-Clean/cmake-build-debug/ && cmake .. && make
+# If name of folder is HPCCG-RHT-Clean-master (directly from git)
+#cd public/ && tar -xzvf HPCCG-RHT-master-Clean.tar.gz && rm HPCCG-RHT-master-Clean.tar.gz && cd HPCCG-RHT-master-Clean/cmake-build-debug/ && cmake .. && make
 
 #nancy
 #oarsub -p "cluster='graphite'" -I -l nodes=1,walltime=5
