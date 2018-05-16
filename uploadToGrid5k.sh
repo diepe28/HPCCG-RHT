@@ -10,6 +10,7 @@
 folder="${PWD##*/}"
 newFolder=$folder-Clean
 
+cd ..
 echo Folder Name: $folder $newFolder
 
 cp -a $folder/ ./$newFolder
@@ -32,6 +33,7 @@ echo "Removing zip file"
 rm HPCCG-RHT-Clean.tar.gz
 echo "Success!!"
 
+# remove previous folders
 #rm -f -r nantes/public/HPCCG-RHT-Clean/ && rm -f -r nancy/public/HPCCG-RHT-Clean/
 
 # Inside a node (if tar.gz was copied into public/ with appriate file structure)
