@@ -84,46 +84,11 @@ int waxpby_producer_no_sync (const int n, const double alpha, const double * con
     return (0);
 }
 
-int waxpby_producer (const int n, const double alpha, const double * const x,
-            const double beta, const double * const y,
-            double * const w) {
-    if (alpha == 1.0) {
-#ifdef USING_OMP
-#pragma omp parallel for
-#endif
-        for (int i = 0; i < n; i++){
-            w[i] = x[i] + beta * y[i];
-            /*-- RHT -- */ RHT_Produce(w[i]);
-        }
-    } else if (beta == 1.0) {
-#ifdef USING_OMP
-#pragma omp parallel for
-#endif
-        for (int i = 0; i < n; i++) {
-            w[i] = alpha * x[i] + y[i];
-            /*-- RHT -- */ RHT_Produce(w[i]);
-        }
-    } else {
-#ifdef USING_OMP
-#pragma omp parallel for
-#endif
-        for (int i = 0; i < n; i++) {
-            w[i] = alpha * x[i] + beta * y[i];
-            /*-- RHT -- */ RHT_Produce(w[i]);
-        }
-    }
-
-    return (0);
-}
-
 int waxpby_consumer (const int n, const double alpha, const double * const x,
                      const double beta, const double * const y,
                      double * const w) {
     int i = 0;
     if (alpha == 1.0) {
-#ifdef USING_OMP
-#pragma omp parallel for
-#endif
 #if VAR_GROUPING == 1
         replicate_loop_consumer(0, n, i, i++, w[i], w[i] = x[i] + beta * y[i])
 #else
@@ -134,9 +99,6 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
 #endif
 
     } else if (beta == 1.0) {
-#ifdef USING_OMP
-#pragma omp parallel for
-#endif
 #if VAR_GROUPING == 1
         replicate_loop_consumer(0, n, i, i++, w[i], w[i] = alpha * x[i] + y[i])
 #else
@@ -147,9 +109,6 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
 #endif
 
     } else {
-#ifdef USING_OMP
-#pragma omp parallel for
-#endif
 #if VAR_GROUPING == 1
         replicate_loop_consumer(0, n, i, i++, w[i], w[i] = alpha * x[i] + beta * y[i])
 #else

@@ -40,6 +40,7 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include "ddot.h"
+#include "RHT.h"
 
 int ddot (const int n, const double * const x, const double * const y,
 	  double * const result, double & time_allreduce) {
@@ -73,7 +74,6 @@ int ddot (const int n, const double * const x, const double * const y,
 int ddot_producer_no_sync (const int n, const double * const x, const double * const y,
                    double * const result, double & time_allreduce) {
     double local_result = 0.0;
-//    printf("Producer here at %d\n", globalQueue.deqPtr);
     int i = 0;
     if (y == x) {
         replicate_loop_producer(0, n, i, i++, local_result, local_result += x[i] * x[i])
@@ -87,58 +87,17 @@ int ddot_producer_no_sync (const int n, const double * const x, const double * c
     double t0 = mytimer();
     double global_result = 0.0;
 
-    /*-- RHT Volatile -- */ RHT_Produce_Volatile(global_result)
+    /*-- RHT Volatile -- */ RHT_Produce_Volatile(local_result)
     MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     /*-- RHT -- */ RHT_Produce_Secure(global_result);
 
     *result = global_result;
-
     time_allreduce += mytimer() - t0;
 #else
     *result = local_result;
 #endif
 
     /*-- RHT -- */ RHT_Produce_Secure(*result);
-    return (0);
-}
-
-int ddot_producer (const int n, const double * const x, const double * const y,
-          double * const result, double & time_allreduce) {
-    double local_result = 0.0;
-    if (y == x)
-#ifdef USING_OMP
-#pragma omp parallel for reduction (+:local_result)
-#endif
-        for (int i = 0; i < n; i++) {
-            local_result += x[i] * x[i];
-            /*-- RHT -- */ RHT_Produce(local_result);
-        }
-    else
-#ifdef USING_OMP
-#pragma omp parallel for reduction (+:local_result)
-#endif
-        for (int i = 0; i < n; i++) {
-            local_result += x[i] * y[i];
-            /*-- RHT -- */ RHT_Produce(local_result);
-        }
-
-#ifdef USING_MPI
-    // Use MPI's reduce function to collect all partial sums
-    double t0 = mytimer();
-    double global_result = 0.0;
-
-    /*-- RHT Volatile -- */ RHT_Produce_Volatile(global_result);
-    MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    /*-- RHT -- */ RHT_Produce(global_result);
-
-    *result = global_result;
-
-    time_allreduce += mytimer() - t0;
-#else
-    *result = local_result;
-#endif
-
-    /*-- RHT -- */ RHT_Produce(*result);
     return (0);
 }
 
@@ -158,10 +117,10 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
 
 #else
     if (y == x)
-            for (int i = 0; i < n; i++) {
-        local_result += x[i] * x[i];
-        /*-- RHT -- */ RHT_Consume_Check(local_result);
-    }
+        for (int i = 0; i < n; i++) {
+            local_result += x[i] * x[i];
+            /*-- RHT -- */ RHT_Consume_Check(local_result);
+        }
     else
     for (int i = 0; i < n; i++) {
         local_result += x[i] * y[i];
@@ -169,16 +128,13 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
     }
 #endif
 
-
-
 #ifdef USING_MPI
     // Use MPI's reduce function to collect all partial sums
     double t0 = mytimer();
     double global_result = 0.0;
 
-    /*-- RHT Volatile -- */ RHT_Consume_Volatile(global_result);
+    /*-- RHT Volatile -- */ RHT_Consume_Volatile(local_result);
     /*-- RHT Not replicated -- */// MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-//    RHT_Consume(global_result)
     global_result = RHT_Consume();
 
     *result = global_result;

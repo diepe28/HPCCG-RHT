@@ -167,7 +167,7 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
     return (0);
 }
 
-int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
+int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
                             const double *const b, double *const x,
                             const int max_iter, const double tolerance, int &niters, double &normr,
                             double *times) {
@@ -216,7 +216,6 @@ int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
     if (print_freq < 1) print_freq = 1;
 
     /*-- RHT -- */ RHT_Produce(print_freq);
-
     // p is of length ncols, copy x to p for sparse MV operation
     TICK();
     waxpby_producer_no_sync(nrow, 1.0, x, 0.0, x, p);
@@ -311,6 +310,11 @@ int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
         /*-- RHT -- */ RHT_Produce_Secure(niters);
     }
 
+#if APPROACH_SRMT == 1
+    // done replication but UNIT might not have been reached
+    srmtQueue.enqPtr = srmtQueue.enqPtrDB;
+#endif
+
     /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this
     /// manually we can decide what is worth replicating or not...
     // Store times
@@ -327,166 +331,6 @@ int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
     times[0] = mytimer() - t_begin;  // Total time. All done...
     return (0);
 }
-
-int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
-          const double * const b, double * const x,
-          const int max_iter, const double tolerance, int &niters, double & normr,
-          double * times) {
-    double t_begin = mytimer();  // Start timing right away
-
-    double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;
-    /*-- RHT -- */ RHT_Produce(t0);
-    /*-- RHT -- */ RHT_Produce(t1);
-    /*-- RHT -- */ RHT_Produce(t2);
-    /*-- RHT -- */ RHT_Produce(t3);
-    /*-- RHT -- */ RHT_Produce(t4);
-
-#ifdef USING_MPI
-    double t5 = 0.0;
-    /*-- RHT -- */ RHT_Produce(t5);
-#endif
-
-    int nrow = hpc_sparse_matrix->local_nrow;
-    int ncol = hpc_sparse_matrix->local_ncol;
-    /*-- RHT -- */ RHT_Produce(nrow);
-    /*-- RHT -- */ RHT_Produce(ncol);
-
-    double *r = new double[nrow];
-    double *p = new double[ncol]; // In parallel case, hpc_sparse_matrix is rectangular
-    double *Ap = new double[nrow];
-
-    normr = 0.0;
-    double rtrans = 0.0;
-    double oldrtrans = 0.0;
-    /*-- RHT -- */ RHT_Produce(normr);
-    /*-- RHT -- */ RHT_Produce(rtrans);
-    /*-- RHT -- */ RHT_Produce(oldrtrans);
-
-#ifdef USING_MPI
-    int rank; // Number of MPI processes, My process ID
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    /*-- RHT -- */ RHT_Produce(rank);
-#else
-    int rank = 0; // Serial case (not using MPI)
-#endif
-
-    int print_freq = max_iter / 10;
-    /*-- RHT -- */ RHT_Produce(print_freq);
-
-    if (print_freq > 50) print_freq = 50;
-    if (print_freq < 1) print_freq = 1;
-
-    /*-- RHT -- */ RHT_Produce(print_freq);
-
-    // p is of length ncols, copy x to p for sparse MV operation
-    TICK();
-    waxpby_producer(nrow, 1.0, x, 0.0, x, p);
-    TOCK(t2);
-
-#ifdef USING_MPI
-    TICK(); exchange_externals_producer(hpc_sparse_matrix,p); TOCK(t5);
-#endif
-    TICK();
-    HPC_sparsemv_producer(hpc_sparse_matrix, p, Ap);
-    TOCK(t3);
-
-    TICK();
-    waxpby_producer(nrow, 1.0, b, -1.0, Ap, r);
-    TOCK(t2);
-
-    TICK();
-    ddot_producer(nrow, r, r, &rtrans, t4);
-    TOCK(t1);
-
-    normr = sqrt(rtrans);
-
-    /*-- RHT -- */ RHT_Produce(rank);
-    /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
-#if PRINT_OUTPUT == 1
-    if (rank == 0) cout << "Initial Residual = " << normr << endl;
-#endif
-
-    TICK();
-    waxpby_producer(nrow, 1.0, r, 0.0, r, p);
-    TOCK(t2);
-
-    double beta = 0;
-    int k = 1;
-
-    goto inFor;
-
-    for (; k < max_iter && normr > tolerance; k++) {
-        oldrtrans = rtrans;
-        /*-- RHT -- */ RHT_Produce(print_freq);
-
-        TICK();
-        ddot_producer(nrow, r, r, &rtrans, t4);
-        TOCK(t1);// 2*nrow ops
-
-        beta = rtrans / oldrtrans;
-        /*-- RHT -- */ RHT_Produce(beta);
-
-        TICK();
-        waxpby_producer(nrow, 1.0, r, beta, p, p);
-        TOCK(t2);// 2*nrow ops
-
-      inFor:
-
-        normr = sqrt(rtrans);
-        /*-- RHT -- */ RHT_Produce(k);
-        /*-- RHT -- */ RHT_Produce(rank);
-        /*-- RHT -- */ RHT_Produce(print_freq);
-        /*-- RHT -- */ RHT_Produce(max_iter);
-        /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
-
-#if PRINT_OUTPUT == 1
-        if (rank == 0 && (k % print_freq == 0 || k + 1 == max_iter))
-            cout << "Iteration = " << k << "   Residual = " << normr << endl;
-#endif
-
-#ifdef USING_MPI
-        TICK();
-        exchange_externals_producer(hpc_sparse_matrix, p);
-        TOCK(t5);
-#endif
-        TICK();
-        HPC_sparsemv_producer(hpc_sparse_matrix, p, Ap);
-        TOCK(t3); // 2*nnz ops
-
-        double alpha = 0.0;
-        /*-- RHT -- */ RHT_Produce(alpha);
-
-        TICK();
-        ddot_producer(nrow, p, Ap, &alpha, t4);
-        TOCK(t1); // 2*nrow ops
-
-        alpha = rtrans / alpha;
-        /*-- RHT -- */ RHT_Produce(alpha);
-
-        TICK();
-        waxpby_producer (nrow, 1.0, x, alpha, p, x);// 2*nrow ops
-        waxpby_producer(nrow, 1.0, r, -alpha, Ap, r);
-        TOCK(t2);// 2*nrow ops
-
-        niters = k;
-        /*-- RHT -- */ RHT_Produce(niters);
-    }
-
-    // Store times
-    times[1] = t1; // ddot time
-    times[2] = t2; // waxpby time
-    times[3] = t3; // sparsemv time
-    times[4] = t4; // AllReduce time
-#ifdef USING_MPI
-    times[5] = t5; // exchange boundary time
-#endif
-    delete[] p;
-    delete[] Ap;
-    delete[] r;
-    times[0] = mytimer() - t_begin;  // Total time. All done...
-    return (0);
-}
-
 
 int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
                    const double * const b, double * const x,
@@ -510,7 +354,6 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     int ncol = hpc_sparse_matrix->local_ncol;
     /*-- RHT -- */ RHT_Consume_Check(nrow);
     /*-- RHT -- */ RHT_Consume_Check(ncol);
-
 
     double *r = new double[nrow];
     double *p = new double[ncol]; // In parallel case, hpc_sparse_matrix is rectangular

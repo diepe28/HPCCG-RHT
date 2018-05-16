@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
 
-            ierr = HPCCG_producer_newLimit(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
+            ierr = HPCCG_producer(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
 
             /*-- RHT -- */ pthread_join(consumerThread, NULL);
 
@@ -318,11 +318,15 @@ int main(int argc, char *argv[]) {
 #if APPROACH_USING_POINTERS == 1
                 printf("USING POINTERS");
 #elif APPROACH_ALREADY_CONSUMED == 1
-                printf("ALREADY CONSUMED");
+                printf("BASELINE: ALREADY CONSUMED");
+#elif APPROACH_CONSUMER_NO_SYNC == 1
+                printf("CONSUMER NO SYNC + ALREADY CONSUMED");
 #elif APPROACH_NEW_LIMIT == 1
-                printf("NEW LIMIT & ALREADY CONSUMED");
+                printf("NEW LIMIT + CONSUMER NO SYNC");
 #elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
-                printf("NEW LIMIT_WRITE_INVERTED");
+                printf("NEW LIMIT + WRITE_INVERTED");
+#elif APPROACH_SRMT == 1
+                printf("BASELINE: SRMT ");
 #endif
                 printf(" [%d]: %f seconds, on cores: %d, %d --- ProducerWaiting: %ld, ConsumerWaiting: %ld\n",
                        iterator, timesRHT[iterator], producerCore, consumerCore, producerCount, consumerCount);

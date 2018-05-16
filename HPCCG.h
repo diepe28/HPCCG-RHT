@@ -57,11 +57,7 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
 // xnot = 0
 // niters is the number of iterations
 
-int HPCCG_producer(HPC_Sparse_Matrix * hpc_sparse_matrix,
-		  const double * const b, double * const x,
-		  const int max_iter, const double tolerance, int & niters, double & normr, double * times);
-
-int HPCCG_producer_newLimit(HPC_Sparse_Matrix *hpc_sparse_matrix,
+int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
                             const double *const b, double *const x,
                             const int max_iter, const double tolerance, int &niters, double &normr, double *times);
 

@@ -30,12 +30,16 @@ set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_ENQ_INDEX=0") # use with APPR
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DCOUNT_QUEUE_DESYNC=0")
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DBRANCH_HINT=1") # should always be true
 
-# Modify this flags to test different approaches
+# These are other approaches of the literature
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_USING_POINTERS=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_ALREADY_CONSUMED=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_LIMIT=1")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_ALREADY_CONSUMED=0 ")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_SRMT=0")
+
+# These are our approaches
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_CONSUMER_NO_SYNC=0")
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_LIMIT=1") # new limit includes the consumer no sync
 set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DVAR_GROUPING=1") # it can be used with any of the below approaches
+set(FLAGS_CURRENT "${FLAGS_CURRENT} -DVAR_GROUPING=0") # it can be used with any of the below approaches
 
 set(SOURCE_FILES main.cpp
         generate_matrix.cpp generate_matrix.h
