@@ -26,20 +26,20 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -lm") #just for gcc
 
 #print output to cmd
 set(FLAGS_CURRENT "${CMAKE_CXX_FLAGS} -DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_ENQ_INDEX=0") # use with APPROACH_NEW_LIMIT
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DCOUNT_QUEUE_DESYNC=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DBRANCH_HINT=1") # should always be true
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_ENQ_INDEX=0") # use with APPROACH_NEW_LIMIT
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DCOUNT_QUEUE_DESYNC=0")
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DBRANCH_HINT=1") # should always be true
 
-# These are other approaches of the literature
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_USING_POINTERS=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_ALREADY_CONSUMED=0 ")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_SRMT=1")
+# # These are other approaches of the literature
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_USING_POINTERS=0")
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_ALREADY_CONSUMED=0 ")
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_SRMT=1")
 
-# These are our approaches
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_CONSUMER_NO_SYNC=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_LIMIT=0") # new limit includes the consumer no sync
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0")
-set(FLAGS_CURRENT "${FLAGS_CURRENT} -DVAR_GROUPING=0") # it can be used with any of the below approaches
+# # These are our approaches
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_CONSUMER_NO_SYNC=0")
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_LIMIT=0") # new limit includes the consumer no sync
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0")
+# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DVAR_GROUPING=0") # it can be used with any of the below approaches
 
 set(SOURCE_FILES main.cpp
         generate_matrix.cpp generate_matrix.h
@@ -58,9 +58,13 @@ set(SOURCE_FILES main.cpp
         YAML_Element.cpp YAML_Element.h
         RHT.h RHT.cpp atomicops.h readerwriterqueue.h QueueStressTest.cpp QueueStressTest.h)
 
-function(createExecutable exeName compFlags)
+function(createExecutable exeName compFlags varFlag)
     add_executable(${exeName} ${SOURCE_FILES})
     set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS "${compFlags}")
+    set_property(TARGET ${exeName} APPEND PROPERTY COMPILE_DEFINITIONS ${compFlags})
+    if(varFlag)
+      set_property(TARGET ${exeName} APPEND PROPERTY COMPILE_DEFINITIONS "VAR_GROUPING=1")
+    endif()
     target_link_libraries(${exeName} ${MPI_LIBRARIES})
     target_link_libraries(${exeName} pthread)
     target_link_libraries(${exeName} m) #math
@@ -78,53 +82,57 @@ endfunction(createExecutable)
 #createExecutable("HPCCG-current" ${FLAGS_CURRENT})
 
 # using pointer flags
-set(FLAGS_USING_POINTERS "-DAPPROACH_USING_POINTERS=1")
-set(FLAGS_USING_POINTERS_VG " ${FLAGS_USING_POINTERS} -DVAR_GROUPING=1")
+set(FLAGS_USING_POINTERS "APPROACH_USING_POINTERS=1")
+set(FLAGS_USING_POINTERS_VG "${FLAGS_USING_POINTERS};VAR_GROUPING=1")
 
 # using already consumed value flags
-set(FLAGS_ALREADY_CONSUMED "-DAPPROACH_ALREADY_CONSUMED=1")
-set(FLAGS_ALREADY_CONSUMED_VG " ${FLAGS_ALREADY_CONSUMED} -DVAR_GROUPING=1")
+set(FLAGS_ALREADY_CONSUMED "APPROACH_ALREADY_CONSUMED=1")
+set(FLAGS_ALREADY_CONSUMED_VG "${FLAGS_ALREADY_CONSUMED};VAR_GROUPING=1")
+#set(FLAGS_ALREADY_CONSUMED_VG "APPROACH_ALREADY_CONSUMED=1;VAR_GROUPING=1")
 
 # using SRMT value flags
-set(FLAGS_SRMT "-DAPPROACH_SRMT=1")
-set(FLAGS_SRMT_VG " ${FLAGS_SRMT} -DVAR_GROUPING=1")
+set(FLAGS_SRMT "APPROACH_SRMT=1")
+set(FLAGS_SRMT_VG "${FLAGS_SRMT};VAR_GROUPING=1")
 
 # using no sync consumer approachh
-set(FLAGS_NO_SYNC_CONSUMER "-DAPPROACH_CONSUMER_NO_SYNC=1")
-set(FLAGS_NO_SYNC_CONSUMER_VG " ${FLAGS_NO_SYNC_CONSUMER} -DVAR_GROUPING=1")
+set(FLAGS_NO_SYNC_CONSUMER "APPROACH_CONSUMER_NO_SYNC=1")
+set(FLAGS_NO_SYNC_CONSUMER_VG "${FLAGS_NO_SYNC_CONSUMER};VAR_GROUPING=1")
 
 # using new limit approach (includes the previous)
-set(FLAGS_NEW_LIMIT "-DAPPROACH_NEW_LIMIT=1")
-set(FLAGS_NEW_LIMIT_VG " ${FLAGS_NEW_LIMIT} -DVAR_GROUPING=1")
+set(FLAGS_NEW_LIMIT "APPROACH_NEW_LIMIT=1")
+set(FLAGS_NEW_LIMIT_VG "${FLAGS_NEW_LIMIT};VAR_GROUPING=1")
 
 # using new limit write inverted approach
-set(FLAGS_NEW_LIMIT_INVERTED "-DAPPROACH_WRITE_INVERTED_NEW_LIMIT=1")
-set(FLAGS_NEW_LIMIT_INVERTED_VG " ${FLAGS_NEW_LIMIT_INVERTED} -DVAR_GROUPING=1")
+set(FLAGS_NEW_LIMIT_INVERTED "APPROACH_WRITE_INVERTED_NEW_LIMIT=1")
+set(FLAGS_NEW_LIMIT_INVERTED_VG "${FLAGS_NEW_LIMIT_INVERTED};VAR_GROUPING=1")
 
 # un comment the next lines to create multiple executables, with different configurations
 #using pointers
 #createExecutable("HPCCG-UP" ${FLAGS_USING_POINTERS})
 #createExecutable("HPCCG-UP-VG" ${FLAGS_USING_POINTERS_VG})
 
+
+
 # already consumed
-createExecutable("HPCCG-AC" ${FLAGS_ALREADY_CONSUMED})
-#createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED_VG})
+createExecutable("HPCCG-AC" ${FLAGS_ALREADY_CONSUMED} 0)
+createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED} 1)
 
 # SRMT
-createExecutable("HPCCG-SRMT" ${FLAGS_SRMT})
-#createExecutable("HPCCG-SRMT-VG" ${FLAGS_SRMT_VG})
+ createExecutable("HPCCG-SRMT" ${FLAGS_SRMT} 0)
+createExecutable("HPCCG-SRMT-VG" ${FLAGS_SRMT} 1)
 
-# no sync consumer
-#createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
-#createExecutable("HPCCG-NSC-VG" ${FLAGS_NO_SYNC_CONSUMER_VG})
+# # no sync consumer
+# #createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
+# #createExecutable("HPCCG-NSC-VG" ${FLAGS_NO_SYNC_CONSUMER_VG})
 
-# new limit
-#createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT})
-#createExecutable("HPCCG-NL-VG" ${FLAGS_NEW_LIMIT_VG})
+# # new limit
+# #createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT})
+# #createExecutable("HPCCG-NL-VG" ${FLAGS_NEW_LIMIT_VG})
 
-# new limit inverted
-#createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED})
-#createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED_VG})
+# # new limit inverted
+# #createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED})
+# #createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED_VG})
 
-# Best approach
-createExecutable("HPCCG-RHT" ${FLAGS_NEW_LIMIT_VG})
+# # Best approach
+createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT} 0)
+createExecutable("HPCCG-RHT" ${FLAGS_NEW_LIMIT} 1)

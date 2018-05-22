@@ -26,12 +26,14 @@ echo "zip file created"
 #scp $newFolder.tar.gz dperez@access.grid5000.fr:nancy/public
 #echo "Copying files to Nantes..."
 #scp $newFolder.tar.gz dperez@access.grid5000.fr:nantes/public
-echo "Copying files to Lyon..."
-scp $newFolder.tar.gz dperez@access.grid5000.fr:lyon/public
-echo "Files copied to Grid5K Storage"
-echo "Removing zip file"
-rm $newFolder.tar.gz
-echo "Success!!"
+
+
+# echo "Copying files to Lyon..."
+# scp $newFolder.tar.gz tropars@access.grid5000.fr:lyon/workdir/soft_error
+# echo "Files copied to Grid5K Storage"
+# echo "Removing zip file"
+# rm $newFolder.tar.gz
+# echo "Success!!"
 
 # remove previous folders
 #rm -f -r nantes/public/HPCCG-RHT-Clean/ && rm -f -r nancy/public/HPCCG-RHT-Clean/
