@@ -86,8 +86,8 @@ mpirun -np 32 HPCCG-RHT 80 80 25 5 > hpccg-norep-40rank.txt
 mpirun -np 1 HPCCG-AC 80 80 800 5 2 0 2 > hpccg-rep-ac-1rank-noHT.txt   &&
 mpirun -np 1 HPCCG-AC 80 80 800 5 2 0 16 > hpccg-rep-ac-1rank-HT.txt  &&
 
-mpirun -np 1 HPCCG-SRMT 80 80 800 5 2 0 2 > hpccg-rep-srmt-1rank-noHT.txt   &&
-mpirun -np 1 HPCCG-SRMT 80 80 800 5 2 0 16 > hpccg-rep-srmt-1rank-HT.txt  &&
+mpirun -np 1 HPCCG-WANG 80 80 800 5 2 0 2 > hpccg-rep-wang-1rank-noHT.txt   &&
+mpirun -np 1 HPCCG-WANG 80 80 800 5 2 0 16 > hpccg-rep-wang-1rank-HT.txt  &&
 
 mpirun -np 1 HPCCG-RHT 80 80 800 5 2 0 2 > hpccg-rep-rht-1rank-noHT.txt   &&
 mpirun -np 1 HPCCG-RHT 80 80 800 5 2 0 16 > hpccg-rep-rht-1rank-HT.txt  
@@ -96,8 +96,8 @@ mpirun -np 1 HPCCG-RHT 80 80 800 5 2 0 16 > hpccg-rep-rht-1rank-HT.txt
 mpirun -np 16 HPCCG-AC 80 80 50 5 32 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15 16 18 20 22 24 26 28 30 17 19 21 23 25 27 29 31 > hpccg-rep-ac-20rank-noHT.txt            &&
 mpirun -np 16 HPCCG-AC 80 80 50 5 32 0 16 2 18 4 20 6 22 8 24 10 26 12 28 14 30 1 17 3 19 5 21 7 23 9 25 11 27 13 29 15 31 > hpccg-rep-ac-20rank-HT.txt            &&
 
-mpirun -np 16 HPCCG-SRMT 80 80 50 5 32 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15 16 18 20 22 24 26 28 30 17 19 21 23 25 27 29 31 > hpccg-rep-srmt-20rank-noHT.txt            &&
-mpirun -np 16 HPCCG-SRMT 80 80 50 5 32 0 16 2 18 4 20 6 22 8 24 10 26 12 28 14 30 1 17 3 19 5 21 7 23 9 25 11 27 13 29 15 31 > hpccg-rep-srmt-20rank-HT.txt            &&
+mpirun -np 16 HPCCG-WANG 80 80 50 5 32 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15 16 18 20 22 24 26 28 30 17 19 21 23 25 27 29 31 > hpccg-rep-wang-20rank-noHT.txt            &&
+mpirun -np 16 HPCCG-WANG 80 80 50 5 32 0 16 2 18 4 20 6 22 8 24 10 26 12 28 14 30 1 17 3 19 5 21 7 23 9 25 11 27 13 29 15 31 > hpccg-rep-wang-20rank-HT.txt            &&
 
 mpirun -np 16 HPCCG-RHT 80 80 50 5 32 0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15 16 18 20 22 24 26 28 30 17 19 21 23 25 27 29 31 > hpccg-rep-rht-20rank-noHT.txt            &&
 mpirun -np 16 HPCCG-RHT 80 80 50 5 32 0 16 2 18 4 20 6 22 8 24 10 26 12 28 14 30 1 17 3 19 5 21 7 23 9 25 11 27 13 29 15 31 > hpccg-rep-rht-20rank-HT.txt

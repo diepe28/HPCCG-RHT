@@ -70,9 +70,9 @@ int waxpby (const int n, const double alpha, const double * const x,
     return (0);
 }
 
-int waxpby_producer_no_sync (const int n, const double alpha, const double * const x,
-                             const double beta, const double * const y,
-                             double * const w) {
+int waxpby_producer(const int n, const double alpha, const double *const x,
+                    const double beta, const double *const y,
+                    double *const w) {
     int i = 0;
     if (alpha == 1.0) {
         replicate_loop_producer(0, n, i, i++, w[i], w[i] = x[i] + beta * y[i])

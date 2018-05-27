@@ -218,35 +218,36 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
     /*-- RHT -- */ RHT_Produce(print_freq);
     // p is of length ncols, copy x to p for sparse MV operation
     TICK();
-    waxpby_producer_no_sync(nrow, 1.0, x, 0.0, x, p);
+    waxpby_producer(nrow, 1.0, x, 0.0, x, p);
     TOCK(t2);
 
 #ifdef USING_MPI
-    TICK(); exchange_externals_producer_no_sync(hpc_sparse_matrix,p); TOCK(t5);
+    TICK();
+    exchange_externals_producer(hpc_sparse_matrix, p); TOCK(t5);
 #endif
 
     TICK();
-    HPC_sparsemv_producer_no_sync(hpc_sparse_matrix, p, Ap);
+    HPC_sparsemv_producer(hpc_sparse_matrix, p, Ap);
     TOCK(t3);
 
     TICK();
-    waxpby_producer_no_sync(nrow, 1.0, b, -1.0, Ap, r);
+    waxpby_producer(nrow, 1.0, b, -1.0, Ap, r);
     TOCK(t2);
 
     TICK();
-    ddot_producer_no_sync(nrow, r, r, &rtrans, t4);
+    ddot_producer(nrow, r, r, &rtrans, t4);
     TOCK(t1);
 
     normr = sqrt(rtrans);
 
-    /*-- RHT -- */ RHT_Produce_Secure(rank);
+    /*-- RHT -- */ RHT_Produce(rank);
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
 #if PRINT_OUTPUT == 1
     if (rank == 0) cout << "Initial Residual = " << normr << endl;
 #endif
 
     TICK();
-    waxpby_producer_no_sync(nrow, 1.0, r, 0.0, r, p);
+    waxpby_producer(nrow, 1.0, r, 0.0, r, p);
     TOCK(t2);
 
     double beta = 0;
@@ -255,26 +256,26 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
     goto inFor;
     for (; k < max_iter && normr > tolerance; k++) {
         oldrtrans = rtrans;
-        /*-- RHT -- */ RHT_Produce_Secure(print_freq);
+        /*-- RHT -- */ RHT_Produce(print_freq);
 
         TICK();
-        ddot_producer_no_sync(nrow, r, r, &rtrans, t4);
+        ddot_producer(nrow, r, r, &rtrans, t4);
         TOCK(t1);// 2*nrow ops
 
         beta = rtrans / oldrtrans;
         /*-- RHT -- */ RHT_Produce(beta);
 
         TICK();
-        waxpby_producer_no_sync(nrow, 1.0, r, beta, p, p);
+        waxpby_producer(nrow, 1.0, r, beta, p, p);
         TOCK(t2);// 2*nrow ops
 
         inFor:
 
         normr = sqrt(rtrans);
-        /*-- RHT -- */ RHT_Produce_Secure(k);
-        /*-- RHT -- */ RHT_Produce_Secure(rank);
-        /*-- RHT -- */ RHT_Produce_Secure(print_freq);
-        /*-- RHT -- */ RHT_Produce_Secure(max_iter);
+        /*-- RHT -- */ RHT_Produce(k);
+        /*-- RHT -- */ RHT_Produce(rank);
+        /*-- RHT -- */ RHT_Produce(print_freq);
+        /*-- RHT -- */ RHT_Produce(max_iter);
         /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
 
 #if PRINT_OUTPUT == 1
@@ -285,34 +286,34 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 
 #ifdef USING_MPI
         TICK();
-        exchange_externals_producer_no_sync(hpc_sparse_matrix, p);
+        exchange_externals_producer(hpc_sparse_matrix, p);
         TOCK(t5);
 #endif
         TICK();
-        HPC_sparsemv_producer_no_sync(hpc_sparse_matrix, p, Ap);
+        HPC_sparsemv_producer(hpc_sparse_matrix, p, Ap);
         TOCK(t3); // 2*nnz ops
         double alpha = 0.0;
-        /*-- RHT -- */ RHT_Produce_Secure(alpha);
+        /*-- RHT -- */ RHT_Produce(alpha);
 
         TICK();
-        ddot_producer_no_sync(nrow, p, Ap, &alpha, t4);
+        ddot_producer(nrow, p, Ap, &alpha, t4);
         TOCK(t1); // 2*nrow ops
 
         alpha = rtrans / alpha;
         /*-- RHT -- */ RHT_Produce(alpha);
 
         TICK();
-        waxpby_producer_no_sync(nrow, 1.0, x, alpha, p, x);// 2*nrow ops
-        waxpby_producer_no_sync(nrow, 1.0, r, -alpha, Ap, r);
+        waxpby_producer(nrow, 1.0, x, alpha, p, x);// 2*nrow ops
+        waxpby_producer(nrow, 1.0, r, -alpha, Ap, r);
         TOCK(t2);// 2*nrow ops
 
         niters = k;
-        /*-- RHT -- */ RHT_Produce_Secure(niters);
+        /*-- RHT -- */ RHT_Produce(niters);
     }
 
-#if APPROACH_SRMT == 1
+#if APPROACH_WANG == 1
     // done replication but UNIT might not have been reached
-    srmtQueue.enqPtr = srmtQueue.enqPtrDB;
+    wangQueue.enqPtr = wangQueue.enqPtrDB;
 #endif
 
     /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this

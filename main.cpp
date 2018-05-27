@@ -325,8 +325,8 @@ int main(int argc, char *argv[]) {
                 printf("NEW LIMIT + CONSUMER NO SYNC");
 #elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
                 printf("NEW LIMIT + WRITE_INVERTED");
-#elif APPROACH_SRMT == 1
-                printf("BASELINE: SRMT ");
+#elif APPROACH_WANG == 1
+                printf("BASELINE: WANG ");
 #endif
                 printf(" [%d]: %f seconds, on cores: %d, %d --- ProducerWaiting: %ld, ConsumerWaiting: %ld\n",
                        iterator, timesRHT[iterator], producerCore, consumerCore, producerCount, consumerCount);

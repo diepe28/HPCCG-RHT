@@ -30,8 +30,8 @@
 int waxpby (const int n, const double alpha, const double * const x,
 	    const double beta, const double * const y, double * const w);
 
-int waxpby_producer_no_sync (const int n, const double alpha, const double * const x,
-					 const double beta, const double * const y, double * const w);
+int waxpby_producer(const int n, const double alpha, const double *const x,
+					const double beta, const double *const y, double *const w);
 
 int waxpby_consumer (const int n, const double alpha, const double * const x,
 			const double beta, const double * const y, double * const w);

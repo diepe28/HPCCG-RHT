@@ -71,8 +71,8 @@ int ddot (const int n, const double * const x, const double * const y,
     return (0);
 }
 
-int ddot_producer_no_sync (const int n, const double * const x, const double * const y,
-                   double * const result, double & time_allreduce) {
+int ddot_producer(const int n, const double *const x, const double *const y,
+                  double *const result, double &time_allreduce) {
     double local_result = 0.0;
     int i = 0;
     if (y == x) {
@@ -89,7 +89,7 @@ int ddot_producer_no_sync (const int n, const double * const x, const double * c
 
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(local_result)
     MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    /*-- RHT -- */ RHT_Produce_Secure(global_result);
+    /*-- RHT -- */ RHT_Produce(global_result);
 
     *result = global_result;
     time_allreduce += mytimer() - t0;
@@ -97,7 +97,7 @@ int ddot_producer_no_sync (const int n, const double * const x, const double * c
     *result = local_result;
 #endif
 
-    /*-- RHT -- */ RHT_Produce_Secure(*result);
+    /*-- RHT -- */ RHT_Produce(*result);
     return (0);
 }
 
