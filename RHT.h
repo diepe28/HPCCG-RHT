@@ -569,12 +569,6 @@ static INLINE void NoSyncConsumer_Consume_Check(double currentValue) {
     Report_Soft_Error(currentValue, globalQueue.otherValue)
 }
 
-
-// -------- New Limit Approach ----------
-static INLINE void NewLimit_Produce(double value) {
-    write_move_normal(value)
-}
-
 // -------- Write Inverted New Limit Approach ----------
 
 static INLINE void WriteInverted_Produce_Secure(double value){
