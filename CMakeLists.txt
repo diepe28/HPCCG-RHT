@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(HPCCG_RHT)
 
 set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
@@ -18,31 +18,26 @@ set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2") #--profile-generate, run tests, recompile with --profile-use
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSING_MPI")
-
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSING_OMP -fopenmp")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize -lm") #just for gcc
-
-
 # Other options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0 -DBRANCH_HINT=1")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOUNT_QUEUE_DESYNC=0 -DAPPROACH_NEW_ENQ_INDEX=0") # to use with APPROACH_NEW_LIMIT
-
-#Sets flags current to all cxx flags
-#set(FLAGS_CURRENT "${CMAKE_CXX_FLAGS}")
-
+add_definitions(-DUSING_MPI -lm)
+add_definitions(-ftree-vectorize -flto)
+add_definitions(-DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0 -DBRANCH_HINT=1 -DCOUNT_QUEUE_DESYNC=0 -DAPPROACH_NEW_ENQ_INDEX=0)
 
 # # These are other approaches of the literature
-# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_USING_POINTERS=0")
-# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_ALREADY_CONSUMED=0 ")
-# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_SRMT=1")
+add_definitions(-DAPPROACH_USING_POINTERS=0)
+add_definitions(-DAPPROACH_ALREADY_CONSUMED=0)
+add_definitions(-DAPPROACH_WANG=1)
 
 # # These are our approaches
-# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_CONSUMER_NO_SYNC=0")
-# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_NEW_LIMIT=0") # new limit includes the consumer no sync
-# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0")
-# set(FLAGS_CURRENT "${FLAGS_CURRENT} -DVAR_GROUPING=0") # it can be used with any of the below approaches
+add_definitions(-DAPPROACH_CONSUMER_NO_SYNC=0)
+add_definitions(-DAPPROACH_NEW_LIMIT=0)
+add_definitions(-DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0)
+add_definitions(-DVAR_GROUPING=0) # it can be used with any of the below approaches
+
+#Sets flags current to all cxx flags
+set(FLAGS_CURRENT "anything")
 
 set(SOURCE_FILES main.cpp
         generate_matrix.cpp generate_matrix.h
@@ -82,7 +77,7 @@ endfunction(createExecutable)
 
 
 #current, for testing
-#createExecutable("HPCCG-current" ${FLAGS_CURRENT})
+createExecutable("HPCCG-current" ${FLAGS_CURRENT} 0)
 
 # using pointer flags
 
@@ -91,39 +86,30 @@ set(FLAGS_USING_POINTERS_VG "${FLAGS_USING_POINTERS};VAR_GROUPING=1")
 
 # using already consumed value flags
 set(FLAGS_ALREADY_CONSUMED "APPROACH_ALREADY_CONSUMED=1")
-set(FLAGS_ALREADY_CONSUMED_VG "${FLAGS_ALREADY_CONSUMED};VAR_GROUPING=1")
-#set(FLAGS_ALREADY_CONSUMED_VG "APPROACH_ALREADY_CONSUMED=1;VAR_GROUPING=1")
 
-# using SRMT value flags
-set(FLAGS_SRMT "APPROACH_SRMT=1")
-set(FLAGS_SRMT_VG "${FLAGS_SRMT};VAR_GROUPING=1")
+# using WANG value flags
+set(FLAGS_WANG "APPROACH_WANG=1")
 
 # using no sync consumer approachh
 set(FLAGS_NO_SYNC_CONSUMER "APPROACH_CONSUMER_NO_SYNC=1")
-set(FLAGS_NO_SYNC_CONSUMER_VG "${FLAGS_NO_SYNC_CONSUMER};VAR_GROUPING=1")
 
 # using new limit approach (includes the previous)
 set(FLAGS_NEW_LIMIT "APPROACH_NEW_LIMIT=1")
-set(FLAGS_NEW_LIMIT_VG "${FLAGS_NEW_LIMIT};VAR_GROUPING=1")
 
 # using new limit write inverted approach
 set(FLAGS_NEW_LIMIT_INVERTED "APPROACH_WRITE_INVERTED_NEW_LIMIT=1")
-set(FLAGS_NEW_LIMIT_INVERTED_VG "${FLAGS_NEW_LIMIT_INVERTED};VAR_GROUPING=1")
 
 # un comment the next lines to create multiple executables, with different configurations
 #using pointers
 #createExecutable("HPCCG-UP" ${FLAGS_USING_POINTERS})
-#createExecutable("HPCCG-UP-VG" ${FLAGS_USING_POINTERS_VG})
-
-
 
 # already consumed
-createExecutable("HPCCG-AC" ${FLAGS_ALREADY_CONSUMED} 0)
-createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED} 1)
+#createExecutable("HPCCG-AC" ${FLAGS_ALREADY_CONSUMED} 0)
+#createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED} 1)
 
-# SRMT
- createExecutable("HPCCG-SRMT" ${FLAGS_SRMT} 0)
-createExecutable("HPCCG-SRMT-VG" ${FLAGS_SRMT} 1)
+# WANG approach
+#createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0)
+#createExecutable("HPCCG-WANG-VG" ${FLAGS_WANG} 1)
 
 # # no sync consumer
 # #createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
@@ -138,5 +124,5 @@ createExecutable("HPCCG-SRMT-VG" ${FLAGS_SRMT} 1)
 # #createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED_VG})
 
 # # Best approach
-createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT} 0)
-createExecutable("HPCCG-RHT" ${FLAGS_NEW_LIMIT} 1)
+#createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT} 0)
+#createExecutable("HPCCG-RHT" ${FLAGS_NEW_LIMIT} 1)
