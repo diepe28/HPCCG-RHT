@@ -313,7 +313,7 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 
 #if APPROACH_WANG == 1
     // done replication but UNIT might not have been reached
-    wangQueue.enqPtr = wangQueue.enqPtrDB;
+    wangQueue.enqPtr = wangQueue.enqPtrLocal;
 #endif
 
     /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.9)
 project(HPCCG_RHT)
 
 set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
@@ -13,17 +13,15 @@ include_directories(${MPI_INCLUDE_PATH})
 set(CMAKE_CXX_STANDARD 11)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSING_MPI=1 -lm") # for clang
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -ftree-vectorize -ftree-vectorizer-verbose=7 -lm -DUSING_MPI=1") #testing for vectorization
-
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2") #--profile-generate, run tests, recompile with --profile-use
-
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -ftree-vectorize -ftree-vectorizer-verbose=7") #testing for vectorization
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --profile-generate") #--profile-generate, run tests, recompile with --profile-use
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSING_OMP -fopenmp")
 
-# Other options
+# General compilation flags
 add_definitions(-DUSING_MPI -lm)
-add_definitions(-ftree-vectorize -flto)
-add_definitions(-DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0 -DBRANCH_HINT=1 -DCOUNT_QUEUE_DESYNC=0 -DAPPROACH_NEW_ENQ_INDEX=0)
+add_definitions(-ftree-vectorize -flto -funroll-all-loops -mavx2)
+add_definitions(-DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0)
+add_definitions(-DBRANCH_HINT=1 -DCOUNT_QUEUE_DESYNC=0 -DAPPROACH_NEW_ENQ_INDEX=0)
 
 # # These are other approaches of the literature
 add_definitions(-DAPPROACH_USING_POINTERS=0)
@@ -36,7 +34,7 @@ add_definitions(-DAPPROACH_NEW_LIMIT=0)
 add_definitions(-DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0)
 add_definitions(-DVAR_GROUPING=0) # it can be used with any of the below approaches
 
-#Sets flags current to all cxx flags
+#Init flags current
 set(FLAGS_CURRENT "anything")
 
 set(SOURCE_FILES main.cpp
@@ -120,8 +118,8 @@ set(FLAGS_NEW_LIMIT_INVERTED "APPROACH_WRITE_INVERTED_NEW_LIMIT=1")
 # #createExecutable("HPCCG-NL-VG" ${FLAGS_NEW_LIMIT_VG})
 
 # # new limit inverted
-# #createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED})
-# #createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED_VG})
+# #createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED} 0)
+# #createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED} 1)
 
 # # Best approach
 #createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT} 0)
