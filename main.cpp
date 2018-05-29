@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
             times[6] = t6;
 #endif
 
-            RHT_Replication_Init(1);
+            RHT_Replication_Init();
 
             // Parameters that need to be reset every run
             for (int m = 0; m < local_nrow; m++) {

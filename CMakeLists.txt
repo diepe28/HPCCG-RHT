@@ -37,6 +37,8 @@ add_definitions(-DVAR_GROUPING=0) # it can be used with any of the below approac
 #Init flags current
 set(FLAGS_CURRENT "anything")
 
+add_definitions(-DSKIP_VOLATILE=0)
+
 set(SOURCE_FILES main.cpp
         generate_matrix.cpp generate_matrix.h
         HPC_Sparse_Matrix.cpp HPC_Sparse_Matrix.h
