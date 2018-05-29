@@ -366,7 +366,7 @@ static void RHT_Replication_Finish() {
 
 // -------- Already Consumed Approach ----------
 
-static INLINE void AlreadyConsumed_PrBoduce(double value) {
+static INLINE void AlreadyConsumed_Produce(double value) {
     globalQueue.nextEnq = (globalQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
 
     while (!fequal(globalQueue.content[globalQueue.nextEnq], ALREADY_CONSUMED)) {
