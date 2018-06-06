@@ -35,7 +35,8 @@ void RHT_Produce(double value) {
 #elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
     WriteInverted_Produce_Secure(value);
 #elif APPROACH_WANG == 1
-    Wang_Produce(value);
+//    Wang_Produce(value);
+    Wang_Produce_Improved(value);
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);
@@ -50,7 +51,8 @@ void RHT_Consume_Check(double currentValue) {
 #elif APPROACH_CONSUMER_NO_SYNC == 1 || APPROACH_NEW_LIMIT == 1 || APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
     NoSyncConsumer_Consume_Check(currentValue); // they all use the no sync consumer
 #elif APPROACH_WANG == 1
-    Wang_Consume_Check(currentValue);
+//    Wang_Consume_Check(currentValue);
+    Wang_Consume_Check_Improved(currentValue);
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);
@@ -65,7 +67,8 @@ double RHT_Consume() {
 #elif APPROACH_CONSUMER_NO_SYNC == 1 || APPROACH_NEW_LIMIT == 1 || APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
     return NoSyncConsumer_Consume(); // they all use the no sync consumer
 #elif APPROACH_WANG == 1
-    return Wang_Consume();
+//    return Wang_Consume();
+    return Wang_Consume_Improved();
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);

@@ -221,6 +221,8 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
     waxpby_producer(nrow, 1.0, x, 0.0, x, p);
     TOCK(t2);
 
+//    printf("Producer so far so good\n");
+
 #ifdef USING_MPI
     TICK();
     exchange_externals_producer(hpc_sparse_matrix, p); TOCK(t5);
@@ -311,10 +313,10 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
         /*-- RHT -- */ RHT_Produce(niters);
     }
 
-#if APPROACH_WANG == 1
-    // done replication but UNIT might not have been reached
-    wangQueue.enqPtr = wangQueue.enqPtrLocal;
-#endif
+    #if APPROACH_WANG == 1
+        // done replication but UNIT might not have been reached
+        wangQueue.enqPtr = wangQueue.enqPtrLocal;
+    #endif
 
     /// TODO, what to do with times? should we exchange them, I mean it is not necessary and since we are doing this
     /// manually we can decide what is worth replicating or not...
@@ -387,6 +389,8 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     TICK();
     waxpby_consumer(nrow, 1.0, x, 0.0, x, p);
     TOCK(t2);
+
+//    printf("Consumer so far so good\n");
 
 #ifdef USING_MPI
     TICK();

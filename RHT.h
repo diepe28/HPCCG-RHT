@@ -24,7 +24,7 @@
 #define CACHE_LINE_SIZE 16
 #define RHT_QUEUE_SIZE 512 // > 512 make no real diff
 #define MIN_PTR_DIST 200 // > 200 makes no real diff
-#define ALREADY_CONSUMED -251802.89123
+#define ALREADY_CONSUMED -251802.891237
 #define GROUP_GRANULARITY 8
 #define INLINE inline __attribute__((always_inline))
 #define EPSILON 0.000001
@@ -269,7 +269,7 @@ static int are_both_nan(double pValue, double cValue){
 #if SKIP_VOLATILE == 1
 #define RHT_Produce_Volatile(volValue);
 #elif APPROACH_WANG == 1
-#define RHT_Produce_Volatile(volValue) /*producerCount++;*/                              \
+#define RHT_Produce_Volatile(volValue) producerCount++;                              \
     wangQueue.pResidue = UNIT - (wangQueue.enqPtrLocal % UNIT);     \
     while(wangQueue.pResidue-- > 0) Wang_Produce(0);                \
     wangQueue.volatileValue = volValue;                             \
@@ -285,7 +285,7 @@ static int are_both_nan(double pValue, double cValue){
 #if SKIP_VOLATILE == 1
 #define RHT_Consume_Volatile(volValue);
 #elif APPROACH_WANG == 1
-#define RHT_Consume_Volatile(volValue) /*consumerCount++;*/         \
+#define RHT_Consume_Volatile(volValue) consumerCount++;         \
     while (wangQueue.checkState == 1);  /*asm("pause");*/           \
     if (!fequal(volValue, wangQueue.volatileValue)){                \
         Report_Soft_Error(volValue, wangQueue.volatileValue)        \
@@ -332,6 +332,9 @@ static void Wang_Queue_Init() {
     wangQueue.enqPtr = wangQueue.enqPtrLocal = wangQueue.enqPtrCached =
     wangQueue.deqPtr = wangQueue.deqPtrLocal = wangQueue.deqPtrCached = 0;
     consumerCount = producerCount = 0;
+    for (int i; i < RHT_QUEUE_SIZE; i++) {
+        wangQueue.content[i] = ALREADY_CONSUMED;
+    }
 }
 
 static void RHT_Replication_Init() {
@@ -495,21 +498,76 @@ static INLINE void Wang_Consume_Check(double currentValue) {
     wangQueue.deqPtrLocal = (wangQueue.deqPtrLocal + 1) % RHT_QUEUE_SIZE;
 }
 
-static INLINE void Wang_Consume_Improved(double currentValue) {
-    if(wangQueue.deqPtrLocal % UNIT == 0) {
-        wangQueue.deqPtr = wangQueue.deqPtrLocal;
+static INLINE void Wang_Produce_Improved(double value) {
+    if(!fequal(wangQueue.content[wangQueue.enqPtr], ALREADY_CONSUMED)){
+        printf("Overwritting, deq: %d, enq: %d deqCached: %d\n",
+        wangQueue.deqPtr, wangQueue.enqPtr, wangQueue.deqPtrCached);
+        exit(123);
+    }
+    wangQueue.content[wangQueue.enqPtr] = value;
+    wangQueue.enqPtr = (wangQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
+    producerCount++;
 
-        while(wangQueue.deqPtrLocal == wangQueue.enqPtrCached) {
-            wangQueue.enqPtrCached = wangQueue.enqPtr;
-            //asm("pause");
+    while (wangQueue.enqPtr == wangQueue.deqPtrCached) {
+        asm("pause");
+//        if(wangQueue.deqPtrCached != wangQueue.deqPtr) printf("Updating from %d to %d\n", wangQueue.deqPtrCached, wangQueue.deqPtr);
+        wangQueue.deqPtrCached = wangQueue.deqPtr;
+//        printf("Produce stuck\n");
+    }
+}
+
+static INLINE double Wang_Consume_Improved() {
+    //todo, there might be a problem if both get stuck
+//    while (fequal(wangQueue.deqPtr, wangQueue.enqPtr)) {
+    while (fequal(wangQueue.content[wangQueue.deqPtr], ALREADY_CONSUMED)) {
+        asm("pause");
+//        printf("Consume stuck\n");
+    }
+
+    consumerCount++;
+    double value = wangQueue.content[wangQueue.deqPtr];
+    wangQueue.content[wangQueue.deqPtr] = ALREADY_CONSUMED;
+    wangQueue.deqPtr = (wangQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+    return value;
+}
+
+static INLINE void Wang_Consume_Check_Improved(double leadingValue) {
+    if (fequal(wangQueue.content[wangQueue.deqPtr], leadingValue)) {
+        wangQueue.content[wangQueue.deqPtr] = ALREADY_CONSUMED;
+        wangQueue.deqPtr = (wangQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+        consumerCount++;
+    } else {
+        // consumer catches up with producer
+//        wangQueue.enqPtrLocal = wangQueue.enqPtr;
+        // whether deqPtr is the same or of ahead by 1 position
+        if (wangQueue.deqPtr >= wangQueue.enqPtr ||
+            (wangQueue.deqPtr == 0 && wangQueue.enqPtr == RHT_QUEUE_SIZE - 1)) {
+            // tell leading to produce a whole new round
+            wangQueue.deqPtrLocal = wangQueue.deqPtr; // prev value
+            wangQueue.deqPtr = wangQueue.deqPtr == 0 ? RHT_QUEUE_SIZE - 1 : wangQueue.deqPtr - 1; // wangQueue.deqPtr--
+
+            // this is the tricky question, we need to spin until is not ahead the deqPtr
+            while (...) {
+//            while (fequal(wangQueue.content[wangQueue.deqPtrLocal], ALREADY_CONSUMED)) {
+                asm("pause");
+            }
+
+            wangQueue.deqPtr = wangQueue.deqPtrLocal; // restoring value
         }
-    }
 
-    if (!fequal(wangQueue.content[wangQueue.deqPtrLocal], currentValue)) {
-        Report_Soft_Error(currentValue, wangQueue.content[wangQueue.deqPtrLocal])
-    }
+        if (fequal(wangQueue.content[wangQueue.deqPtr], leadingValue)) {
+            wangQueue.content[wangQueue.deqPtr] = ALREADY_CONSUMED;
+            wangQueue.deqPtr = (wangQueue.deqPtr + 1) % RHT_QUEUE_SIZE;
+            consumerCount++;
+            return;
+        }
 
-    wangQueue.deqPtrLocal = (wangQueue.deqPtrLocal + 1) % RHT_QUEUE_SIZE;
+        printf("Wrong deq: %d vs enq: %d ... LValue: %f vs TValue: %f equal? %d \n",
+               wangQueue.deqPtr, wangQueue.enqPtr, leadingValue, wangQueue.content[wangQueue.deqPtr],
+               fequal(wangQueue.content[wangQueue.deqPtr], leadingValue));
+
+        Report_Soft_Error(leadingValue, wangQueue.content[wangQueue.deqPtr])
+    }
 }
 
 

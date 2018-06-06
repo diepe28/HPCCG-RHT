@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.9)
 project(HPCCG_RHT)
 
-set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
-#set(CMAKE_BUILD_TYPE Debug) # NO optimizations, debuging allowed
+#set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
+set(CMAKE_BUILD_TYPE Debug) # NO optimizations, debuging allowed
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -37,7 +37,7 @@ add_definitions(-DVAR_GROUPING=0) # it can be used with any of the below approac
 #Init flags current
 set(FLAGS_CURRENT "anything")
 
-add_definitions(-DSKIP_VOLATILE=0)
+add_definitions(-DSKIP_VOLATILE=1)
 
 set(SOURCE_FILES main.cpp
         generate_matrix.cpp generate_matrix.h
