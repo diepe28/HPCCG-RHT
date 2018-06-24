@@ -33,7 +33,8 @@ add_definitions(-DAPPROACH_MIX_WANG=1)
 add_definitions(-DAPPROACH_CONSUMER_NO_SYNC=0)
 add_definitions(-DAPPROACH_NEW_LIMIT=0)
 add_definitions(-DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0)
-add_definitions(-DVAR_GROUPING=0) # it can be used with any of the above approaches
+add_definitions(-DVAR_GROUPING=1) # it can be used with any of the above approaches
+
 add_definitions(-DSKIP_VOLATILE=0)
 
 #Init flags current

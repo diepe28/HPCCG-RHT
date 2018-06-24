@@ -44,6 +44,14 @@ void RHT_Produce(double value) {
 #endif
 }
 
+void RHT_Produce_NoCheck(double value) {
+#if APPROACH_MIX_WANG == 1
+    Mix_Produce_NoCheck(value);
+#else
+    RHT_Produce(value);
+#endif
+}
+
 void RHT_Consume_Check(double currentValue) {
 #if APPROACH_USING_POINTERS == 1
     UsingPointers_Consume_Check(currentValue);

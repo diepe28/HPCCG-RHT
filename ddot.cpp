@@ -89,7 +89,7 @@ int ddot_producer(const int n, const double *const x, const double *const y,
 
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(local_result)
     MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    /*-- RHT -- */ RHT_Produce(global_result);
+    /*-- RHT -- */ RHT_Produce_NoCheck(global_result);
 
     *result = global_result;
     time_allreduce += mytimer() - t0;

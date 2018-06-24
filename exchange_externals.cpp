@@ -139,8 +139,8 @@ void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x) {
     int size, rank; // Number of MPI processes, My process ID
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    /*-- RHT -- */ RHT_Produce(size);
-    /*-- RHT -- */ RHT_Produce(rank);
+    /*-- RHT -- */ RHT_Produce_NoCheck(size);
+    /*-- RHT -- */ RHT_Produce_NoCheck(rank);
 
     //
     //  first post receives, these are immediate receives
@@ -213,7 +213,7 @@ void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x) {
         int n_recv = recv_length[i];
 
         for(int m = 0; m < n_recv; m++){
-            RHT_Produce(x_external[m]);
+            RHT_Produce_NoCheck(x_external[m]);
         }
 
         x_external += n_recv;

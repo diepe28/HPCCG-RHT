@@ -204,7 +204,7 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 #ifdef USING_MPI
     int rank; // Number of MPI processes, My process ID
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    /*-- RHT -- */ RHT_Produce(rank);
+    /*-- RHT -- */ RHT_Produce_NoCheck(rank);
 #else
     int rank = 0; // Serial case (not using MPI)
 #endif
@@ -371,7 +371,6 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
 
 #ifdef USING_MPI
     int rank; // Number of MPI processes, My process ID
-//    /*-- RHT -- */ RHT_Consume(rank)
     /*-- RHT -- */ rank = (int) RHT_Consume();
 #else
     int rank = 0; // Serial case (not using MPI)

@@ -557,11 +557,10 @@ static INLINE void Mix_Produce_Aux(double value) {
     if (wangQueue.enqPtr == wangQueue.deqPtrCached) {
 //        producerCount++;
         wangQueue.nextEnq = (wangQueue.enqPtr + 1) % RHT_QUEUE_SIZE;
-        do{
 
+        do{
             if (fequal(wangQueue.content[wangQueue.nextEnq], ALREADY_CONSUMED) &&
                 wangQueue.deqPtr == wangQueue.enqPtr){
-//                printf("The next is alreadyConsumed EnqPtr: %d vs DeqPtr: %d\n", wangQueue.enqPtr, wangQueue.deqPtr);
                 wangQueue.deqPtrCached = (wangQueue.deqPtrCached + (RHT_QUEUE_SIZE - 1)) % RHT_QUEUE_SIZE;
             }else{
                 asm("pause");
@@ -573,15 +572,19 @@ static INLINE void Mix_Produce_Aux(double value) {
 
 static INLINE void Mix_Produce(double value) {
 #if VAR_GROUPING == 1
-    wangQueue.deqGroupVal += value;
-    if (wangQueue.deqIter++ % GROUP_GRANULARITY == 0){
-        Mix_Produce_Aux(wangQueue.deqGroupVal);
-        wangQueue.deqGroupVal = 0;
+    wangQueue.enqGroupVal += value;
+    if (wangQueue.enqIter++ % GROUP_GRANULARITY == 0){
+        Mix_Produce_Aux(wangQueue.enqGroupVal);
+        wangQueue.enqGroupVal = 0;
     }
 #else
     Mix_Produce_Aux(value);
 #endif
+}
 
+// directly pushes a new value in the queue (regardless of var grouping)
+static INLINE void Mix_Produce_NoCheck(double value) {
+    Mix_Produce_Aux(value);
 }
 
 static INLINE double Mix_Consume() {
@@ -602,7 +605,7 @@ static INLINE double Mix_Consume() {
 // that is by chance the same as the current value... that decreases the soft error detection probability. So
 // the consumer no check improvement must be done along the already consumed approach.
 
-static INLINE void Mix_Consume_Check(double trailingValue) {
+static INLINE void Mix_Consume_Check_Aux(double trailingValue) {
     if (__builtin_expect(fequal(wangQueue.content[wangQueue.deqPtr], trailingValue), 1)) {
         consumer_move()
     } else {
@@ -613,7 +616,6 @@ static INLINE void Mix_Consume_Check(double trailingValue) {
 
         if (__builtin_expect(fequal(wangQueue.content[wangQueue.deqPtr], trailingValue), 1)) {
             consumer_move()
-//            printf("Problem was fixed\n");
         } else {
             printf("Wrong deqPtr: %d vs enqPtr: %d ... LValue: %f vs TValue: %f equal? %d \n",
                    wangQueue.deqPtr, wangQueue.enqPtr, trailingValue, wangQueue.content[wangQueue.deqPtr],
@@ -621,6 +623,18 @@ static INLINE void Mix_Consume_Check(double trailingValue) {
             Report_Soft_Error(trailingValue, wangQueue.content[wangQueue.deqPtr])
         }
     }
+}
+
+static INLINE void Mix_Consume_Check(double trailingValue) {
+#if VAR_GROUPING == 1
+    wangQueue.deqGroupVal += trailingValue;
+    if (wangQueue.deqIter++ % GROUP_GRANULARITY == 0){
+        Mix_Consume_Check_Aux(wangQueue.deqGroupVal);
+        wangQueue.deqGroupVal = 0;
+    }
+#else
+    Mix_Consume_Check_Aux(value);
+#endif
 }
 
 // -------- NoSyncConsumer Approach, reducing sync operations in the consumer  ----------
@@ -707,6 +721,7 @@ static INLINE void WriteInverted_Produce_Secure(double value){
 
 //////////// 'PUBLIC' QUEUE METHODS //////////////////
 void RHT_Produce(double value);
+void RHT_Produce_NoCheck(double value);
 void RHT_Consume_Check(double currentValue);
 double RHT_Consume();
 
