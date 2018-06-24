@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
         nz = atoi(argv[3]);
         numRuns = atoi(argv[4]);
         replicated = 0;
-        timesBaseline = (double *) malloc(sizeof(double) * numRuns);
+        timesBaseline = new double[numRuns];
     } else {
         if (argc > 5) { // dperez, for our purposes
             replicated = 1;
@@ -189,14 +189,14 @@ int main(int argc, char *argv[]) {
             nz = atoi(argv[3]);
             numRuns = atoi(argv[4]);
             numThreads = atoi(argv[5]); // should -np * 2
-            coreNumbers = (int *) malloc(sizeof(int) * numThreads);
+            coreNumbers = new int[numThreads];
             for (int i = 0; i < numThreads; i++) {
                 // Each pair is the producer and consumer core for each MPI process.
                 // Example 2 0 2 1 3: means 2 MPI processes the first one runs on core 0,2 and
                 // the second one is cores 1,3. Depending on the machine config it may be HT or not.
                 coreNumbers[i] = atoi(argv[6 + i]);
             }
-            timesRHT = (double *) malloc(sizeof(double) * numRuns);
+            timesRHT = new double[numRuns];
         } else {
             read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
         }
@@ -226,23 +226,23 @@ int main(int argc, char *argv[]) {
 
     if (replicated) {
         // --- Protected runs ---
-        ConsumerParams *consumerParams = (ConsumerParams *) (malloc(sizeof(ConsumerParams)));
+        ConsumerParams consumerParams;
         int local_nrow = nx * ny * nz; // This is the size of our subblock
         pthread_t consumerThread;
 
         x2 = new double[local_nrow];
 
-        consumerParams->max_iter = max_iter;
-        consumerParams->tolerance = tolerance;
-        consumerParams->niters = niters;
-        consumerParams->normr = normr;
-        consumerParams->times = times;
+        consumerParams.max_iter = max_iter;
+        consumerParams.tolerance = tolerance;
+        consumerParams.niters = niters;
+        consumerParams.normr = normr;
+        consumerParams.times = times;
 
         // Assigning core numbers to each thread of each MPI process
         producerCore = coreNumbers[rank * 2];
         consumerCore = coreNumbers[rank * 2 + 1];
 
-        consumerParams->executionCore = consumerCore;
+        consumerParams.executionCore = consumerCore;
 
         printf("\n--- REPLICATED VERSION ON RANK %d WITH CORES %d, %d\n", rank, producerCore, consumerCore);
 
@@ -273,14 +273,14 @@ int main(int argc, char *argv[]) {
             for (int m = 0; m < local_nrow; m++) {
                 x2[m] = x[m];
             }
-            consumerParams->A = sparseMatrix;
-            consumerParams->b = b;
-            consumerParams->x = x2;
+            consumerParams.A = sparseMatrix;
+            consumerParams.b = b;
+            consumerParams.x = x2;
 
             SetThreadAffinity(producerCore);
 
             int err = pthread_create(&consumerThread, NULL, (void *(*)(void *)) consumer_thread_func,
-                                     (void *) consumerParams);
+                                     (void *) &consumerParams);
 
             if (err) {
                 fprintf(stderr, "Fail creating thread %d\n", 1);
@@ -325,6 +325,8 @@ int main(int argc, char *argv[]) {
                 printf("NEW LIMIT + WRITE_INVERTED");
 #elif APPROACH_WANG == 1
                 printf("BASELINE: WANG ");
+#elif APPROACH_MIX_WANG == 1
+                printf("BASELINE: MIX_WANG ");
 #endif
                 printf(" [%d]: %f seconds, on cores: %d, %d --- ProducerWaiting: %ld, ConsumerWaiting: %ld\n",
                        iterator, timesRHT[iterator], producerCore, consumerCore, producerCount, consumerCount);
@@ -344,6 +346,7 @@ int main(int argc, char *argv[]) {
         sdRHT /= numRuns;
         delete x2;
         delete timesRHT;
+        delete coreNumbers;
     } else {
         // Not replicated (normal) --- Unprotected runs ---
         for (iterator = meanBaseline = 0; iterator < numRuns; iterator++) {
@@ -378,7 +381,7 @@ int main(int argc, char *argv[]) {
             sdBaseline /= numRuns;
         }
 
-        delete timesBaseline;
+        delete(timesBaseline);
     }
 
     if (ierr) cerr << "Error in call to CG: " << ierr << ".\n" << endl;
@@ -421,7 +424,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    delete coreNumbers;
     return 0;
 }
 

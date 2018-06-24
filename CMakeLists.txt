@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.9)
 project(HPCCG_RHT)
 
-#set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
-set(CMAKE_BUILD_TYPE Debug) # NO optimizations, debuging allowed
+set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
+#set(CMAKE_BUILD_TYPE Debug) # NO optimizations, debuging allowed
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -26,18 +26,18 @@ add_definitions(-DBRANCH_HINT=1 -DCOUNT_QUEUE_DESYNC=0 -DAPPROACH_NEW_ENQ_INDEX=
 # # These are other approaches of the literature
 add_definitions(-DAPPROACH_USING_POINTERS=0)
 add_definitions(-DAPPROACH_ALREADY_CONSUMED=0)
-add_definitions(-DAPPROACH_WANG=1)
+add_definitions(-DAPPROACH_WANG=0)
 
 # # These are our approaches
+add_definitions(-DAPPROACH_MIX_WANG=1)
 add_definitions(-DAPPROACH_CONSUMER_NO_SYNC=0)
 add_definitions(-DAPPROACH_NEW_LIMIT=0)
 add_definitions(-DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0)
-add_definitions(-DVAR_GROUPING=0) # it can be used with any of the below approaches
+add_definitions(-DVAR_GROUPING=0) # it can be used with any of the above approaches
+add_definitions(-DSKIP_VOLATILE=0)
 
 #Init flags current
 set(FLAGS_CURRENT "anything")
-
-add_definitions(-DSKIP_VOLATILE=1)
 
 set(SOURCE_FILES main.cpp
         generate_matrix.cpp generate_matrix.h
@@ -99,6 +99,9 @@ set(FLAGS_NEW_LIMIT "APPROACH_NEW_LIMIT=1")
 # using new limit write inverted approach
 set(FLAGS_NEW_LIMIT_INVERTED "APPROACH_WRITE_INVERTED_NEW_LIMIT=1")
 
+# using mix-wang approach
+set(FLAGS_MIX_WANG "APPROACH_MIX_WANG=1")
+
 # un comment the next lines to create multiple executables, with different configurations
 #using pointers
 #createExecutable("HPCCG-UP" ${FLAGS_USING_POINTERS})
@@ -122,6 +125,10 @@ set(FLAGS_NEW_LIMIT_INVERTED "APPROACH_WRITE_INVERTED_NEW_LIMIT=1")
 # # new limit inverted
 # #createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED} 0)
 # #createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED} 1)
+
+# # mix wang approach
+#createExecutable("HPCCG-MIX" ${FLAGS_MIX_WANG} 0)
+# #createExecutable("HPCCG-MIX-VG" ${FLAGS_MIX_WANG} 1)
 
 # # Best approach
 #createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT} 0)

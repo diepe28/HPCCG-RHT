@@ -11,7 +11,6 @@ WANG_QUEUE wangQueue;
 #endif
 
 long producerCount;
-long consumerCount;
 
 int wait_var;
 double wait_calc;
@@ -23,7 +22,8 @@ int groupIncompleteProducer;
 __thread long iterCountProducer;
 __thread long iterCountConsumer;
 
-
+long consumerCount;
+int printValues = 0;
 
 void RHT_Produce(double value) {
 #if APPROACH_USING_POINTERS == 1
@@ -35,8 +35,9 @@ void RHT_Produce(double value) {
 #elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
     WriteInverted_Produce_Secure(value);
 #elif APPROACH_WANG == 1
-//    Wang_Produce(value);
-    Wang_Produce_Improved(value);
+    Wang_Produce(value);
+#elif APPROACH_MIX_WANG == 1
+    Mix_Produce(value);
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);
@@ -51,8 +52,9 @@ void RHT_Consume_Check(double currentValue) {
 #elif APPROACH_CONSUMER_NO_SYNC == 1 || APPROACH_NEW_LIMIT == 1 || APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
     NoSyncConsumer_Consume_Check(currentValue); // they all use the no sync consumer
 #elif APPROACH_WANG == 1
-//    Wang_Consume_Check(currentValue);
-    Wang_Consume_Check_Improved(currentValue);
+    Wang_Consume_Check(currentValue);
+#elif APPROACH_MIX_WANG == 1
+    Mix_Consume_Check(currentValue);
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);
@@ -67,8 +69,9 @@ double RHT_Consume() {
 #elif APPROACH_CONSUMER_NO_SYNC == 1 || APPROACH_NEW_LIMIT == 1 || APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
     return NoSyncConsumer_Consume(); // they all use the no sync consumer
 #elif APPROACH_WANG == 1
-//    return Wang_Consume();
-    return Wang_Consume_Improved();
+    return Wang_Consume();
+#elif APPROACH_MIX_WANG == 1
+    return Mix_Consume();
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);
