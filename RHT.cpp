@@ -6,7 +6,7 @@
 
 RHT_QUEUE globalQueue;
 
-#ifdef APPROACH_WANG
+#if APPROACH_WANG == 1 || APPROACH_MIX_WANG == 1
 WANG_QUEUE wangQueue;
 #endif
 

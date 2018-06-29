@@ -125,7 +125,7 @@ static void RHT_Replication_Init() {
 }
 
 static void RHT_Replication_Finish() {
-#if APPROACH_WANG == 1
+#if APPROACH_WANG == 1 || APPROACH_MIX_WANG == 1
     if(wangQueue.content)
         free((void *) wangQueue.content);
 #else
@@ -485,7 +485,7 @@ static INLINE double Wang_Consume() {
     if(wangQueue.deqPtrLocal % UNIT == 0) {
         wangQueue.deqPtr = wangQueue.deqPtrLocal;
         // While were at the limit, we update the cached enqPtr
-       // if(wangQueue.deqPtrLocal == wangQueue.enqPtrCached) consumerCount++;
+        // if(wangQueue.deqPtrLocal == wangQueue.enqPtrCached) consumerCount++;
         while(wangQueue.deqPtrLocal == wangQueue.enqPtrCached) {
             wangQueue.enqPtrCached = wangQueue.enqPtr;
             //asm("pause");
