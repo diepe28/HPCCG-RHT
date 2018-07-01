@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.7.2)
 project(HPCCG_RHT)
 
 set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
@@ -59,7 +59,8 @@ set(SOURCE_FILES main.cpp
 
 function(createExecutable exeName compFlags varFlag)
     add_executable(${exeName} ${SOURCE_FILES})
-    set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS "${compFlags}")
+    #this line causes problems when used with cmake 3.7 (version of g5k machines)
+    #set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS "${compFlags}")
     set_property(TARGET ${exeName} APPEND PROPERTY COMPILE_DEFINITIONS ${compFlags})
     if(varFlag)
       set_property(TARGET ${exeName} APPEND PROPERTY COMPILE_DEFINITIONS "VAR_GROUPING=1")
@@ -123,8 +124,8 @@ createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT} 0)
 createExecutable("HPCCG-NL-VG" ${FLAGS_NEW_LIMIT} 1)
 
 # # new limit inverted
-createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED} 0)
-createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED} 1)
+#createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED} 0)
+#createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED} 1)
 
 # # mix wang approach
 createExecutable("HPCCG-MIX" ${FLAGS_MIX_WANG} 0)
