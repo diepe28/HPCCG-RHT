@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7.2)
+cmake_minimum_required(VERSION 3.7)
 project(HPCCG_RHT)
 
 set(CMAKE_BUILD_TYPE Release) # optimizations, but debuging is not allowed
@@ -23,19 +23,19 @@ add_definitions(-ftree-vectorize -flto -funroll-all-loops -mavx2)
 add_definitions(-DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0)
 add_definitions(-DBRANCH_HINT=1 -DCOUNT_QUEUE_DESYNC=0 -DAPPROACH_NEW_ENQ_INDEX=0)
 
-# # These are other approaches of the literature
-add_definitions(-DAPPROACH_USING_POINTERS=0)
-add_definitions(-DAPPROACH_ALREADY_CONSUMED=0)
-add_definitions(-DAPPROACH_WANG=0)
+# These are other approaches of the literature
+#add_definitions(-DAPPROACH_USING_POINTERS=1)
+#add_definitions(-DAPPROACH_ALREADY_CONSUMED=1)
+#add_definitions(-DAPPROACH_WANG=1)
 
-# # These are our approaches
-add_definitions(-DAPPROACH_MIX_WANG=0)
-add_definitions(-DAPPROACH_CONSUMER_NO_SYNC=0)
-add_definitions(-DAPPROACH_NEW_LIMIT=1)
-add_definitions(-DAPPROACH_WRITE_INVERTED_NEW_LIMIT=0)
-add_definitions(-DVAR_GROUPING=0) # it can be used with any of the above approaches
+# These are our approaches
+add_definitions(-DAPPROACH_MIX_WANG=1)
+#add_definitions(-DAPPROACH_CONSUMER_NO_SYNC=1)
+#add_definitions(-DAPPROACH_NEW_LIMIT=1)
+#add_definitions(-DAPPROACH_WRITE_INVERTED_NEW_LIMIT=1)
+#add_definitions(-DVAR_GROUPING=1) # it can be used with any of the above approaches
 
-add_definitions(-DSKIP_VOLATILE=0)
+#add_definitions(-DSKIP_VOLATILE=1)
 
 #Init flags current
 set(FLAGS_CURRENT "anything")
@@ -115,15 +115,15 @@ set(FLAGS_MIX_WANG "APPROACH_MIX_WANG=1")
 #createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0)
 #createExecutable("HPCCG-WANG-VG" ${FLAGS_WANG} 1)
 
-# # no sync consumer
-# #createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
-# #createExecutable("HPCCG-NSC-VG" ${FLAGS_NO_SYNC_CONSUMER_VG})
+# no sync consumer
+#createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
+#createExecutable("HPCCG-NSC-VG" ${FLAGS_NO_SYNC_CONSUMER_VG})
 
 # # new limit
 #createExecutable("HPCCG-NL" ${FLAGS_NEW_LIMIT} 0)
 #createExecutable("HPCCG-NL-VG" ${FLAGS_NEW_LIMIT} 1)
 
-# # new limit inverted
+# new limit inverted
 #createExecutable("HPCCG-NLI" ${FLAGS_NEW_LIMIT_INVERTED} 0)
 #createExecutable("HPCCG-NLI-VG" ${FLAGS_NEW_LIMIT_INVERTED} 1)
 

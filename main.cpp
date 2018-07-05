@@ -86,6 +86,7 @@ using std::endl;
 #include "YAML_Element.h"
 #include "YAML_Doc.h"
 #include "QueueStressTest.h"
+#include "RHT.h"
 
 #undef DEBUG
 
@@ -305,8 +306,8 @@ int main(int argc, char *argv[]) {
 
             timesRHT[iterator] = times[0];
             meanRHT += times[0];
-            consumerMean += consumerCount;
-            producerMean += producerCount;
+            consumerMean += wangQueue.consumerCount;
+            producerMean += wangQueue.producerCount;
 
             RHT_Replication_Finish();
 
@@ -328,8 +329,8 @@ int main(int argc, char *argv[]) {
 #elif APPROACH_MIX_WANG == 1
                 printf("BASELINE: MIX_WANG ");
 #endif
-                printf(" [%d]: %f seconds, on cores: %d, %d --- ProducerWaiting: %ld, ConsumerWaiting: %ld\n",
-                       iterator, timesRHT[iterator], producerCore, consumerCore, producerCount, consumerCount);
+                printf(" [%d]: %f seconds, on cores: %d, %d --- ProducerWaiting: %lud, ConsumerWaiting: %lud\n",
+                       iterator, timesRHT[iterator], producerCore, consumerCore, wangQueue.producerCount, wangQueue.consumerCount);
             }
 
             freeMemory(sparseMatrix, x, b, xexact);
