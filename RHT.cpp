@@ -40,8 +40,8 @@ void RHT_Produce(double value) {
 #elif APPROACH_WANG == 1
     Wang_Produce(value);
 #elif APPROACH_MIX_WANG == 1
-//    Mix_Produce(value);
-    Mix_Produce_Improved(value);
+    Mix_Produce(value);
+//    Mix_Produce_Improved(value);
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);
@@ -51,8 +51,8 @@ void RHT_Produce(double value) {
 // directly pushes a new value in the queue (regardless of var grouping)
 void RHT_Produce_NoCheck(double value) {
 #if APPROACH_MIX_WANG == 1
-//    Mix_Produce(value);
-    Mix_Produce_Improved(value);
+    Mix_Produce(value);
+//    Mix_Produce_Improved(value);
 #elif APPROACH_WANG == 1
     Wang_Produce(value);
 #else
@@ -72,8 +72,8 @@ void RHT_Consume_Check(double currentValue) {
 #elif APPROACH_WANG == 1
     Wang_Consume_Check(currentValue);
 #elif APPROACH_MIX_WANG == 1
-//    Mix_Consume_Check(currentValue);
-    Mix_Consume_Check_Improved(currentValue);
+    Mix_Consume_Check(currentValue);
+//    Mix_Consume_Check_Improved(currentValue);
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);
@@ -90,8 +90,8 @@ double RHT_Consume() {
 #elif APPROACH_WANG == 1
     return Wang_Consume();
 #elif APPROACH_MIX_WANG == 1
-//    return Mix_Consume();
-    return Mix_Consume_Improved();
+    return Mix_Consume();
+//    return Mix_Consume_Improved();
 #else
     printf("NO APPROACH SPECIFIED\n");
     exit(1);
