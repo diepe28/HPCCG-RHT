@@ -74,13 +74,16 @@ int ddot (const int n, const double * const x, const double * const y,
 int ddot_producer(const int n, const double *const x, const double *const y,
                   double *const result, double &time_allreduce) {
     double local_result = 0.0;
-    int i = 0;
-    if (y == x) {
-        replicate_loop_producer(0, n, i, i++, local_result, local_result += x[i] * x[i])
-    }
-    else {
-        replicate_loop_producer(0, n, i, i++, local_result, local_result += x[i] * y[i])
-    }
+    if (y == x)
+        for (int i = 0; i < n; i++) {
+            local_result += x[i] * x[i];
+            RHT_Produce(local_result);
+        }
+    else
+        for (int i = 0; i < n; i++) {
+            local_result += x[i] * y[i];
+            RHT_Produce(local_result);
+        }
 
 #ifdef USING_MPI
     // Use MPI's reduce function to collect all partial sums
@@ -104,29 +107,17 @@ int ddot_producer(const int n, const double *const x, const double *const y,
 int ddot_consumer (const int n, const double * const x, const double * const y,
                    double * const result, double & time_allreduce) {
     double local_result = 0.0;
-//    printf("Consumer here at %d\n", globalQueue.deqPtr);
 
-#if VAR_GROUPING == 1
-    int i = 0;
-    if (y == x) {
-        replicate_loop_consumer(0, n, i, i++, local_result, local_result += x[i] * x[i])
-    }
-    else {
-        replicate_loop_consumer(0, n, i, i++, local_result, local_result += x[i] * y[i])
-    }
-
-#else
     if (y == x)
         for (int i = 0; i < n; i++) {
             local_result += x[i] * x[i];
             /*-- RHT -- */ RHT_Consume_Check(local_result);
         }
     else
-    for (int i = 0; i < n; i++) {
-        local_result += x[i] * y[i];
-        /*-- RHT -- */ RHT_Consume_Check(local_result);
-    }
-#endif
+        for (int i = 0; i < n; i++) {
+            local_result += x[i] * y[i];
+            /*-- RHT -- */ RHT_Consume_Check(local_result);
+        }
 
 #ifdef USING_MPI
     // Use MPI's reduce function to collect all partial sums

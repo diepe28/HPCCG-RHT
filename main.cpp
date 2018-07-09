@@ -320,8 +320,6 @@ int main(int argc, char *argv[]) {
                 printf("BASELINE: ALREADY CONSUMED");
 #elif APPROACH_CONSUMER_NO_SYNC == 1
                 printf("CONSUMER NO SYNC + ALREADY CONSUMED");
-#elif APPROACH_NEW_LIMIT == 1
-                printf("NEW LIMIT + CONSUMER NO SYNC");
 #elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
                 printf("NEW LIMIT + WRITE_INVERTED");
 #elif APPROACH_WANG == 1
@@ -414,12 +412,11 @@ int main(int argc, char *argv[]) {
             printf("USING POINTERS");
 #elif APPROACH_ALREADY_CONSUMED == 1
             printf("ALREADY CONSUMED");
-#elif APPROACH_NEW_LIMIT == 1
-            printf("NEW LIMIT & ALREADY CONSUMED");
-#elif APPROACH_WRITE_INVERTED_NEW_LIMIT == 1
-            printf("NEW LIMIT_WRITE_INVERTED");
+#eleif APPROACH_WANG == 1
+            printf("APPROACH WANG");
+#eleif APPROACH_WANG == 1
+            printf("APPROACH MIX WANG");
 #endif
-
             printf(": %f , SD RHT %f --- PWaiting: %lf, CWaiting: %lf \n\n", meanRHT, sdRHT, producerMean,
                    consumerMean);
         }

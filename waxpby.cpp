@@ -75,11 +75,20 @@ int waxpby_producer(const int n, const double alpha, const double *const x,
                     double *const w) {
     int i = 0;
     if (alpha == 1.0) {
-        replicate_loop_producer(0, n, i, i++, w[i], w[i] = x[i] + beta * y[i])
+        for (i = 0; i < n; i++) {
+            w[i] = x[i] + beta * y[i];
+            /*-- RHT -- */ RHT_Produce(w[i]);
+        }
     } else if (beta == 1.0) {
-        replicate_loop_producer(0, n, i, i++, w[i], w[i] = alpha * x[i] + y[i])
+        for (i = 0; i < n; i++) {
+            w[i] = alpha * x[i] + y[i];
+            /*-- RHT -- */ RHT_Produce(w[i]);
+        }
     } else {
-        replicate_loop_producer(0, n, i, i++, w[i], w[i] = alpha * x[i] + beta * y[i])
+        for (i = 0; i < n; i++) {
+            w[i] = alpha * x[i] + beta * y[i];
+            /*-- RHT -- */ RHT_Produce(w[i]);
+        }
     }
     return (0);
 }
@@ -89,35 +98,20 @@ int waxpby_consumer (const int n, const double alpha, const double * const x,
                      double * const w) {
     int i = 0;
     if (alpha == 1.0) {
-#if VAR_GROUPING == 1
-        replicate_loop_consumer(0, n, i, i++, w[i], w[i] = x[i] + beta * y[i])
-#else
-        for (i = 0; i < n; i++){
+        for (i = 0; i < n; i++) {
             w[i] = x[i] + beta * y[i];
             /*-- RHT -- */ RHT_Consume_Check(w[i]);
         }
-#endif
-
     } else if (beta == 1.0) {
-#if VAR_GROUPING == 1
-        replicate_loop_consumer(0, n, i, i++, w[i], w[i] = alpha * x[i] + y[i])
-#else
         for (i = 0; i < n; i++) {
             w[i] = alpha * x[i] + y[i];
             /*-- RHT -- */ RHT_Consume_Check(w[i]);
         }
-#endif
-
     } else {
-#if VAR_GROUPING == 1
-        replicate_loop_consumer(0, n, i, i++, w[i], w[i] = alpha * x[i] + beta * y[i])
-#else
         for (i = 0; i < n; i++) {
             w[i] = alpha * x[i] + beta * y[i];
             /*-- RHT -- */ RHT_Consume_Check(w[i]);
         }
-#endif
-
     }
     return (0);
 }

@@ -175,7 +175,10 @@ void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x) {
     // Fill up send buffer
     //
     i = 0;
-    replicate_loop_producer(0, total_to_be_sent, i, i++, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
+    for (i = 0; i < total_to_be_sent; i++) {
+        send_buffer[i] = x[elements_to_send[i]];
+        /*-- RHT -- */ RHT_Produce(send_buffer[i]);
+    }
 
     //
     // Send to each neighbor
@@ -280,15 +283,11 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     //
     // Fill up send buffer
     //
-#if VAR_GROUPING == 1
-    i = 0;
-    replicate_loop_consumer(0, total_to_be_sent, i, i++, send_buffer[i], send_buffer[i] = x[elements_to_send[i]])
-#else
+
     for (i = 0; i < total_to_be_sent; i++) {
         send_buffer[i] = x[elements_to_send[i]];
         /*-- RHT -- */ RHT_Consume_Check(send_buffer[i]);
     }
-#endif
 
     //
     // Send to each neighbor
