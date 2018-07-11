@@ -151,6 +151,7 @@ void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x) {
     int MPI_MY_TAG = 99;
     /*-- RHT -- */ RHT_Produce(MPI_MY_TAG);
 
+    /*-- RHT Volatile -- */ RHT_Produce_Volatile(num_neighbors);
     MPI_Request *request = new MPI_Request[num_neighbors];
 
     //
@@ -235,7 +236,6 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     int num_neighbors = A->num_send_neighbors;
     /*-- RHT -- */ RHT_Consume_Check(num_neighbors);
 
-    /// TODO what to do with arrays
     int *recv_length = A->recv_length;
     int *send_length = A->send_length;
     int *neighbors = A->neighbors;
@@ -259,6 +259,7 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     int MPI_MY_TAG = 99;
     /*-- RHT -- */ RHT_Consume_Check(MPI_MY_TAG);
 
+    /*-- RHT Volatile -- */ RHT_Consume_Volatile(num_neighbors);
     MPI_Request *request = new MPI_Request[num_neighbors];
 
     //

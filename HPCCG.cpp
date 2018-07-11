@@ -188,7 +188,7 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
     int nrow = hpc_sparse_matrix->local_nrow;
     int ncol = hpc_sparse_matrix->local_ncol;
     /*-- RHT -- */ RHT_Produce(nrow);
-    /*-- RHT -- */ RHT_Produce(ncol);
+    /*-- RHT -- */ RHT_Produce_Volatile(ncol);
 
     double *r = new double[nrow];
     double *p = new double[ncol]; // In parallel case, hpc_sparse_matrix is rectangular
@@ -356,7 +356,7 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     int nrow = hpc_sparse_matrix->local_nrow;
     int ncol = hpc_sparse_matrix->local_ncol;
     /*-- RHT -- */ RHT_Consume_Check(nrow);
-    /*-- RHT -- */ RHT_Consume_Check(ncol);
+    /*-- RHT -- */ RHT_Consume_Volatile(ncol);
 
     double *r = new double[nrow];
     double *p = new double[ncol]; // In parallel case, hpc_sparse_matrix is rectangular

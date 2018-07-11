@@ -26,11 +26,12 @@ add_definitions(-DBRANCH_HINT=1 -DCOUNT_QUEUE_DESYNC=0 -DAPPROACH_NEW_ENQ_INDEX=
 # These are other approaches of the literature
 #add_definitions(-DAPPROACH_USING_POINTERS=1)
 #add_definitions(-DAPPROACH_ALREADY_CONSUMED=1)
-#add_definitions(-DAPPROACH_WANG=1)
+add_definitions(-DAPPROACH_WANG=1)
 
 # These are our approaches
+#add_definitions(-DJUST_VOLATILES=1)
 #add_definitions(-DAPPROACH_MIX_WANG=1)
-add_definitions(-DAPPROACH_MIX_IMPROVED=1)
+#add_definitions(-DAPPROACH_MIX_IMPROVED=1)
 add_definitions(-DVAR_GROUPING=1) # it can be used with any of the above approaches
 
 # no longer used
