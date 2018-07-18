@@ -21,12 +21,12 @@ set(CMAKE_CXX_STANDARD 11)
 add_definitions(-DUSING_MPI)
 add_definitions(-ftree-vectorize -flto -funroll-all-loops -mavx2 -lm)
 add_definitions(-DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0)
-add_definitions(-DBRANCH_HINT=1 -DCOUNT_QUEUE_DESYNC=0 -DAPPROACH_NEW_ENQ_INDEX=0)
+add_definitions(-DBRANCH_HINT=1)
 
 # These are other approaches of the literature
 #add_definitions(-DAPPROACH_USING_POINTERS=1)
 #add_definitions(-DAPPROACH_ALREADY_CONSUMED=1)
-#add_definitions(-DAPPROACH_WANG=1)
+add_definitions(-DAPPROACH_WANG=1)
 
 # These are our approaches
 #add_definitions(-DJUST_VOLATILES=1)
@@ -84,7 +84,7 @@ endfunction(createExecutable)
 
 
 #current, for testing
-#createExecutable("HPCCG-current" ${FLAGS_CURRENT} 0)
+createExecutable("HPCCG-current" ${FLAGS_CURRENT} 0)
 
 # using pointer flags
 
@@ -117,9 +117,9 @@ set(FLAGS_MIX_WANG "APPROACH_MIX_WANG=1")
 #createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED} 1)
 
 # WANG approach
-createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0)
-createExecutable("HPCCG-WANG-VG" ${FLAGS_WANG} 1)
-createExecutable("HPCCG-WANG-JV" ${FLAGS_WANG} 2)
+#createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0)
+#createExecutable("HPCCG-WANG-VG" ${FLAGS_WANG} 1)
+#createExecutable("HPCCG-WANG-JV" ${FLAGS_WANG} 2)
 
 # no sync consumer
 #createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
