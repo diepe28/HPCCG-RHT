@@ -294,7 +294,9 @@ static INLINE void Wang_Produce(double value) {
         // While were at the limit, we update the cached deqPtr
         while(wangQueue.enqPtrLocal == wangQueue.deqPtrCached) {
             wangQueue.deqPtrCached = wangQueue.deqPtr;
-//            asm("pause");
+#if OUR_IMPROVEMENTS == 1
+            asm("pause");
+#endif
         }
         wangQueue.enqPtr = wangQueue.enqPtrLocal;
     }
@@ -306,7 +308,9 @@ static INLINE double Wang_Consume() {
         // While were at the limit, we update the cached enqPtr
         while(wangQueue.deqPtrLocal == wangQueue.enqPtrCached) {
             wangQueue.enqPtrCached = wangQueue.enqPtr;
-            //asm("pause");
+#if OUR_IMPROVEMENTS == 1
+            asm("pause");
+#endif
         }
     }
 
@@ -322,11 +326,13 @@ static INLINE void Wang_Consume_Check(double currentValue) {
         // While were at the limit, we update the cached enqPtr
         while(wangQueue.deqPtrLocal == wangQueue.enqPtrCached) {
             wangQueue.enqPtrCached = wangQueue.enqPtr;
-            //asm("pause");
+#if OUR_IMPROVEMENTS == 1
+            asm("pause");
+#endif
         }
     }
 
-#if BRANCH_HINT == 1
+#if OUR_IMPROVEMENTS == 1
     if (__builtin_expect(fequal(wangQueue.content[wangQueue.deqPtrLocal], currentValue), 1))
 #else
         if (fequal(wangQueue.content[wangQueue.deqPtrLocal], currentValue))

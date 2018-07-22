@@ -21,12 +21,12 @@ set(CMAKE_CXX_STANDARD 11)
 add_definitions(-DUSING_MPI)
 add_definitions(-ftree-vectorize -flto -funroll-all-loops -mavx2 -lm)
 add_definitions(-DPRINT_OUTPUT=0 -DPERCENTAGE_OF_REPLICATION=0)
-add_definitions(-DBRANCH_HINT=1)
+#add_definitions(-DOUR_IMPROVEMENTS=1)
 
 # These are other approaches of the literature
 #add_definitions(-DAPPROACH_USING_POINTERS=1)
 #add_definitions(-DAPPROACH_ALREADY_CONSUMED=1)
-add_definitions(-DAPPROACH_WANG=1)
+#add_definitions(-DAPPROACH_WANG=1)
 
 # These are our approaches
 #add_definitions(-DJUST_VOLATILES=1)
@@ -59,7 +59,7 @@ set(SOURCE_FILES main.cpp
         YAML_Element.cpp YAML_Element.h
         RHT.h RHT.cpp atomicops.h readerwriterqueue.h QueueStressTest.cpp QueueStressTest.h)
 
-function(createExecutable exeName compFlags varFlag)
+function(createExecutable exeName compFlags varFlag ourImprovs)
     add_executable(${exeName} ${SOURCE_FILES})
     #this line causes problems when used with cmake 3.7 (version of g5k machines)
     #set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS "${compFlags}")
@@ -69,6 +69,9 @@ function(createExecutable exeName compFlags varFlag)
     endif()
     if(varFlag EQUAL 2)
         set_property(TARGET ${exeName} APPEND PROPERTY COMPILE_DEFINITIONS "JUST_VOLATILES=1")
+    endif()
+    if(ourImprovs EQUAL 1)
+        set_property(TARGET ${exeName} APPEND PROPERTY COMPILE_DEFINITIONS "OUR_IMPROVEMENTS=1")
     endif()
     target_link_libraries(${exeName} ${MPI_LIBRARIES})
     target_link_libraries(${exeName} pthread)
@@ -84,7 +87,7 @@ endfunction(createExecutable)
 
 
 #current, for testing
-createExecutable("HPCCG-current" ${FLAGS_CURRENT} 0)
+#createExecutable("HPCCG-current" ${FLAGS_CURRENT} 0 0)
 
 # using pointer flags
 
@@ -117,9 +120,13 @@ set(FLAGS_MIX_WANG "APPROACH_MIX_WANG=1")
 #createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED} 1)
 
 # WANG approach
-#createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0)
-#createExecutable("HPCCG-WANG-VG" ${FLAGS_WANG} 1)
-#createExecutable("HPCCG-WANG-JV" ${FLAGS_WANG} 2)
+createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0 0)
+createExecutable("HPCCG-WANG-VG" ${FLAGS_WANG} 1 0)
+createExecutable("HPCCG-WANG-JV" ${FLAGS_WANG} 2 0)
+
+createExecutable("IMP-HPCCG-WANG" ${FLAGS_WANG} 0 1)
+createExecutable("IMP-HPCCG-WANG-VG" ${FLAGS_WANG} 1 1)
+createExecutable("IMP-HPCCG-WANG-JV" ${FLAGS_WANG} 2 1)
 
 # no sync consumer
 #createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
