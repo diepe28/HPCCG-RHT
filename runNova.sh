@@ -29,7 +29,7 @@ mpirun -np 1 IMP-HPCCG-WANG-JV 150 150 250 5 2 0 2 > IMP-replicated-wang-jv-1ran
 
 echo Running replicated wang just volatiles 1rank HT
 mpirun -np 1 HPCCG-WANG-JV 150 150 250 5 2 0 16 > replicated-wang-jv-1rank-HT.txt 
-mpirun -np 1 IMP-HPCCG-WANG-JV 150 150 250 5 2 0 16 > replicated-wang-jv-1rank-HT.txt 
+mpirun -np 1 IMP-HPCCG-WANG-JV 150 150 250 5 2 0 16 > IMP-replicated-wang-jv-1rank-HT.txt 
 
 echo Running baseline 16 ranks
 mpirun -np 16 HPCCG-WANG 150 150 110 5 > mybaseline-16rank.txt
