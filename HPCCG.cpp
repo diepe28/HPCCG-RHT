@@ -56,16 +56,22 @@ using std::endl;
 #include "HPCCG.h"
 #include "RHT.h"
 
-#define TICK()  t0 = mytimer() // Use TICK and TOCK to time a code section
-#define TOCK(t) t += mytimer() - t0
+#define TICK()  clock_gettime(CLOCK_MONOTONIC, &newStart); // Use TICK and TOCK to time a code section
+#define TOCK(t)                                                 \
+    clock_gettime(CLOCK_MONOTONIC, &newEnd);                    \
+    t += (newEnd.tv_sec - newStart.tv_sec) + (newEnd.tv_nsec - newStart.tv_nsec) / 1000000000.0;
 
 int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
 	  const double * const b, double * const x,
 	  const int max_iter, const double tolerance, int &niters, double & normr,
 	  double * times) {
-    double t_begin = mytimer();  // Start timing right away
+
+    struct timespec startAll, newStart, newEnd;
+    clock_gettime(CLOCK_MONOTONIC, &startAll);
+    //double t_begin = mytimer();  // Start timing right away
 
     double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;
+
 #ifdef USING_MPI
     double t5 = 0.0;
 #endif
@@ -96,7 +102,9 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
     waxpby(nrow, 1.0, x, 0.0, x, p);
     TOCK(t2);
 #ifdef USING_MPI
-    TICK(); exchange_externals(hpc_sparse_matrix,p); TOCK(t5);
+    TICK();
+    exchange_externals(hpc_sparse_matrix, p);
+    TOCK(t5);
 #endif
     TICK();
     HPC_sparsemv(hpc_sparse_matrix, p, Ap);
@@ -135,7 +143,9 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
 #endif
 
 #ifdef USING_MPI
-            TICK(); exchange_externals(hpc_sparse_matrix,p); TOCK(t5);
+        TICK();
+        exchange_externals(hpc_sparse_matrix, p);
+        TOCK(t5);
 #endif
         TICK();
         HPC_sparsemv(hpc_sparse_matrix, p, Ap);
@@ -163,7 +173,8 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
     delete[] p;
     delete[] Ap;
     delete[] r;
-    times[0] = mytimer() - t_begin;  // Total time. All done...
+    // Total time. All done...
+    GetTimeSince(startAll, times[0] =) //times[0] = mytimer() - t_begin;
     return (0);
 }
 
@@ -171,7 +182,9 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
                             const double *const b, double *const x,
                             const int max_iter, const double tolerance, int &niters, double &normr,
                             double *times) {
-    double t_begin = mytimer();  // Start timing right away
+    struct timespec startAll, newStart, newEnd;
+    clock_gettime(CLOCK_MONOTONIC, &startAll);
+    //double t_begin = mytimer();  // Start timing right away
 
     double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;
     /*-- RHT -- */ RHT_Produce(t0);
@@ -225,7 +238,8 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 
 #ifdef USING_MPI
     TICK();
-    exchange_externals_producer(hpc_sparse_matrix, p); TOCK(t5);
+    exchange_externals_producer(hpc_sparse_matrix, p);
+    TOCK(t5);
 #endif
 
     TICK();
@@ -331,7 +345,10 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
     delete[] p;
     delete[] Ap;
     delete[] r;
-    times[0] = mytimer() - t_begin;  // Total time. All done...
+
+    // Total time. All done...
+    GetTimeSince(startAll, times[0] = ) //times[0] = mytimer() - t_begin;
+
     return (0);
 }
 
@@ -339,7 +356,7 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
                    const double * const b, double * const x,
                    const int max_iter, const double tolerance, int &niters, double & normr,
                    double * times) {
-    double t_begin = mytimer();  // Start timing right away
+    //-- RHT -- Not replicated double t_begin = mytimer();  // Start timing right away
 
     double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;
     /*-- RHT -- */ RHT_Consume_Check(t0);
@@ -385,28 +402,29 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     /*-- RHT -- */ RHT_Consume_Check(print_freq);
 
     // p is of length ncols, copy x to p for sparse MV operation
-    TICK();
+    //-- RHT Not replicated -- TICK();
     waxpby_consumer(nrow, 1.0, x, 0.0, x, p);
-    TOCK(t2);
+    //-- RHT Not replicated --TOCK(t2);
 
 //    printf("Consumer so far so good\n");
 
 #ifdef USING_MPI
-    TICK();
-    exchange_externals_consumer(hpc_sparse_matrix,p); TOCK(t5);
+    //-- RHT Not replicated --TICK();
+    exchange_externals_consumer(hpc_sparse_matrix,p);
+    //-- RHT Not replicated --TOCK(t5);
 #endif
 
-    TICK();
+    //-- RHT Not replicated --TICK();
     HPC_sparsemv_consumer(hpc_sparse_matrix, p, Ap);
-    TOCK(t3);
+    //-- RHT Not replicated --TOCK(t3);
 
-    TICK();
+    //-- RHT Not replicated --TICK();
     waxpby_consumer(nrow, 1.0, b, -1.0, Ap, r);
-    TOCK(t2);
+    //-- RHT Not replicated --TOCK(t2);
 
-    TICK();
+    //-- RHT Not replicated --TICK();
     ddot_consumer(nrow, r, r, &rtrans, t4);
-    TOCK(t1);
+    //-- RHT Not replicated --TOCK(t1);
 
     normr = sqrt(rtrans);
 
@@ -414,9 +432,9 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     /*-- RHT Volatile -- */ RHT_Consume_Volatile(normr);
     /*-- RHT Not Replicated -- */// if (rank == 0) cout << "Initial Residual = " << normr << endl;
 
-    TICK();
+    //-- RHT Not replicated --TICK();
     waxpby_consumer(nrow, 1.0, r, 0.0, r, p);
-    TOCK(t2);
+    //-- RHT Not replicated --TOCK(t2);
 
     double beta = 0;
     int k = 1;
@@ -427,16 +445,16 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         oldrtrans = rtrans;
         /*-- RHT -- */ RHT_Consume_Check(print_freq);
 
-        TICK();
+        //-- RHT Not replicated --TICK();
         ddot_consumer(nrow, r, r, &rtrans, t4);
-        TOCK(t1);// 2*nrow ops
+        //-- RHT Not replicated --TOCK(t1);// 2*nrow ops
 
         beta = rtrans / oldrtrans;
         /*-- RHT -- */ RHT_Consume_Check(beta);
 
-        TICK();
+        //-- RHT Not replicated --TICK();
         waxpby_consumer(nrow, 1.0, r, beta, p, p);
-        TOCK(t2);// 2*nrow ops
+        //-- RHT Not replicated --TOCK(t2);// 2*nrow ops
 
       inFor:
 
@@ -450,28 +468,28 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
         // cout << "Iteration = " << k << "   Residual = " << normr << endl;
 
 #ifdef USING_MPI
-        TICK();
+        //-- RHT Not replicated --TICK();
         exchange_externals_consumer(hpc_sparse_matrix, p);
-        TOCK(t5);
+        //-- RHT Not replicated --TOCK(t5);
 #endif
-        TICK();
+        //-- RHT Not replicated --TICK();
         HPC_sparsemv_consumer(hpc_sparse_matrix, p, Ap);
-        TOCK(t3); // 2*nnz ops
+        //-- RHT Not replicated --TOCK(t3); // 2*nnz ops
 
         double alpha = 0.0;
         /*-- RHT -- */ RHT_Consume_Check(alpha);
 
-        TICK();
+        //-- RHT Not replicated --TICK();
         ddot_consumer(nrow, p, Ap, &alpha, t4);
-        TOCK(t1); // 2*nrow ops
+        //-- RHT Not replicated --TOCK(t1); // 2*nrow ops
 
         alpha = rtrans / alpha;
         /*-- RHT -- */ RHT_Consume_Check(alpha);
 
-        TICK();
+        //-- RHT Not replicated --TICK();
         waxpby_consumer(nrow, 1.0, x, alpha, p, x);// 2*nrow ops
         waxpby_consumer(nrow, 1.0, r, -alpha, Ap, r);
-        TOCK(t2);// 2*nrow ops
+        //-- RHT Not replicated --TOCK(t2);// 2*nrow ops
 
         niters = k;
         RHT_Consume_Check(niters);
@@ -489,6 +507,6 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
     delete[] p;
     delete[] Ap;
     delete[] r;
-    times[0] = mytimer() - t_begin;  // Total time. All done...
+    //-- RHT -- Not replicated times[0] = mytimer() - t_begin;  // Total time. All done...
     return (0);
 }

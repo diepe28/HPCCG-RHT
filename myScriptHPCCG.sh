@@ -13,6 +13,16 @@
 
 folder="$1"
 newFolder="$1"-Clean
+cluster="$2" #cenat | g5k
+
+if [ "$2" == "cenat" ]
+then
+    cluster="dperez@cluster.cenat.ac.cr"
+else
+    cluster="dperez@access.grid5000.fr"
+fi
+
+echo Cluster http: $cluster
 
 echo Folder Name: $folder $newFolder
 
@@ -37,11 +47,19 @@ echo "zip file created"
 
 #echo "Copying files to Nancy..."
 #scp $newFolder.tar.gz dperez@access.grid5000.fr:nancy/public
-echo "Copying files to Nantes..."
-scp $newFolder.tar.gz dperez@access.grid5000.fr:nantes/public
-echo "Copying files to Lyon..."
-scp $newFolder.tar.gz dperez@access.grid5000.fr:lyon/public
-echo "Files copied to Grid5K Storage"
+
+if [ "$2" == "cenat" ]
+then
+    echo "Copying files to Kabre..."
+    scp $newFolder.tar.gz $cluster:~/public/workspace
+    echo "Files copied to Kabre Storage"
+else
+    echo "Copying files to Nantes..."
+    scp $newFolder.tar.gz $cluster:nantes/public
+    echo "Copying files to Lyon..."
+    scp $newFolder.tar.gz $cluster:lyon/public
+    echo "Files copied to Grid5K Storage"
+fi    
 echo "Removing zip file"
 rm HPCCG-RHT-Clean.tar.gz
 echo "Success!!"
@@ -80,6 +98,12 @@ echo "Success!!"
 #oarsub -p "cluster='nova'" -l nodes=1,walltime=4 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runNova.sh"
 
 #oarsub -p "cluster='ecotype'" -l nodes=1,walltime=4 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype.sh"
-
 #ssh dperez@access.grid5000.fr
+
+#ssh dperez@cluster.cenat.ac.cr
+#module load gcc/7.2.0 && module load cmake/3.12.0-rc2 && export CXX=/opt/compilers/gcc-7.2.0/bin/g++ && export CC=/opt/compilers/gcc-7.2.0/bin/gcc && 
+#tar -xzvf HPCCG-RHT-Clean.tar.gz && rm HPCCG-RHT-Clean.tar.gz && cd HPCCG-RHT-Clean/cmake-build-debug/ && cmake .. && make
+
+#Usuario: dperez
+#Clave: lnD8RhsF
 

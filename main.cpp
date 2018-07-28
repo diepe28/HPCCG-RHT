@@ -219,11 +219,12 @@ int main(int argc, char *argv[]) {
     bool dump_matrix = false;
     if (dump_matrix && size <= 4) dump_matlab_matrix(sparseMatrix, rank);
 
-    double t1 = mytimer();   // Initialize it (if needed)
+    //-- RHT -- Not replicated - double t1 = mytimer();   // Initialize it (if needed)
     int niters = 0;
     double normr = 0.0;
     int max_iter = 150;
     double tolerance = 0.0; // Set tolerance to zero to make all runs do max_iter iterations
+    struct timespec startExe, newEnd, startAll, endAll;
 
     if (replicated) {
         // --- Protected runs ---
@@ -249,8 +250,6 @@ int main(int argc, char *argv[]) {
 
         for (iterator = meanRHT = 0; iterator < numRuns; iterator++) {
 #if PERCENTAGE_OF_REPLICATION == 1
-            double elapsedAll = 0;
-            struct timespec startAll, endAll;
 
             //here is where the timer of the all execution starts...
             if (rank == 0) {
@@ -262,9 +261,9 @@ int main(int argc, char *argv[]) {
 #ifdef USING_MPI
             // Transform matrix indices from global to local values.
             // Define number of columns for the local matrix.
-            t6 = mytimer();
+            clock_gettime(CLOCK_MONOTONIC, &startExe); // t6 = mytimer();
             make_local_matrix(sparseMatrix);
-            t6 = mytimer() - t6;
+            GetTimeSince(startExe, t6 = ) // t6 = mytimer() - t6;
             times[6] = t6;
 #endif
 
@@ -295,11 +294,7 @@ int main(int argc, char *argv[]) {
 #if PERCENTAGE_OF_REPLICATION == 1
             //this is where all execution ends
             if(rank == 0) {
-                clock_gettime(CLOCK_MONOTONIC, &endAll);
-
-                elapsedAll = (endAll.tv_sec - startAll.tv_sec);
-                elapsedAll += (endAll.tv_nsec - startAll.tv_nsec) / 1000000000.0;
-
+                elapsedAl = GetTimeSince(startAll)
                 printf("The replication is %.5f %% of all the execution\n", times[0] / elapsedAll);
             }
 #endif
@@ -354,9 +349,9 @@ int main(int argc, char *argv[]) {
 #ifdef USING_MPI
             // Transform matrix indices from global to local values.
             // Define number of columns for the local matrix.
-            t6 = mytimer();
+            clock_gettime(CLOCK_MONOTONIC, &startExe); //t6 = mytimer();
             make_local_matrix(sparseMatrix);
-            t6 = mytimer() - t6;
+            GetTimeSince(startExe, t6 = ) //t6 = mytimer() - t6;
             times[6] = t6;
 #endif
 

@@ -28,5 +28,10 @@
 //@HEADER
 #ifndef MYTIMER_H
 #define MYTIMER_H
-double mytimer(void);
+
+#define GetTimeSince(startTimer, resultExp)                          \
+    clock_gettime(CLOCK_MONOTONIC, &newEnd);                    \
+    resultExp  (newEnd.tv_sec - startTimer.tv_sec) + (newEnd.tv_nsec - startTimer.tv_nsec) / 1000000000.0;
+
+double mytimer_deprecated(void);
 #endif // MYTIMER_H

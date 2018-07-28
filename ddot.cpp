@@ -58,12 +58,14 @@ int ddot (const int n, const double * const x, const double * const y,
 
 #ifdef USING_MPI
     // Use MPI's reduce function to collect all partial sums
-    double t0 = mytimer();
+    struct timespec startAll, newEnd;
+    double elapsedTime;
+    clock_gettime(CLOCK_MONOTONIC, &startAll); //double t0 = mytimer();
     double global_result = 0.0;
     MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM,
                   MPI_COMM_WORLD);
     *result = global_result;
-    time_allreduce += mytimer() - t0;
+    GetTimeSince(startAll, time_allreduce +=) //time_allreduce += mytimer() - t0;
 #else
     *result = local_result;
 #endif
@@ -87,7 +89,9 @@ int ddot_producer(const int n, const double *const x, const double *const y,
 
 #ifdef USING_MPI
     // Use MPI's reduce function to collect all partial sums
-    double t0 = mytimer();
+    struct timespec startAll, newEnd;
+    clock_gettime(CLOCK_MONOTONIC, &startAll); //double t0 = mytimer();
+
     double global_result = 0.0;
 
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(local_result)
@@ -95,7 +99,7 @@ int ddot_producer(const int n, const double *const x, const double *const y,
     /*-- RHT -- */ RHT_Produce_NoCheck(global_result);
 
     *result = global_result;
-    time_allreduce += mytimer() - t0;
+    GetTimeSince(startAll, time_allreduce +=) //time_allreduce += mytimer() - t0;
 #else
     *result = local_result;
 #endif
@@ -121,7 +125,7 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
 
 #ifdef USING_MPI
     // Use MPI's reduce function to collect all partial sums
-    double t0 = mytimer();
+    /*-- RHT Not replicated -- */// double t0 = mytimer();
     double global_result = 0.0;
 
     /*-- RHT Volatile -- */ RHT_Consume_Volatile(local_result);
@@ -129,7 +133,7 @@ int ddot_consumer (const int n, const double * const x, const double * const y,
     global_result = RHT_Consume();
 
     *result = global_result;
-    time_allreduce += mytimer() - t0;
+    /*-- RHT Not replicated -- */// time_allreduce += mytimer() - t0;
 #else
     *result = local_result;
 #endif

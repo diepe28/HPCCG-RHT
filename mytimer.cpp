@@ -34,10 +34,11 @@
 // If compiled with -DWALL, returns elapsed time.
 
 /////////////////////////////////////////////////////////////////////////
+
 #ifdef USING_MPI
 #include <mpi.h> // If this routine is compiled with -DUSING_MPI
                  // then include mpi.h
-double mytimer(void)
+double mytimer_deprecated(void)
 {
    return(MPI_Wtime());
 }
