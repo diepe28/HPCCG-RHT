@@ -163,9 +163,12 @@ void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x) {
     // Post receives first
     for (i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
+#if JUST_VOLATILES == 1
+        /*-- RHT -- */ RHT_Produce_Volatile(n_recv);
+#else
         /*-- RHT -- */ RHT_Produce(n_recv);
-        /*-- RHT Volatile -- */ RHT_Produce_Volatile((double)neighbors[i]);
-        /// TODO what to with last parameter? is a user def type
+#endif
+        /*-- RHT -- */ RHT_Produce_Volatile((double)neighbors[i]);
         MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
                   MPI_COMM_WORLD, request + i);
         x_external += n_recv;
@@ -187,7 +190,11 @@ void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x) {
 
     for (i = 0; i < num_neighbors; i++) {
         int n_send = send_length[i];
+#if JUST_VOLATILES == 1
+        /*-- RHT -- */ RHT_Produce_Volatile(n_send);
+#else
         /*-- RHT -- */ RHT_Produce(n_send);
+#endif
         /*-- RHT Volatile -- */ RHT_Produce_Volatile(neighbors[i]);
         MPI_Send(send_buffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
                  MPI_COMM_WORLD);
@@ -271,7 +278,11 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
     // Post receives first
     for (i = 0; i < num_neighbors; i++) {
         int n_recv = recv_length[i];
+#if JUST_VOLATILES == 1
+        /*-- RHT -- */ RHT_Consume_Volatile(n_recv);
+#else
         /*-- RHT -- */ RHT_Consume_Check(n_recv);
+#endif
         /*-- RHT Volatile -- */ RHT_Consume_Volatile((double)neighbors[i]);
         /// TODO what to with last parameter? is a user def type
         /*-- RHT Volatile Not replicated -- */// MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG,
@@ -296,7 +307,11 @@ void exchange_externals_consumer(HPC_Sparse_Matrix * A, const double *x) {
 
     for (i = 0; i < num_neighbors; i++) {
         int n_send = send_length[i];
+#if JUST_VOLATILES == 1
+        /*-- RHT -- */ RHT_Consume_Volatile(n_send);
+#else
         /*-- RHT -- */ RHT_Consume_Check(n_send);
+#endif
         /*-- RHT Volatile -- */ RHT_Consume_Volatile((double)neighbors[i]);
         /*-- RHT Volatile Not replicated -- */// MPI_Send(send_buffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
         send_buffer += n_send;

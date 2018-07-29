@@ -4,7 +4,8 @@
 #Simple script to upload a new version of HPCCG-RHT to Grid 5K and run them
 #chmod +x executable, to give permission
 
-#Example of use: ./myScript.sh HPCCG-RHT
+#Example of use: ./myScriptHPCCG.sh HPCCG-RHT g5k
+#Example of use: ./myScriptHPCCG.sh HPCCG-RHT cenat
 
 #rm -r -f nancy/public/HPCCG-RHT-Clean/
 #rm nancy/public/HPCCG-RHT-Clean.tar.gz 

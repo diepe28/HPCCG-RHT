@@ -200,7 +200,12 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 
     int nrow = hpc_sparse_matrix->local_nrow;
     int ncol = hpc_sparse_matrix->local_ncol;
+
+#if JUST_VOLATILES == 1
+    /*-- RHT -- */ RHT_Produce_Volatile(nrow);
+#else
     /*-- RHT -- */ RHT_Produce(nrow);
+#endif
     /*-- RHT -- */ RHT_Produce_Volatile(ncol);
 
     double *r = new double[nrow];
@@ -288,10 +293,19 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
         inFor:
 
         normr = sqrt(rtrans);
+
+#if JUST_VOLATILES == 1
+        /*-- RHT -- */ RHT_Produce_Volatile(k);
+        /*-- RHT -- */ RHT_Produce_Volatile(rank);
+        /*-- RHT -- */ RHT_Produce_Volatile(print_freq);
+        /*-- RHT -- */ RHT_Produce_Volatile(max_iter);
+#else
         /*-- RHT -- */ RHT_Produce(k);
         /*-- RHT -- */ RHT_Produce(rank);
         /*-- RHT -- */ RHT_Produce(print_freq);
         /*-- RHT -- */ RHT_Produce(max_iter);
+#endif
+
         /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
 
 #if PRINT_OUTPUT == 1
@@ -372,7 +386,12 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
 
     int nrow = hpc_sparse_matrix->local_nrow;
     int ncol = hpc_sparse_matrix->local_ncol;
+
+#if JUST_VOLATILES == 1
+    /*-- RHT -- */ RHT_Consume_Volatile(nrow);
+#else
     /*-- RHT -- */ RHT_Consume_Check(nrow);
+#endif
     /*-- RHT -- */ RHT_Consume_Volatile(ncol);
 
     double *r = new double[nrow];
@@ -459,10 +478,17 @@ int HPCCG_consumer(HPC_Sparse_Matrix * hpc_sparse_matrix,
       inFor:
 
         normr = sqrt(rtrans);
+#if JUST_VOLATILES == 1
+        /*-- RHT -- */ RHT_Consume_Volatile(k);
+        /*-- RHT -- */ RHT_Consume_Volatile(rank);
+        /*-- RHT -- */ RHT_Consume_Volatile(print_freq);
+        /*-- RHT -- */ RHT_Consume_Volatile(max_iter);
+#else
         /*-- RHT -- */ RHT_Consume_Check(k);
         /*-- RHT -- */ RHT_Consume_Check(rank);
         /*-- RHT -- */ RHT_Consume_Check(print_freq);
         /*-- RHT -- */ RHT_Consume_Check(max_iter);
+#endif
         /*-- RHT Volatile -- */ RHT_Consume_Volatile(normr);
         /*-- RHT Not replicated -- */// if (rank == 0 && (k % print_freq == 0 || k + 1 == max_iter))
         // cout << "Iteration = " << k << "   Residual = " << normr << endl;
