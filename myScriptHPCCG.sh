@@ -35,6 +35,7 @@ rm -rf $newFolder/.idea
 mkdir $newFolder/tempFolder
 cp -a $newFolder/runNova.sh ./$newFolder/tempFolder
 cp -a $newFolder/runEcotype.sh ./$newFolder/tempFolder
+cp -a $newFolder/runEcotype-testHT.sh ./$newFolder/tempFolder
 cp -a $newFolder/scriptTest.sh ./$newFolder/tempFolder
 
 rm -rf $newFolder/cmake-build-debug
@@ -70,6 +71,7 @@ echo "Success!!"
 # Inside a node (if tar.gz was copied into public/ with appriate file structure)
 #cd public/ && tar -xzvf HPCCG-RHT-Clean.tar.gz && rm HPCCG-RHT-Clean.tar.gz && cd HPCCG-RHT-Clean/cmake-build-debug/ && cmake .. && make
 
+#Install newer gcc
 #sudo-g5k && sudo -H /bin/bash 
 #sudo echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" > /etc/apt/sources.list.d/preferences.list &&
 #sudo echo "Package: *
@@ -98,12 +100,17 @@ echo "Success!!"
 #execute a script file
 #oarsub -p "cluster='nova'" -l nodes=1,walltime=4 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runNova.sh"
 
-#oarsub -p "cluster='ecotype'" -l nodes=1,walltime=4 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype.sh"
+#oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype.sh"
 #ssh dperez@access.grid5000.fr
+
+#extend a jobtime
+#oarwalltime 12345 +1:30
 
 #ssh dperez@cluster.cenat.ac.cr
 #module load gcc/7.2.0 && module load cmake/3.12.0-rc2 && export CXX=/opt/compilers/gcc-7.2.0/bin/g++ && export CC=/opt/compilers/gcc-7.2.0/bin/gcc && 
 #tar -xzvf HPCCG-RHT-Clean.tar.gz && rm HPCCG-RHT-Clean.tar.gz && cd HPCCG-RHT-Clean/cmake-build-debug/ && cmake .. && make
+#qsub hpccg.pbs
+#qdel jobId
 
 #Usuario: dperez
 #Clave: lnD8RhsF
