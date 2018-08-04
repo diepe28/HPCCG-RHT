@@ -145,10 +145,10 @@ static int are_both_nan(double pValue, double cValue){
     }                                                                       \
     wangQueue.volatileValue = volValue;                                     \
     wangQueue.checkState = 0;                                               \
-    while (wangQueue.checkState == 0); ThreadWait
+    while (wangQueue.checkState == 0) { ThreadWait }
 
 #define RHT_Consume_Volatile(volValue)                                      \
-    while (wangQueue.checkState == 1);  ThreadWait                          \
+    while (wangQueue.checkState == 1)  { ThreadWait }                       \
     if (!fequal(volValue, wangQueue.volatileValue)){                        \
         Report_Soft_Error(volValue, wangQueue.volatileValue)                \
     }                                                                       \

@@ -101,6 +101,7 @@ echo "Success!!"
 #oarsub -p "cluster='nova'" -l nodes=1,walltime=4 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runNova.sh"
 
 #oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype.sh"
+#oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype-testHT.sh"
 #ssh dperez@access.grid5000.fr
 
 #extend a jobtime
