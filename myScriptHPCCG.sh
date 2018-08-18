@@ -36,6 +36,7 @@ mkdir $newFolder/tempFolder
 cp -a $newFolder/runNova.sh ./$newFolder/tempFolder
 cp -a $newFolder/runEcotype.sh ./$newFolder/tempFolder
 cp -a $newFolder/runEcotype-testHT.sh ./$newFolder/tempFolder
+cp -a $newFolder/runVarGrouping.sh ./$newFolder/tempFolder
 cp -a $newFolder/scriptTest.sh ./$newFolder/tempFolder
 
 rm -rf $newFolder/cmake-build-debug
@@ -101,6 +102,7 @@ echo "Success!!"
 #oarsub -p "cluster='nova'" -l nodes=1,walltime=4 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runNova.sh"
 
 #oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype.sh"
+#oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runVarGrouping.sh"
 #oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype-testHT.sh"
 #ssh dperez@access.grid5000.fr
 

@@ -11,13 +11,12 @@
 #define HPCCG_1_0_SYNCQUEUE_H
 
 
+#include <x86intrin.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
-//#include <zconf.h>
 #include <math.h>
 #include <zconf.h>
-
 
 // -------- Macros ----------
 // a cache line is 64 bytes, int -> 4 bytes, double -> 8 bytes
@@ -25,7 +24,7 @@
 #define RHT_QUEUE_SIZE 1024 // > 512 make no real diff
 #define MIN_PTR_DIST 128 // > 200 makes no real diff
 #define ALREADY_CONSUMED -251802.891237
-#define GROUP_GRANULARITY 16
+//#define GROUP_GRANULARITY 16
 #define INLINE inline __attribute__((always_inline))
 #define EPSILON 0.000001
 #define fequal(a,b) (fabs(a-b) < EPSILON)
@@ -127,11 +126,14 @@ static int are_both_nan(double pValue, double cValue){
 // must be inside {}
 #define Report_Soft_Error(consumerValue, producerValue) \
     printf("\n SOFT ERROR DETECTED, Consumer: %f Producer: %f -- PCount: %lu vs CCount: %lu, distance: %lu \n",  \
-            consumerValue, producerValue, wangQueue.producerCount, wangQueue.consumerCount, wangQueue.producerCount - wangQueue.consumerCount); \
+            consumerValue, producerValue, wangQueue.producerCount, wangQueue.consumerCount, \
+            wangQueue.producerCount - wangQueue.consumerCount); \
     exit(1);
 
+//__asm__("pause");
+
 #if OUR_IMPROVEMENTS == 1
-#define ThreadWait asm("pause");
+#define ThreadWait _mm_pause();
 #else
 #define ThreadWait ;
 #endif

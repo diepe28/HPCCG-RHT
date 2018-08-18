@@ -322,6 +322,9 @@ int main(int argc, char *argv[]) {
 #elif APPROACH_MIX_WANG == 1
                 printf("BASELINE: MIX_WANG ");
 #endif
+#if VAR_GROUPING == 1
+                printf("VG: %d ", GROUP_GRANULARITY);
+#endif
                 printf(" [%d]: %f seconds, on cores: %d, %d --- ProducerWaiting: %lu, ConsumerWaiting: %lu\n",
                        iterator, timesRHT[iterator], producerCore, consumerCore, wangQueue.producerCount, wangQueue.consumerCount);
             }

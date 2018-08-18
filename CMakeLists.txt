@@ -59,7 +59,7 @@ set(SOURCE_FILES main.cpp
         YAML_Element.cpp YAML_Element.h
         RHT.h RHT.cpp atomicops.h readerwriterqueue.h QueueStressTest.cpp QueueStressTest.h)
 
-function(createExecutable exeName compFlags varFlag ourImprovs)
+function(createExecutable exeName compFlags varFlag ourImprovs groupSize)
     add_executable(${exeName} ${SOURCE_FILES})
     #this line causes problems when used with cmake 3.7 (version of g5k machines)
     #set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS "${compFlags}")
@@ -73,6 +73,9 @@ function(createExecutable exeName compFlags varFlag ourImprovs)
     if(ourImprovs EQUAL 1)
         set_property(TARGET ${exeName} APPEND PROPERTY COMPILE_DEFINITIONS "OUR_IMPROVEMENTS=1")
     endif()
+
+    set_property(TARGET ${exeName} APPEND PROPERTY COMPILE_DEFINITIONS "GROUP_GRANULARITY=${groupSize}")
+
     target_link_libraries(${exeName} ${MPI_LIBRARIES})
     target_link_libraries(${exeName} pthread)
     target_link_libraries(${exeName} m) #math
@@ -87,7 +90,7 @@ endfunction(createExecutable)
 
 
 #current, for testing
-#createExecutable("HPCCG-current" ${FLAGS_CURRENT}  2 0)
+#createExecutable("HPCCG-current" ${FLAGS_CURRENT} 0 1)
 
 # using pointer flags
 
@@ -119,14 +122,21 @@ set(FLAGS_MIX_WANG "APPROACH_MIX_WANG=1")
 #createExecutable("HPCCG-AC" ${FLAGS_ALREADY_CONSUMED} 0)
 #createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED} 1)
 
-# WANG approach
-createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0 0)
-createExecutable("HPCCG-WANG-VG" ${FLAGS_WANG} 1 0)
-createExecutable("HPCCG-WANG-JV" ${FLAGS_WANG} 2 0)
+createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0 0 0)
+createExecutable("HPCCG-WANG-VG-2" ${FLAGS_WANG} 1 0 2)
+createExecutable("HPCCG-WANG-VG-4" ${FLAGS_WANG} 1 0 4)
+createExecutable("HPCCG-WANG-VG-8" ${FLAGS_WANG} 1 0 8)
+createExecutable("HPCCG-WANG-VG-16" ${FLAGS_WANG} 1 0 16)
+createExecutable("HPCCG-WANG-VG-32" ${FLAGS_WANG} 1 0 32)
 
-createExecutable("IMP-HPCCG-WANG" ${FLAGS_WANG} 0 1)
-createExecutable("IMP-HPCCG-WANG-VG" ${FLAGS_WANG} 1 1)
-createExecutable("IMP-HPCCG-WANG-JV" ${FLAGS_WANG} 2 1)
+# WANG approach
+#createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0 0)
+#createExecutable("HPCCG-WANG-VG" ${FLAGS_WANG} 1 0)
+#createExecutable("HPCCG-WANG-JV" ${FLAGS_WANG} 2 0)
+
+#createExecutable("IMP-HPCCG-WANG" ${FLAGS_WANG} 0 1)
+#createExecutable("IMP-HPCCG-WANG-VG" ${FLAGS_WANG} 1 1)
+#createExecutable("IMP-HPCCG-WANG-JV" ${FLAGS_WANG} 2 1)
 
 # no sync consumer
 #createExecutable("HPCCG-NSC" ${FLAGS_NO_SYNC_CONSUMER})
