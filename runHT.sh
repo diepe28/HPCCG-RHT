@@ -19,12 +19,19 @@
 #
 #echo Done disabling turbo-mode
 
+x=200
+y=200
+z=800
+nRuns=10
+nRanks=20
+nCores=40
+
 echo Running baseline
-mpirun -np 1 HPCCG-WANG 200 200 800 10 > mybaseline-1rank.txt
-mpirun -np 2 HPCCG-WANG 200 200 400 10 > mybaseline-2rank.txt
-mpirun -np 4 HPCCG-WANG 200 200 200 10 > mybaseline-4rank.txt
-mpirun -np 8 HPCCG-WANG 200 200 100 10 > mybaseline-8rank.txt
-mpirun -np 16 HPCCG-WANG 200 200 50 10 > mybaseline-16rank.txt
-mpirun -np 20 HPCCG-WANG 200 200 40 10 > mybaseline-20rank.txt
-mpirun -np 40 HPCCG-WANG 200 200 20 10 > mybaseline-40rank.txt
+mpirun -np 1 HPCCG-WANG $x $y $z 800 $nRuns > baseline-1rank.txt
+mpirun -np 2 HPCCG-WANG $x $y $z 400 $nRuns > baseline-2rank.txt
+mpirun -np 4 HPCCG-WANG $x $y $z 200 $nRuns > baseline-4rank.txt
+mpirun -np 8 HPCCG-WANG $x $y $z 100 $nRuns > baseline-8rank.txt
+mpirun -np 16 HPCCG-WANG $x $y $z 50 $nRuns > baseline-16rank.txt
+mpirun -np 20 HPCCG-WANG $x $y $z 40 $nRuns > baseline-20rank.txt
+mpirun -np 40 HPCCG-WANG $x $y $z 20 $nRuns > baseline-40rank.txt
 
