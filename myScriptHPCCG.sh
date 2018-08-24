@@ -103,7 +103,7 @@ echo "Success!!"
 #oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype.sh"
 #oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runVarGrouping.sh"
 #oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runDifferentSizes.sh"
-#oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runEcotype-testHT.sh"
+#oarsub -p "cluster='ecotype'" -l nodes=1,walltime=7 "/home/dperez/public/HPCCG-RHT-Clean/cmake-build-debug/runHT.sh"
 #ssh dperez@access.grid5000.fr
 
 #extend a jobtime
