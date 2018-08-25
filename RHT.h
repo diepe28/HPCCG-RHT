@@ -63,10 +63,10 @@ typedef struct {
     double padding3[31];
     volatile double *content;
     double padding4[31];
-    volatile double volatileValue;
-    volatile int checkState;
+    volatile double volValue;
+    volatile int volState;
     double padding5[30];
-    int pResidue, cResidue, nextEnq;
+    int pRmdr, cRmdr, nextEnq;
 }WANG_QUEUE;
 
 extern RHT_QUEUE globalQueue;
@@ -85,7 +85,7 @@ static void Queue_Init() {
 
 static void Wang_Queue_Init() {
     wangQueue.content = (double *) (malloc(sizeof(double) * RHT_QUEUE_SIZE));
-    wangQueue.checkState = 1;
+    wangQueue.volState = 1;
     wangQueue.enqPtr = wangQueue.enqPtrLocal = wangQueue.enqPtrCached =
     wangQueue.deqPtr = wangQueue.deqPtrLocal = wangQueue.deqPtrCached =
     wangQueue.deqGroupVal = wangQueue.deqIter = wangQueue.enqGroupVal =
@@ -138,55 +138,58 @@ static int are_both_nan(double pValue, double cValue){
 #define ThreadWait ;
 #endif
 
-#if APPROACH_WANG == 1
-#define RHT_Produce_Volatile(volValue)                                      \
-    wangQueue.pResidue = (UNIT - (wangQueue.enqPtrLocal % UNIT)) % UNIT;    \
-    if (wangQueue.pResidue > 0) {                                           \
-        wangQueue.enqPtrLocal = (wangQueue.enqPtrLocal + (wangQueue.pResidue - 1)) % RHT_QUEUE_SIZE; \
-        Wang_Produce(0);                                                    \
-    }                                                                       \
-    wangQueue.volatileValue = volValue;                                     \
-    wangQueue.checkState = 0;                                               \
-    while (wangQueue.checkState == 0) { ThreadWait }
 
-#define RHT_Consume_Volatile(volValue)                                      \
-    while (wangQueue.checkState == 1)  { ThreadWait }                       \
-    if (!fequal(volValue, wangQueue.volatileValue)){                        \
-        Report_Soft_Error(volValue, wangQueue.volatileValue)                \
+#if APPROACH_WANG == 1
+#define RHT_Produce_Volatile(val)                                           \
+    wangQueue.pRmdr = (UNIT - (wangQueue.enqPtrLocal % UNIT)) % UNIT;       \
+    if (wangQueue.pRmdr > 0) {                                              \
+        wangQueue.enqPtrLocal = (wangQueue.enqPtrLocal + wangQueue.pRmdr) % RHT_QUEUE_SIZE;\
+        wangQueue.deqPtrCached = wangQueue.deqPtr;                          \
+        wangQueue.enqPtr = wangQueue.enqPtrLocal;                           \
     }                                                                       \
-    wangQueue.checkState = 1;                                               \
-    wangQueue.cResidue = (UNIT - (wangQueue.deqPtrLocal % UNIT)) % UNIT;    \
-    if (wangQueue.cResidue > 0) {                                           \
-        wangQueue.deqPtrLocal = (wangQueue.deqPtrLocal + (wangQueue.cResidue - 1)) % RHT_QUEUE_SIZE; \
-        Wang_Consume();                                                     \
+    wangQueue.volValue = val;                                               \
+    wangQueue.volState = 0;                                                 \
+    while (wangQueue.volState == 0) { ThreadWait }
+
+#define RHT_Consume_Volatile(val)                                           \
+    while (wangQueue.volState == 1)  { ThreadWait }                         \
+    if (!fequal(val, wangQueue.volValue)){                                  \
+        Report_Soft_Error(val, wangQueue.volValue)                          \
+    }                                                                       \
+    wangQueue.volState = 1;                                                 \
+    wangQueue.cRmdr = (UNIT - (wangQueue.deqPtrLocal % UNIT)) % UNIT;       \
+    if (wangQueue.cRmdr > 0) {                                              \
+        wangQueue.deqPtrLocal = (wangQueue.deqPtrLocal + wangQueue.cRmdr) % RHT_QUEUE_SIZE; \
+        wangQueue.deqPtr = wangQueue.deqPtrLocal;                           \
+        wangQueue.enqPtrCached = wangQueue.enqPtr;                          \
     }
 
 #elif APPROACH_MIX_WANG == 1 || APPROACH_MIX_IMPROVED == 1
-#define RHT_Produce_Volatile(volValue)                        \
-    wangQueue.volatileValue = volValue;                       \
-    wangQueue.checkState = 0;                                 \
-    while (wangQueue.checkState == 0) asm("pause");
+#define RHT_Produce_Volatile(volValue)                          \
+    wangQueue.volValue = volValue;                              \
+    wangQueue.volState = 0;                                     \
+    while (wangQueue.volState == 0) asm("pause");
 
 #define RHT_Consume_Volatile(volValue)                          \
-while (wangQueue.checkState == 1) asm("pause");                 \
-    if (!fequal(volValue, wangQueue.volatileValue)){            \
-        Report_Soft_Error(volValue, wangQueue.volatileValue)    \
+while (wangQueue.volState == 1) asm("pause");                   \
+    if (!fequal(volValue, wangQueue.volValue)){                 \
+    Report_Soft_Error(volValue, wangQueue.volValue)             \
     }                                                           \
     wangQueue.producerCount = wangQueue.consumerCount = 0;      \
-    wangQueue.checkState = 1;
+    wangQueue.volState = 1;
 
 #else
 #define RHT_Produce_Volatile(volValue)                          \
-    globalQueue.volatileValue = volValue;                       \
-    globalQueue.checkState = 0;                                 \
-    while (globalQueue.checkState == 0) asm("pause");
+    globalQueue.volValue = volValue;                            \
+    globalQueue.volState = 0;                                   \
+    while (globalQueue.volState == 0) asm("pause");
 
 #define RHT_Consume_Volatile(volValue)                          \
-    while (globalQueue.checkState == 1) asm("pause");           \
-    if (!fequal(volValue, globalQueue.volatileValue)){          \
-        Report_Soft_Error(volValue, globalQueue.volatileValue)  \
+    while (globalQueue.volState == 1) asm("pause");             \
+    if (!fequal(volValue, globalQueue.volValue)){               \
+        Report_Soft_Error(volValue, globalQueue.volValue)       \
     }                                                           \
-    globalQueue.checkState = 1;
+    globalQueue.volState = 1;
 #endif
 
 static void SetThreadAffinity(int threadId) {
