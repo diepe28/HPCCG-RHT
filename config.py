@@ -1,0 +1,50 @@
+############### Injector Parameters ##################
+#
+#    config - config file used by the compiler pass
+#    funcList - list of functions that are faulty
+#    prob - probability that instuction is faulty
+#    byte - which byte is faulty (0-7) -1 random
+#    singleInj - one injection per active rank (0 or 1)
+#    ptr - add code to inject into pointers (0 or 1)
+#    arith - add code to inject into mathematics (0 or 1)
+#    ctrl - add code to inject into control (0 or 1)
+#    stateFile - unique counter for fault site index;
+#                should differ based on application
+#
+#####################################################
+
+config = "HPCCG-RHT.config"
+funcList = "\"\""
+prob = 1e-8
+byte = -1
+bit = -1
+ptr = 1
+arith = 1
+ctrl = 1
+stateFile = "HPCCG-RHT"
+
+############# Library Parameters #####################
+#
+#    FLIPIT_PATH - Path to FlipIt repo
+#    SHOW - libraries and path wraped by mpicc
+#
+#####################################################
+import os
+FLIPIT_PATH = os.environ['FLIPIT_PATH']
+LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH']
+SHOW = "" # not needed for this example (No MPI)
+CPP_LIB = "" # not needed for this example (C program)
+
+
+########### Files to NOT inject inside ###############
+notInject = ["main.cpp", "generate_matrix.cpp" , "HPC_Sparse_Matrix.cpp", "read_HPC_row.cpp", "compute_residual.cpp", "mytimer.cpp", "dump_matlab_matrix.cpp", "HPC_sparsemv.cpp", "HPCCG.cpp", "waxpby.cpp", "ddot.cpp", "make_local_matrix.cpp", "exchange_externals.cpp", "YAML_Element.cpp", "YAML_Doc.cpp", "RHT.cpp", "QueueStressTest.cpp"]
+
+############ Default Compiler #################
+#cc = "gcc"
+cc = "g++"
+
+############ Verbose compiler output ##############
+verbose = True
+
+############ Generate a histogram of fault site traversals #########
+histogram = False

@@ -122,12 +122,12 @@ set(FLAGS_MIX_WANG "APPROACH_MIX_WANG=1")
 #createExecutable("HPCCG-AC" ${FLAGS_ALREADY_CONSUMED} 0)
 #createExecutable("HPCCG-AC-VG" ${FLAGS_ALREADY_CONSUMED} 1)
 
-createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0 0 0)
-createExecutable("HPCCG-WANG-VG-2" ${FLAGS_WANG} 1 0 2)
-createExecutable("HPCCG-WANG-VG-4" ${FLAGS_WANG} 1 0 4)
-createExecutable("HPCCG-WANG-VG-8" ${FLAGS_WANG} 1 0 8)
-createExecutable("HPCCG-WANG-VG-16" ${FLAGS_WANG} 1 0 16)
-createExecutable("HPCCG-WANG-VG-32" ${FLAGS_WANG} 1 0 32)
+createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0 0 1)
+#createExecutable("HPCCG-WANG-VG-2" ${FLAGS_WANG} 1 0 2)
+#createExecutable("HPCCG-WANG-VG-4" ${FLAGS_WANG} 1 0 4)
+#createExecutable("HPCCG-WANG-VG-8" ${FLAGS_WANG} 1 0 8)
+#createExecutable("HPCCG-WANG-VG-16" ${FLAGS_WANG} 1 0 16)
+#createExecutable("HPCCG-WANG-VG-32" ${FLAGS_WANG} 1 0 32)
 
 # WANG approach
 #createExecutable("HPCCG-WANG" ${FLAGS_WANG} 0 0)

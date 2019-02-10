@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <math.h>
-#include <zconf.h>
+//#include <zconf.h>
 
 // -------- Macros ----------
 // a cache line is 64 bytes, int -> 4 bytes, double -> 8 bytes
@@ -24,7 +24,7 @@
 #define RHT_QUEUE_SIZE 1024 // > 512 make no real diff
 #define MIN_PTR_DIST 128 // > 200 makes no real diff
 #define ALREADY_CONSUMED -251802.891237
-//#define GROUP_GRANULARITY 16
+#define GROUP_GRANULARITY 16
 #define INLINE inline __attribute__((always_inline))
 #define EPSILON 0.000001
 #define fequal(a,b) (fabs(a-b) < EPSILON)

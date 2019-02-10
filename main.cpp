@@ -1,29 +1,29 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               HPCCG: Simple Conjugate Gradient Benchmark Code
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -54,7 +54,7 @@
 // HPCCG - CG Solver
 
 // compute_residual - Compares HPCCG solution to known solution.
-// dperez, I removed some OPEN MP conditional compilation flags, because it does not matter for out tests
+// dperez, I removed some OPEN MP conditional compilation flags, because it does not matter for our tests
 #include <iostream>
 using std::cout;
 using std::cerr;
@@ -93,9 +93,7 @@ using std::endl;
 //-D CMAKE_C_COMPILER=/usr/bin/clang-5.0 -D CMAKE_CXX_COMPILER=/usr/bin/clang++-5.0
 //-D CMAKE_C_COMPILER=/usr/bin/gcc-7 -D CMAKE_CXX_COMPILER=/usr/bin/g++-7
 
-// a trick to remove ALREADY_CONSUMED VALUE, have another field indicating the times it has been read, something like that
 // try instead of ASM(pause), a inner loop
-//batching, try to update the deqPtr locally, and when it reaches a threshold we update the shared variable, backoff
 
 typedef struct {
     HPC_Sparse_Matrix *A;
@@ -289,7 +287,8 @@ int main(int argc, char *argv[]) {
 
             ierr = HPCCG_producer(sparseMatrix, b, x, max_iter, tolerance, niters, normr, times);
 
-            /*-- RHT -- */ pthread_join(consumerThread, NULL);
+            //-- RHT --
+             pthread_join(consumerThread, NULL);
 
 #if PERCENTAGE_OF_REPLICATION == 1
             //this is where all execution ends

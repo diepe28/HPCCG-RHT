@@ -1,28 +1,28 @@
 #@HEADER
 # ************************************************************************
-# 
+#
 #               HPCCG: Simple Conjugate Gradient Benchmark Code
 #                 Copyright (2006) Sandia Corporation
-# 
+#
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
-# 
+#
 # This library is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
 # published by the Free Software Foundation; either version 2.1 of the
 # License, or (at your option) any later version.
-#  
+#
 # This library is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#  
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+#
 # ************************************************************************
 #@HEADER
 
@@ -34,21 +34,21 @@
 #
 # 0) Specify compiler and linker:
 
-CXX=/usr/local/bin/g++
-LINKER=/usr/local/bin/g++
+CXX=/usr/bin/g++
+LINKER=/usr/bin/g++
 #CXX=mpicxx
 #LINKER=mpicxx
 
 
 # 1) Build with MPI or not?
-#    If you want to run the program with MPI, make sure USE_MPI is set 
+#    If you want to run the program with MPI, make sure USE_MPI is set
 #    to -DUSING_MPI
 
 USE_MPI =
 #USE_MPI = -DUSING_MPI
 
 
-# 2) MPI headers:  
+# 2) MPI headers:
 #    If you:
 #    - Are building MPI mode (-DUSING_MPI is set above).
 #    - Do not have the MPI headers installed in a default search directory and
@@ -59,10 +59,10 @@ USE_MPI =
 
 
 # 3) Specify C++ compiler optimization flags (if any)
-#    Typically some reasonably high level of optimization should be used to 
+#    Typically some reasonably high level of optimization should be used to
 #    enhance performance.
 
-#IA32 with GCC: 
+#IA32 with GCC:
 #CPP_OPT_FLAGS = -O3 -funroll-all-loops -malign-double
 CPP_OPT_FLAGS = -O3 -ftree-vectorize -ftree-vectorizer-verbose=2
 
@@ -81,7 +81,7 @@ CPP_OPT_FLAGS = -O3 -ftree-vectorize -ftree-vectorizer-verbose=2
 #    If you want to run the program with OpenMP, make sure USING_OMP is set
 #    to -DUSING_OMP
 
-USE_OMP = 
+USE_OMP =
 #USE_OMP = -DUSING_OMP
 
 #
@@ -94,32 +94,106 @@ USE_OMP =
 #
 # 7) System libraries: (May need to add -lg2c before -lm)
 
-SYS_LIB =-lm
+SYS_LIB =-lm -lpthread
 
 #
 # 6) Specify name if executable (optional):
-
 TARGET = test_HPCCG
+
+# other compilation flags
+COMP_FLAGS = -DAPPROACH_WANG=1
 
 ################### Derived Quantities (no modification required) ##############
 
-CXXFLAGS= $(CPP_OPT_FLAGS) $(OMP_FLAGS) $(USE_OMP) $(USE_MPI) $(MPI_INC)
-
+CXXFLAGS= $(CPP_OPT_FLAGS) $(USE_OMP) $(USE_MPI) $(MPI_INC) $(COMP_FLAGS)
 LIB_PATHS= $(SYS_LIB)
 
-TEST_CPP = main.cpp generate_matrix.cpp read_HPC_row.cpp \
-	  compute_residual.cpp mytimer.cpp dump_matlab_matrix.cpp \
-          HPC_sparsemv.cpp HPCCG.cpp waxpby.cpp ddot.cpp \
-          make_local_matrix.cpp exchange_externals.cpp \
-          YAML_Element.cpp YAML_Doc.cpp
+TEST_CPP = main.cpp	\
+			generate_matrix.cpp \
+			HPC_Sparse_Matrix.cpp \
+			read_HPC_row.cpp \
+			compute_residual.cpp \
+			mytimer.cpp \
+			dump_matlab_matrix.cpp \
+			HPC_sparsemv.cpp \
+			HPCCG.cpp \
+			waxpby.cpp \
+			ddot.cpp \
+			make_local_matrix.cpp \
+			exchange_externals.cpp \
+			YAML_Element.cpp \
+			YAML_Doc.cpp \
+			RHT.cpp \
+			QueueStressTest.cpp
 
-TEST_OBJ          = $(TEST_CPP:.cpp=.o)
+#TEST_OBJ = $(TEST_CPP:.cpp=.o)
+#
+#$(TARGET): $(TEST_OBJ)
+#	$(LINKER) $(CPP_OPT_FLAGS) $(TEST_OBJ) $(LIB_PATHS) -o $(TARGET)
 
-$(TARGET): $(TEST_OBJ)
-	$(LINKER) $(CPP_OPT_FLAGS) $(OMP_FLAGS) $(TEST_OBJ) $(LIB_PATHS) -o $(TARGET)
+#flipIp variables
+CFLAGS = -g -I$(FLIPIT_PATH)/include $(CXXFLAGS)
+FILIB  = -L$(FLIPIT_PATH)/lib -lcorrupt
+FIPASS = $(FLIPIT_PATH)/lib/libFlipItPass.so
+LFLAGS = $(FILIB)
+flipit-c++ = $(FLIPIT_PATH)/scripts/flipit-c++ $(CFLAGS)
+
+#$@, the name of the TARGET
+#$<, the name of the first prerequisite
+
+$(TARGET): main.o RHT.o generate_matrix.o HPC_Sparse_Matrix.o read_HPC_row.o compute_residual.o mytimer.o dump_matlab_matrix.o HPC_sparsemv.o HPCCG.o waxpby.o ddot.o make_local_matrix.o exchange_externals.o YAML_Element.o YAML_Doc.o RHT.o QueueStressTest.o
+	$(LINKER) -o $(TARGET) *.o $(LFLAGS) $(SYS_LIB)
+
+main.o: main.cpp
+	$(flipit-c++) -o $@ -c $<
+
+RHT.o: RHT.cpp
+	$(flipit-c++) -o $@ -c $<
+
+HPCCG.o: HPCCG.cpp
+	$(flipit-c++) -o $@ -c $<
+
+QueueStressTest.o: QueueStressTest.cpp
+	$(flipit-c++) -o $@ -c $<
+
+YAML_Doc.o: YAML_Doc.cpp
+	$(flipit-c++) -o $@ -c $<
+
+YAML_Element.o: YAML_Element.cpp
+	$(flipit-c++) -o $@ -c $<
+
+exchange_externals.o: exchange_externals.cpp
+	$(flipit-c++) -o $@ -c $<
+
+make_local_matrix.o: make_local_matrix.cpp
+	$(flipit-c++) -o $@ -c $<
+
+ddot.o: ddot.cpp
+	$(flipit-c++) -o $@ -c $<
+
+waxpby.o: waxpby.cpp
+	$(flipit-c++) -o $@ -c $<
+
+HPC_sparsemv.o: HPC_sparsemv.cpp
+	$(flipit-c++) -o $@ -c $<
+
+dump_matlab_matrix.o: dump_matlab_matrix.cpp
+	$(flipit-c++) -o $@ -c $<
+
+mytimer.o: mytimer.cpp
+	$(flipit-c++) -o $@ -c $<
+
+compute_residual.o: compute_residual.cpp
+	$(flipit-c++) -o $@ -c $<
+
+read_HPC_row.o: read_HPC_row.cpp
+	$(flipit-c++) -o $@ -c $<
+
+generate_matrix.o: generate_matrix.cpp
+	$(flipit-c++) -o $@ -c $<
 
 test:
 	@echo "Not implemented yet..."
 
 clean:
-	@rm -f *.o  *~ $(TARGET) $(TARGET).exe test_HPCPCG 
+	@rm -f *.o  *~ $(TARGET) $(TARGET).exe test_HPCPCG
