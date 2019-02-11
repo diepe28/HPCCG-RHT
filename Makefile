@@ -34,18 +34,18 @@
 #
 # 0) Specify compiler and linker:
 
-CXX=/usr/bin/g++
-LINKER=/usr/bin/g++
-#CXX=mpicxx
-#LINKER=mpicxx
+#CXX=/usr/bin/g++
+#LINKER=/usr/bin/g++
+CXX=mpicxx
+LINKER=mpicxx
 
 
 # 1) Build with MPI or not?
 #    If you want to run the program with MPI, make sure USE_MPI is set
 #    to -DUSING_MPI
 
-USE_MPI =
-#USE_MPI = -DUSING_MPI
+#USE_MPI =
+USE_MPI = -DUSING_MPI
 
 
 # 2) MPI headers:
@@ -55,7 +55,7 @@ USE_MPI =
 #    - Are not using MPI compiler wrappers
 #    Then specify the path to your MPI header file (include a -I)
 
-#MPI_INC = -I/usr/MPICH/SDK.gcc/include
+MPI_INC = -I/usr/MPICH/SDK.gcc/include
 
 
 # 3) Specify C++ compiler optimization flags (if any)
@@ -74,7 +74,7 @@ CPP_OPT_FLAGS = -O3 -ftree-vectorize -ftree-vectorizer-verbose=2
 #    - Are not using MPI compiler wrappers for linking
 #    Then specify the path to your MPI library (include -L and -l directives)
 
-#MPI_LIB = -L/usr/MPICH/SDK.gcc/lib -lmpich
+MPI_LIB = -L/usr/MPICH/SDK.gcc/lib -lmpich
 
 #
 # 5) Build with OpenMP or not?
@@ -126,6 +126,24 @@ TEST_CPP = main.cpp	\
 			RHT.cpp \
 			QueueStressTest.cpp
 
+TEST_OBJ = main.o	\
+			generate_matrix.o \
+			HPC_Sparse_Matrix.o \
+			read_HPC_row.o \
+			compute_residual.o \
+			mytimer.o \
+			dump_matlab_matrix.o \
+			HPC_sparsemv.o \
+			HPCCG.o \
+			waxpby.o \
+			ddot.o \
+			make_local_matrix.o \
+			exchange_externals.o \
+			YAML_Element.o \
+			YAML_Doc.o \
+			RHT.o \
+			QueueStressTest.o
+
 #TEST_OBJ = $(TEST_CPP:.cpp=.o)
 #
 #$(TARGET): $(TEST_OBJ)
@@ -136,61 +154,61 @@ CFLAGS = -g -I$(FLIPIT_PATH)/include $(CXXFLAGS)
 FILIB  = -L$(FLIPIT_PATH)/lib -lcorrupt
 FIPASS = $(FLIPIT_PATH)/lib/libFlipItPass.so
 LFLAGS = $(FILIB)
-flipit-c++ = $(FLIPIT_PATH)/scripts/flipit-c++ $(CFLAGS)
+flipit-cxx = $(FLIPIT_PATH)/scripts/flipit-c++ $(CFLAGS)
 
 #$@, the name of the TARGET
 #$<, the name of the first prerequisite
 
-$(TARGET): main.o RHT.o generate_matrix.o HPC_Sparse_Matrix.o read_HPC_row.o compute_residual.o mytimer.o dump_matlab_matrix.o HPC_sparsemv.o HPCCG.o waxpby.o ddot.o make_local_matrix.o exchange_externals.o YAML_Element.o YAML_Doc.o RHT.o QueueStressTest.o
+$(TARGET): $(TEST_OBJ)
 	$(LINKER) -o $(TARGET) *.o $(LFLAGS) $(SYS_LIB)
 
 main.o: main.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 RHT.o: RHT.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 HPCCG.o: HPCCG.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 QueueStressTest.o: QueueStressTest.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 YAML_Doc.o: YAML_Doc.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 YAML_Element.o: YAML_Element.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 exchange_externals.o: exchange_externals.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 make_local_matrix.o: make_local_matrix.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 ddot.o: ddot.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 waxpby.o: waxpby.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 HPC_sparsemv.o: HPC_sparsemv.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 dump_matlab_matrix.o: dump_matlab_matrix.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 mytimer.o: mytimer.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 compute_residual.o: compute_residual.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 read_HPC_row.o: read_HPC_row.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 generate_matrix.o: generate_matrix.cpp
-	$(flipit-c++) -o $@ -c $<
+	$(flipit-cxx) -o $@ -c $<
 
 test:
 	@echo "Not implemented yet..."

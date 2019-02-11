@@ -41,7 +41,8 @@ notInject = ["main.cpp", "generate_matrix.cpp" , "HPC_Sparse_Matrix.cpp", "read_
 
 ############ Default Compiler #################
 #cc = "gcc"
-cc = "g++"
+#cc = "g++"
+cc = "mpicxx"
 
 ############ Verbose compiler output ##############
 verbose = True
