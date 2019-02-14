@@ -64,8 +64,8 @@ MPI_INC = -I/usr/MPICH/SDK.gcc/include
 
 #IA32 with GCC:
 #CPP_OPT_FLAGS = -O3 -funroll-all-loops -malign-double
-CPP_OPT_FLAGS = -O3 -ftree-vectorize -ftree-vectorizer-verbose=2
-
+#CPP_OPT_FLAGS = -O3 -ftree-vectorize -ftree-vectorizer-verbose=2
+CPP_OPT_FLAGS = -O3 -std=c++11
 #
 # 4) MPI library:
 #    If you:
@@ -155,6 +155,8 @@ FILIB  = -L$(FLIPIT_PATH)/lib -lcorrupt
 FIPASS = $(FLIPIT_PATH)/lib/libFlipItPass.so
 LFLAGS = $(FILIB)
 flipit-cxx = $(FLIPIT_PATH)/scripts/flipit-c++ $(CFLAGS)
+#CC=$(flipit-cxx) #this one is needed for flipit-c++ to work
+#OMPI_CXX=clang++ mpicxx -show:command
 
 #$@, the name of the TARGET
 #$<, the name of the first prerequisite
@@ -214,4 +216,4 @@ test:
 	@echo "Not implemented yet..."
 
 clean:
-	@rm -f *.o  *~ $(TARGET) $(TARGET).exe test_HPCPCG
+	@rm -f *.o *.bc *.bin  *~ $(TARGET) $(TARGET).exe test_HPCPCG

@@ -32,12 +32,31 @@ stateFile = "HPCCG-RHT"
 import os
 FLIPIT_PATH = os.environ['FLIPIT_PATH']
 LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH']
-SHOW = "" # not needed for this example (No MPI)
+# set with include and library paths from mpicc -show; or mpicc -showme
+SHOW = "-Wl,-Bsymbolic-functions -Wl,-z,relro -I/usr/include/mpich -L/usr/lib/x86_64-linux-gnu -lmpich"
 CPP_LIB = "" # not needed for this example (C program)
 
 
 ########### Files to NOT inject inside ###############
-notInject = ["main.cpp", "generate_matrix.cpp" , "HPC_Sparse_Matrix.cpp", "read_HPC_row.cpp", "compute_residual.cpp", "mytimer.cpp", "dump_matlab_matrix.cpp", "HPC_sparsemv.cpp", "HPCCG.cpp", "waxpby.cpp", "ddot.cpp", "make_local_matrix.cpp", "exchange_externals.cpp", "YAML_Element.cpp", "YAML_Doc.cpp", "RHT.cpp", "QueueStressTest.cpp"]
+notInject = [
+			 "main.cpp",
+			 "generate_matrix.cpp",
+			 "HPC_Sparse_Matrix.cpp",
+			 "read_HPC_row.cpp",
+			 "compute_residual.cpp",
+			 "mytimer.cpp",
+			 "dump_matlab_matrix.cpp",
+			 "HPC_sparsemv.cpp",
+			 "HPCCG.cpp",
+			 #"waxpby.cpp",
+			 "ddot.cpp",
+			 "make_local_matrix.cpp",
+			 "exchange_externals.cpp",
+			 "YAML_Element.cpp",
+			 "YAML_Doc.cpp",
+			 "RHT.cpp",
+			 "QueueStressTest.cpp"
+			 ]
 
 ############ Default Compiler #################
 #cc = "gcc"

@@ -87,6 +87,7 @@ using std::endl;
 #include "YAML_Doc.h"
 #include "QueueStressTest.h"
 #include "RHT.h"
+#include "FlipIt/corrupt/corrupt.h"
 
 #undef DEBUG
 
@@ -120,7 +121,7 @@ int main(int argc, char *argv[]) {
     double *x, *b, *xexact, *x2, *b2, *xexact2;
     double norm, d;
     int ierr = 0, numRuns = 1;
-    int i, j, iterator;
+    int i, j, iterator, flipIpSeed = 533;
     int ione = 1;
     double times[7];
     double t6 = 0.0;
@@ -133,6 +134,8 @@ int main(int argc, char *argv[]) {
 
     double meanBaseline, sdBaseline, producerMean, consumerMean;
     double meanRHT, sdRHT;
+
+    FLIPIT_Init(0, argc, argv, flipIpSeed);
 
 #ifdef USING_MPI
 
@@ -419,6 +422,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    FLIPIT_Finalize(NULL);
     return 0;
 }
 
