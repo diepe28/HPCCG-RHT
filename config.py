@@ -15,12 +15,14 @@
 
 config = "HPCCG-RHT.config"
 funcList = "\"\""
+#funcList = "waxpby_producer"
 prob = 1e-8
 byte = -1
 bit = -1
 ptr = 1
 arith = 1
 ctrl = 1
+singleInj = 1
 stateFile = "HPCCG-RHT"
 
 ############# Library Parameters #####################
@@ -32,7 +34,7 @@ stateFile = "HPCCG-RHT"
 import os
 FLIPIT_PATH = os.environ['FLIPIT_PATH']
 LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH']
-# set with include and library paths from mpicc -show; or mpicc -showme
+# set with include and library paths from mpicc -show; or mpixx -showme
 SHOW = "-Wl,-Bsymbolic-functions -Wl,-z,relro -I/usr/include/mpich -L/usr/lib/x86_64-linux-gnu -lmpich"
 CPP_LIB = "" # not needed for this example (C program)
 
@@ -48,7 +50,7 @@ notInject = [
 			 "dump_matlab_matrix.cpp",
 			 "HPC_sparsemv.cpp",
 			 "HPCCG.cpp",
-			 #"waxpby.cpp",
+			 "waxpby.cpp",
 			 "ddot.cpp",
 			 "make_local_matrix.cpp",
 			 "exchange_externals.cpp",

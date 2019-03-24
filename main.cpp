@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     }
 
     if(rank == 0) {
-#if DPRINT_OUTPUT == 0
+#if PRINT_OUTPUT == 0
         printf(" The print output has been disabled, check CMakeList.txt to switch on/off options\n\n");
 #else
         printf(" The print output is enabled, check CMakeList.txt to switch on/off options\n\n");
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
                 timesBaseline[iterator] = times[0];
                 meanBaseline += times[0];
                 //PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
-                printf("Baseline[%d]: %f seconds --- \n", iterator, timesBaseline[iterator]);
+                printf("Baseline[%d]: %f seconds--- \n", iterator, timesBaseline[iterator]);                
             }
 
             freeMemory(sparseMatrix, x, b, xexact);
@@ -418,8 +418,9 @@ int main(int argc, char *argv[]) {
             printf("APPROACH MIX WANG");
 #endif
             printf(": %f , SD RHT %f --- PWaiting: %lf, CWaiting: %lf \n\n", meanRHT, sdRHT, producerMean,
-                   consumerMean);
+                   consumerMean);            
         }
+        printf("Final result: %e\n", normr);
     }
 
     FLIPIT_Finalize(NULL);

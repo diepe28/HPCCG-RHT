@@ -101,6 +101,7 @@ SYS_LIB =-lm -lpthread
 TARGET = test_HPCCG
 
 # other compilation flags
+#COMP_FLAGS = -DAPPROACH_WANG=1 -DPRINT_OUTPUT=1
 COMP_FLAGS = -DAPPROACH_WANG=1
 
 ################### Derived Quantities (no modification required) ##############
@@ -108,45 +109,12 @@ COMP_FLAGS = -DAPPROACH_WANG=1
 CXXFLAGS= $(CPP_OPT_FLAGS) $(USE_OMP) $(USE_MPI) $(MPI_INC) $(COMP_FLAGS)
 LIB_PATHS= $(SYS_LIB)
 
-TEST_CPP = main.cpp	\
-			generate_matrix.cpp \
-			HPC_Sparse_Matrix.cpp \
-			read_HPC_row.cpp \
-			compute_residual.cpp \
-			mytimer.cpp \
-			dump_matlab_matrix.cpp \
-			HPC_sparsemv.cpp \
-			HPCCG.cpp \
-			waxpby.cpp \
-			ddot.cpp \
-			make_local_matrix.cpp \
-			exchange_externals.cpp \
-			YAML_Element.cpp \
-			YAML_Doc.cpp \
-			RHT.cpp \
-			QueueStressTest.cpp
+# Every *.cpp file
+TEST_CPP=$(wildcard *.cpp)
 
-TEST_OBJ = main.o	\
-			generate_matrix.o \
-			HPC_Sparse_Matrix.o \
-			read_HPC_row.o \
-			compute_residual.o \
-			mytimer.o \
-			dump_matlab_matrix.o \
-			HPC_sparsemv.o \
-			HPCCG.o \
-			waxpby.o \
-			ddot.o \
-			make_local_matrix.o \
-			exchange_externals.o \
-			YAML_Element.o \
-			YAML_Doc.o \
-			RHT.o \
-			QueueStressTest.o
+# Every value of TEST_CPP change it from .cpp -> .o
+TEST_OBJ=$(TEST_CPP:.cpp=.o)
 
-#TEST_OBJ = $(TEST_CPP:.cpp=.o)
-#
-#$(TARGET): $(TEST_OBJ)
 #	$(LINKER) $(CPP_OPT_FLAGS) $(TEST_OBJ) $(LIB_PATHS) -o $(TARGET)
 
 #flipIp variables
@@ -162,7 +130,10 @@ flipit-cxx = $(FLIPIT_PATH)/scripts/flipit-c++ $(CFLAGS)
 #$<, the name of the first prerequisite
 
 $(TARGET): $(TEST_OBJ)
-	$(LINKER) -o $(TARGET) *.o $(LFLAGS) $(SYS_LIB)
+	$(LINKER) -o $(TARGET) $(TEST_OBJ) $(LFLAGS) $(SYS_LIB)
+
+#%.o: %.c
+#	$(flipit-cxx) -o $@ -c $<
 
 main.o: main.cpp
 	$(flipit-cxx) -o $@ -c $<
