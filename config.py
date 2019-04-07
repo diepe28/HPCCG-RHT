@@ -15,7 +15,8 @@
 
 config = "HPCCG-RHT.config"
 funcList = "\"\""
-#funcList = "waxpby_producer"
+#funcList = "waxpby_producer" it does not seem to be working
+#prob = 1e-8
 prob = 1e-8
 byte = -1
 bit = -1
@@ -50,7 +51,7 @@ notInject = [
 			 "dump_matlab_matrix.cpp",
 			 "HPC_sparsemv.cpp",
 			 "HPCCG.cpp",
-			 "waxpby.cpp",
+			 #"waxpby.cpp",
 			 "ddot.cpp",
 			 "make_local_matrix.cpp",
 			 "exchange_externals.cpp",

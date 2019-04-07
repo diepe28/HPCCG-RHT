@@ -98,11 +98,14 @@ SYS_LIB =-lm -lpthread
 
 #
 # 6) Specify name if executable (optional):
-TARGET = test_HPCCG
+TARGET = Wang
 
 # other compilation flags
 #COMP_FLAGS = -DAPPROACH_WANG=1 -DPRINT_OUTPUT=1
+
 COMP_FLAGS = -DAPPROACH_WANG=1
+#COMP_FLAGS = -DAPPROACH_WANG=1 -DVAR_GROUPING=1
+#COMP_FLAGS = -DAPPROACH_WANG=1 -DJUST_VOLATILES=1
 
 ################### Derived Quantities (no modification required) ##############
 
@@ -129,8 +132,18 @@ flipit-cxx = $(FLIPIT_PATH)/scripts/flipit-c++ $(CFLAGS)
 #$@, the name of the TARGET
 #$<, the name of the first prerequisite
 
-$(TARGET): $(TEST_OBJ)
+all : Wang WangVG WangJV
+
+Wang: $(TEST_OBJ)
 	$(LINKER) -o $(TARGET) $(TEST_OBJ) $(LFLAGS) $(SYS_LIB)
+
+WangVG : COMP_FLAGS += -DVAR_GROUPING=1
+WangVG: $(TEST_OBJ)
+	$(LINKER) -o WangVG $(TEST_OBJ) $(LFLAGS) $(SYS_LIB)
+
+WangJV : COMP_FLAGS += -DJUST_VOLATILES=1	
+WangJV: $(TEST_OBJ)
+	$(LINKER) -o WangJV $(TEST_OBJ) $(LFLAGS) $(SYS_LIB)	
 
 #%.o: %.c
 #	$(flipit-cxx) -o $@ -c $<
@@ -186,5 +199,13 @@ generate_matrix.o: generate_matrix.cpp
 test:
 	@echo "Not implemented yet..."
 
+.PHONY : all
+
+#clean:
+#	@rm -f *.o *.bc *.bin  *~ $(TARGET) $(TARGET).exe
+
 clean:
-	@rm -f *.o *.bc *.bin  *~ $(TARGET) $(TARGET).exe test_HPCPCG
+	@rm -f *.o *.bc *.bin  *~ 
+
+cleanExes:
+	@rm Wang*
