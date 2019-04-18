@@ -15,9 +15,8 @@
 
 config = "HPCCG-RHT.config"
 funcList = "\"\""
-#funcList = "waxpby_producer" it does not seem to be working
-#prob = 1e-8
-prob = 1e-8
+#funcList = "waxpby"
+prob = 1e-6
 byte = -1
 bit = -1
 ptr = 1
@@ -70,4 +69,4 @@ cc = "mpicxx"
 verbose = True
 
 ############ Generate a histogram of fault site traversals #########
-histogram = False
+histogram = True

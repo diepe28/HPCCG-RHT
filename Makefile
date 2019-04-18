@@ -66,6 +66,7 @@ MPI_INC = -I/usr/MPICH/SDK.gcc/include
 #CPP_OPT_FLAGS = -O3 -funroll-all-loops -malign-double
 #CPP_OPT_FLAGS = -O3 -ftree-vectorize -ftree-vectorizer-verbose=2
 CPP_OPT_FLAGS = -O3 -std=c++11
+#CPP_OPT_FLAGS = -std=c++11 -g
 #
 # 4) MPI library:
 #    If you:
@@ -141,9 +142,9 @@ WangVG : COMP_FLAGS += -DVAR_GROUPING=1
 WangVG: $(TEST_OBJ)
 	$(LINKER) -o WangVG $(TEST_OBJ) $(LFLAGS) $(SYS_LIB)
 
-WangJV : COMP_FLAGS += -DJUST_VOLATILES=1	
+WangJV : COMP_FLAGS += -DJUST_VOLATILES=1
 WangJV: $(TEST_OBJ)
-	$(LINKER) -o WangJV $(TEST_OBJ) $(LFLAGS) $(SYS_LIB)	
+	$(LINKER) -o WangJV $(TEST_OBJ) $(LFLAGS) $(SYS_LIB)
 
 #%.o: %.c
 #	$(flipit-cxx) -o $@ -c $<
@@ -205,7 +206,7 @@ test:
 #	@rm -f *.o *.bc *.bin  *~ $(TARGET) $(TARGET).exe
 
 clean:
-	@rm -f *.o *.bc *.bin  *~ 
+	@rm -f *.o *.bc *.bin  *~
 
 cleanExes:
-	@rm Wang*
+	@rm -f Wang* *~

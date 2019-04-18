@@ -116,12 +116,17 @@ void consumer_thread_func(void * args);
 #define myTimes 100
 
 int main(int argc, char *argv[]) {
+    int lower = 1, upper = 1000;
+    // Use current time as seed for random generator
+    srand(time(0));
+    int randomNumber = (rand() % (upper - lower + 1)) + lower;
+
     HPC_Sparse_Matrix *sparseMatrix;
 
     double *x, *b, *xexact, *x2, *b2, *xexact2;
     double norm, d;
     int ierr = 0, numRuns = 1;
-    int i, j, iterator, flipIpSeed = 533;
+    int i, j, iterator, flipIpSeed = randomNumber;
     int ione = 1;
     double times[7];
     double t6 = 0.0;
@@ -366,7 +371,7 @@ int main(int argc, char *argv[]) {
                 timesBaseline[iterator] = times[0];
                 meanBaseline += times[0];
                 //PrintSummary(sparseMatrix, times, nx, ny, nz, size, rank, niters, normr, t4min, t4max, t4avg);
-                printf("Baseline[%d]: %f seconds--- \n", iterator, timesBaseline[iterator]);                
+                printf("Baseline[%d]: %f seconds--- \n", iterator, timesBaseline[iterator]);
             }
 
             freeMemory(sparseMatrix, x, b, xexact);
@@ -418,7 +423,7 @@ int main(int argc, char *argv[]) {
             printf("APPROACH MIX WANG");
 #endif
             printf(": %f , SD RHT %f --- PWaiting: %lf, CWaiting: %lf \n\n", meanRHT, sdRHT, producerMean,
-                   consumerMean);            
+                   consumerMean);
         }
         printf("Final result: %e\n", normr);
     }
