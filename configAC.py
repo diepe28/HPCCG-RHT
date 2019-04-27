@@ -15,11 +15,11 @@
 
 config = "HPCCG-RHT.config"
 #funcList = "\"\""
-funcList = "\"ddot ddot_producer\""
+funcList = "\"waxpby waxpby_producer\""
 prob = 1e-8
 byte = -1
 bit = -1
-ptr = 1
+ptr = 0
 arith = 1
 ctrl = 1
 singleInj = 1
@@ -50,8 +50,8 @@ notInject = [
 			 "dump_matlab_matrix.cpp",
 			 "HPC_sparsemv.cpp",
 			 "HPCCG.cpp",
-			 "waxpby.cpp",
-			 #"ddot.cpp",
+			 #"waxpby.cpp",
+			 "ddot.cpp",
 			 "make_local_matrix.cpp",
 			 "exchange_externals.cpp",
 			 "YAML_Element.cpp",

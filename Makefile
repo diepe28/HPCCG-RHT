@@ -206,7 +206,7 @@ test:
 #	@rm -f *.o *.bc *.bin  *~ $(TARGET) $(TARGET).exe
 
 clean:
-	@rm -f *.o *.bc *.bin  *~
+	@rm -f *.o *.bc *.bin *.pyc  *~
 
 cleanExes:
 	@rm -f Wang* *~
