@@ -425,6 +425,7 @@ int main(int argc, char *argv[]) {
             printf(": %f , SD RHT %f --- PWaiting: %lf, CWaiting: %lf \n\n", meanRHT, sdRHT, producerMean,
                    consumerMean);
         }
+        printf("Iterations: %d\n", niters);
         printf("Final result: %e\n", normr);
     }
 
