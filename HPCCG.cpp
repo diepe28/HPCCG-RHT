@@ -120,7 +120,6 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
 #if PRINT_OUTPUT == 1
     if (rank == 0) cout << "Initial Residual = " << normr << endl;
 #endif
-
     for (int k = 1; k < max_iter && normr > tolerance; k++) {
         if (k == 1) {
             TICK();
@@ -160,7 +159,7 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
         waxpby(nrow, 1.0, r, -alpha, Ap, r);
         TOCK(t2);// 2*nrow ops
         niters = k;
-    }
+    }    
 
     // Store times
     times[1] = t1; // ddot time

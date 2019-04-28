@@ -228,8 +228,8 @@ int main(int argc, char *argv[]) {
     //-- RHT -- Not replicated - double t1 = mytimer();   // Initialize it (if needed)
     int niters = 0;
     double normr = 0.0;
-    int max_iter = 150;
-    double tolerance = 0.0; // Set tolerance to zero to make all runs do max_iter iterations
+    int max_iter = 200; //150;
+    double tolerance = 1e-20; // Set tolerance to zero to make all runs do max_iter iterations
     struct timespec startExe, newEnd, startAll, endAll;
 
     if (replicated) {
