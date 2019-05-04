@@ -1,29 +1,29 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               HPCCG: Simple Conjugate Gradient Benchmark Code
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -79,12 +79,16 @@ int ddot_producer(const int n, const double *const x, const double *const y,
     if (y == x)
         for (int i = 0; i < n; i++) {
             local_result += x[i] * x[i];
+						FLIPIT_SetInjector(FLIPIT_OFF);
             RHT_Produce(local_result);
+						FLIPIT_SetInjector(FLIPIT_ON);
         }
     else
         for (int i = 0; i < n; i++) {
             local_result += x[i] * y[i];
+						FLIPIT_SetInjector(FLIPIT_OFF);
             RHT_Produce(local_result);
+						FLIPIT_SetInjector(FLIPIT_ON);
         }
 
 #ifdef USING_MPI
@@ -94,9 +98,13 @@ int ddot_producer(const int n, const double *const x, const double *const y,
 
     double global_result = 0.0;
 
+		FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(local_result)
+		FLIPIT_SetInjector(FLIPIT_ON);
     MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce_NoCheck(global_result);
+		FLIPIT_SetInjector(FLIPIT_ON);
 
     *result = global_result;
     GetTimeSince(startAll, time_allreduce +=) //time_allreduce += mytimer() - t0;
@@ -104,7 +112,9 @@ int ddot_producer(const int n, const double *const x, const double *const y,
     *result = local_result;
 #endif
 
+		FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(*result);
+		FLIPIT_SetInjector(FLIPIT_ON);
     return (0);
 }
 
