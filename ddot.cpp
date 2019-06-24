@@ -79,16 +79,12 @@ int ddot_producer(const int n, const double *const x, const double *const y,
     if (y == x)
         for (int i = 0; i < n; i++) {
             local_result += x[i] * x[i];
-						FLIPIT_SetInjector(FLIPIT_OFF);
             RHT_Produce(local_result);
-						FLIPIT_SetInjector(FLIPIT_ON);
         }
     else
         for (int i = 0; i < n; i++) {
             local_result += x[i] * y[i];
-						FLIPIT_SetInjector(FLIPIT_OFF);
             RHT_Produce(local_result);
-						FLIPIT_SetInjector(FLIPIT_ON);
         }
 
 #ifdef USING_MPI
@@ -98,9 +94,7 @@ int ddot_producer(const int n, const double *const x, const double *const y,
 
     double global_result = 0.0;
 
-		FLIPIT_SetInjector(FLIPIT_OFF);
-    /*-- RHT Volatile -- */ RHT_Produce_Volatile(local_result)
-		FLIPIT_SetInjector(FLIPIT_ON);
+		/*-- RHT Volatile -- */ RHT_Produce_Volatile(local_result)
     MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce_NoCheck(global_result);
@@ -112,9 +106,7 @@ int ddot_producer(const int n, const double *const x, const double *const y,
     *result = local_result;
 #endif
 
-		FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(*result);
-		FLIPIT_SetInjector(FLIPIT_ON);
     return (0);
 }
 

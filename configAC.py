@@ -16,9 +16,9 @@
 config = "HPCCG-RHT.config"
 #funcList = "\"\""
 funcList = "\"ddot ddot_producer\""
-prob = 1e-8
-byte = 0
-bit = 0
+prob = 1e-7
+byte = 3
+bit = -1
 ptr = 0
 arith = 1
 ctrl = 1

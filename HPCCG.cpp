@@ -159,7 +159,7 @@ int HPCCG(HPC_Sparse_Matrix * hpc_sparse_matrix,
         waxpby(nrow, 1.0, r, -alpha, Ap, r);
         TOCK(t2);// 2*nrow ops
         niters = k;
-    }    
+    }
 
     // Store times
     times[1] = t1; // ddot time
@@ -221,7 +221,10 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 #ifdef USING_MPI
     int rank; // Number of MPI processes, My process ID
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    /*-- RHT -- */ RHT_Produce_NoCheck(rank);
+    FLIPIT_SetInjector(FLIPIT_OFF);
+		/*-- RHT -- */ RHT_Produce_NoCheck(rank);
+		 FLIPIT_SetInjector(FLIPIT_ON);
+
 #else
     int rank = 0; // Serial case (not using MPI)
 #endif
