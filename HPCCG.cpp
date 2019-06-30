@@ -221,9 +221,7 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 #ifdef USING_MPI
     int rank; // Number of MPI processes, My process ID
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    FLIPIT_SetInjector(FLIPIT_OFF);
 		/*-- RHT -- */ RHT_Produce_NoCheck(rank);
-		 FLIPIT_SetInjector(FLIPIT_ON);
 
 #else
     int rank = 0; // Serial case (not using MPI)

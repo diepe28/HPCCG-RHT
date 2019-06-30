@@ -222,9 +222,7 @@ void exchange_externals_producer(HPC_Sparse_Matrix *A, const double *x) {
         int n_recv = recv_length[i];
 
         for(int m = 0; m < n_recv; m++){
-          FLIPIT_SetInjector(FLIPIT_OFF);
       		RHT_Produce_NoCheck(x_external[m]);
-      		FLIPIT_SetInjector(FLIPIT_ON);
         }
 
         x_external += n_recv;
