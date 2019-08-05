@@ -206,7 +206,7 @@ test:
 #	@rm -f *.o *.bc *.bin  *~ $(TARGET) $(TARGET).exe
 
 clean:
-	@rm -f *.o *.bc *.bin *.pyc  *~
+	@rm -f *.o *.bc *.bin *.pyc *.LLVM.txt  *~
 
-cleanExes:
-	@rm -f Wang* *~
+cleanBinaries:
+	@rm -f Wang* *.log *~
