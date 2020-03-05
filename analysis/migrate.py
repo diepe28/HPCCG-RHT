@@ -22,16 +22,22 @@ import sys
 if __name__ == '__main__':
     prefix = sys.argv[1]
     path = sys.argv[2]
+    outputPath = str(path) + "/readyFiles/"
     files = []
-    
+
+    # make output path
+    os.system("mkdir -p " + outputPath)
+
     # cache all the file names
     for p, s, f in os.walk(path):
         for name in f:
             if prefix in name:
-                print "Adding ", name, len(files)
+                print("Adding ", name, len(files))
                 files.append(name)
 
-    #order the file names and then append the trial number        
-    files.sort() 
-    for i in xrange(0, len(files):
-        os.system("cp " + path + "/" + f + " " + path +"/" + prefix +  "_" + str(i))
+    #order the file names and then append the trial number
+    #files.sort()
+    for i in range(0, len(files)):        
+        command = "cp " + str(path) + str(files[i]) + " " + str(outputPath) + prefix +  "_" + str(i) + ".txt"
+        #print(command)
+        os.system(command)

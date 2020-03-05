@@ -3,11 +3,11 @@ from database import init, finalize
 from visualize import initVis, visClassifications, visFunctions, visCrashes,\
     visSignals, visDetections, visDetectedInjections, visDetectionLatency
 from custom import customInit, customParser
-#import analysis_config 
+#import analysis_config
 from analysis_config import *
 
 def visualize (c, more_detail_funcs = None):
-    """Driver function to visulize a fault injection campaign. 
+    """Driver function to visualize a fault injection campaign.
     Parameters
     ----------
     c : object
@@ -28,16 +28,16 @@ def visualize (c, more_detail_funcs = None):
     visDetectedInjections(c)
     visDetectionLatency(c)
     plot.show()
-    
+
     # add custom plotting function below
     plot.show()
 
 
 if __name__ == "__main__":
-    c = init(database, LLVM_log_path, trial_path +"/"+ trial_prefix,\
+    #c = init(database, LLVM_log_path, trial_path +"/"+ trial_prefix,\
+    #    customFuncs=(customInit, customParser))
+    ################################## hello, this line is not working, that is why the above (original) is commented
+    c = init(database, LLVM_log_path, trial_path ,\
         customFuncs=(customInit, customParser))
     visualize(c, more_detail_funcs)
     finalize()
-
-
-

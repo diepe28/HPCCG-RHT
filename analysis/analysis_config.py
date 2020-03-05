@@ -14,7 +14,7 @@ rebuild_database = True
     analysis scripts recursilvely search this directory for the logs
 """
 #LLVM_log_path = "../llvm"
-LLVM_log_path = "/home/diego/Documents/workspace/HPCCG-RHT" 
+LLVM_log_path = "../"
 
 """Determines what type of log files to look for and parse.
 
@@ -22,7 +22,7 @@ LLVM_log_path = "/home/diego/Documents/workspace/HPCCG-RHT"
     ----
     Options are "Binary" or "ASCII"
 """
-LLVM_log_type = "Binary"
+LLVM_log_type = "ASCII"
 
 """Path to where the output files of the run(s) are stored. Each output file
     should a seperate fault injection run of the application.
@@ -37,11 +37,13 @@ LLVM_log_type = "Binary"
     --------
     migrate.py to suffix _# or _#.txt to existing run output files
 """
-trial_path = "../trials"
+trial_path = "../../App-Executer/Execution-Wang/Output"
+#trial_path = "../../reliabilityExperiments/results-6-August/0_MPI_NOPdcDrt_allErrorsrunNotReplicated/runNotReplicated/bck/readyFiles/output"
 
 """Begining of the trial file name e.g. foo for trials foo_1 or foo_1.txt
 """
-trial_prefix = "foo"
+#trial_prefix = "Output"
+trial_prefix = "output"
 
 """Path to source code.
 
@@ -49,11 +51,12 @@ trial_prefix = "foo"
     -----
     assumes stdout and stderr are in the same file
 """
-srcPath = "../src/"
+srcPath = "../"
 
 """Number of fault injection trials to read
 """
-numTrials = 100.
+#numTrials = 20.
+numTrials = 500.
 
 """Names of functions that a more detailed analysis should be conducted for
 
@@ -62,19 +65,23 @@ numTrials = 100.
     A more detailed analysis includes color coding source code based on
     injection frequency
 """
-more_detail_funcs = ["foobar"]
+more_detail_funcs = ["ddot", "ddot_producer"]
 
 """Snipits of system generated messages. These SHOULD be changed based on
     your system
 """
-busError = "exit signal Bus error"
-assertMessage = "Assertion"
-segError = "Sig 11"
+#busError = "exit signal Bus error"
+busError = "BAD TERMINATION"
+#assertMessage = "Assertion"
+assertMessage = "EXIT CODE: 11"
+#segError = "Sig 11"
+segError = "signal 11"
 
 """Snipit of a detection message. This SHOULD be changed based on your
     detection scheme
 """
-detectMessage = "Foo Check"
+#detectMessage = "SOFT ERROR DETECTED"
+detectMessage = "Final result"
 
 """FlipIt Injection markers. You SHOULD NOT need to change these.
 """

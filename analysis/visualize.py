@@ -11,7 +11,18 @@ numTrialsInj = 0
 colors = ['g','b', 'y', 'm', 'c', 'r']
 TYPES = ["Arith-FP", "Pointer", "Arith-Fix", "Ctrl-Loop", "Ctrl-Branch"]
 TYPES_LONG = ["Floating-Point", "Pointer", "Fixed-Point", "Control-Loop", "Control-Branch"]
-typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4}
+#typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4}
+typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4
+,
+ "Load":1,
+ "FMul":0,
+ "FAdd":0,
+ "Add":0,
+ "Store":1,
+ "Call":1
+  }
+
+
 nClassifications = len(TYPES)
 
 def initVis(c):
@@ -29,7 +40,7 @@ def initVis(c):
     c.execute("SELECT * FROM trials")
     numTrials = 1. * len(c.fetchall())
     if numTrialsInj == 0:
-        print "No injections found to visualize..."
+        print("No injections found to visualize...")
         sys.exit(1)
     print "Visualizing ", numTrials, " fault injection trials ("\
         , numTrialsInj,") with faults"
@@ -88,7 +99,7 @@ def piechart(percents, labels, title):
     title : str
         title of the pie chart
     """
-    
+
     global numFigs
     plot.figure(numFigs)
     patches, texts, autotexts = plot.pie(percents, labels=labels, autopct='%1.1f%%', colors=colors)
@@ -124,7 +135,7 @@ def histo(values, bins, xlabel, ylabel, title, ticks=None, label=None, c=None):
         trend name of the data being graphed
     c : char
         color of the trend
-    
+
     See Also
     ---------
     barchart
@@ -148,8 +159,8 @@ def histo(values, bins, xlabel, ylabel, title, ticks=None, label=None, c=None):
 
 def visClassifications(c, moreDetail=None):
     """Graphs of what types of faults were injected. Classification based
-    on FlipIt classification. 
-    
+    on FlipIt classification.
+
     Parameters
     ----------
     c : object
@@ -158,21 +169,21 @@ def visClassifications(c, moreDetail=None):
         function names to generate extra analysis of injections inside them
     Notes
     ----------
-    More detail currently not implimented. 
+    More detail currently not implimented.
     """
     typeBuckets = np.zeros(nClassifications + 1)
     bits =  np.zeros((nClassifications, 64))
     c.execute("SELECT site, bit  FROM injections")
     injs = c.fetchall()
     if len(injs) == 0:
-        print "Error in visClassifications: No Injections\n"
+        print("Error in visClassifications: No Injections\n")
         return
     maximum = max(injs)[0] +1
     locs = np.zeros((nClassifications, maximum))
-        
+
     c.execute("SELECT type FROM sites INNER JOIN injections ON sites.site = injections.site")
     types = c.fetchall()
-    
+
     for i in range(len(injs)):
         type = types[i][0]
         site = injs[i][0]
@@ -182,8 +193,8 @@ def visClassifications(c, moreDetail=None):
         if type in typeIdx:
             idx = typeIdx[type]
             if idx == 6:
-                print "Warning: mapping type (", type,\
-                    ") to type ( Control-Branch )"
+                print("Warning: mapping type (", type,\
+                    ") to type ( Control-Branch )")
                 idx = 4
             typeBuckets[idx] += 1
             locs[idx][site] += 1
@@ -193,7 +204,7 @@ def visClassifications(c, moreDetail=None):
             typeBuckets[nClassifications] += 1
     fracs = typeBuckets/np.sum(typeBuckets)
     piechart(fracs[0:-1], TYPES_LONG, "Classification of Injections Based on Type")
-    barchart(np.linspace(0,64,num=64), bits, "Bit Location", "Frequency",  "Injected bit", TYPES) 
+    barchart(np.linspace(0,64,num=64), bits, "Bit Location", "Frequency",  "Injected bit", TYPES)
     plot.xlim((0,64))
 
 
@@ -201,7 +212,7 @@ def visClassifications(c, moreDetail=None):
 
 def visFunctions(c, moreDetail=None):
     """Graphs percentages of what functions faults were injection into
-    
+
     Parameters
     ----------
     c : object
@@ -217,7 +228,7 @@ def visFunctions(c, moreDetail=None):
         c.execute("SELECT COUNT(trial) FROM injections INNER JOIN sites ON sites.site = injections.site AND sites.function = ?", i)
         values.append(1. * c.fetchone()[0])
     piechart(np.array(values)/sum(values), [i[0] for i in funcs], "Injected Functions")
-    
+
     ind = 0
     width = .5
     fig = plot.figure(numFigs)
@@ -226,16 +237,18 @@ def visFunctions(c, moreDetail=None):
         i = i[0]
         c.execute("SELECT type FROM sites INNER JOIN injections ON sites.site = injections.site AND sites.function = ?", (i,))
         types = c.fetchall()
-        
+
         tot = float(len(types))
         per = np.zeros(nClassifications)
         per = [ 0 for i in xrange(nClassifications)]
+        print "Types: ", types
         for t in types:
             #per[typeIdx[t[0]]] += 1.
+            print "t: ", t, " t[0]: ", t[0]
             idx = typeIdx[t[0]]
             if idx == 6:
-                print "Warning: mapping type ( Control ) to type "\
-                "( Control-Branch )"
+                print("Warning: mapping type ( Control ) to type "\
+                "( Control-Branch )")
                 idx = 4
             per[idx] += 1
         per  = np.array(per)/tot * 100
@@ -249,10 +262,10 @@ def visFunctions(c, moreDetail=None):
     ax.set_xticks(np.arange(len(funcs)))
     ax.set_xticklabels([f[0] for f in funcs], rotation=60, ha='center')
     numFigs += 1
-    
+
     ax.set_ylim((0,100))
     ax.set_ylabel("Percent")
-    
+
     # shrink graph to add legend and title at top
     plot.tight_layout()
     box = ax.get_position()
@@ -262,7 +275,7 @@ def visFunctions(c, moreDetail=None):
           fancybox=True, shadow=True, ncol=5)
     plot.setp(plot.gca().get_legend().get_texts(), fontsize='x-small')
     plot.text(0.5, 1.15, "Breakdown of Injection Type per Function",
-    horizontalalignment='center', fontsize=14, transform = ax.transAxes) 
+    horizontalalignment='center', fontsize=14, transform = ax.transAxes)
 
     # more detail for a function creates an html file with the source
     # code colored based on injection percentatge
@@ -287,12 +300,12 @@ def visInjectionsInCode(c, functions):
         c.execute("SELECT file, line FROM sites INNER JOIN injections ON sites.site = injections.site AND sites.function = ?", (func,))
         result = c.fetchall()
         if len(result) == 0:
-            print "Warning (visInjectionsInCode): no injections in target function -- ", func
+            print("Warning (visInjectionsInCode): no injections in target function -- ", func)
             continue
 
         # locate the min and max source line num to shrink output file size
         # we only want to show the section of code that we inject in
-        lines = [i[1] for i in result] 
+        lines = [i[1] for i in result]
         file = result[0][0]
         if ".LLVM.txt" in file:
             file = result[-1][0]
@@ -315,13 +328,13 @@ def visInjectionsInCode(c, functions):
         if os.path.isfile(file):
             srcPath = ""
         if not os.path.isfile(srcPath+file):
-            print "Warning (visInjectionsInCode): source file not found -- ", srcPath + file
+            print("Warning (visInjectionsInCode): source file not found -- ", srcPath + file)
             continue
-        print "\nRelating injections to source code in file: ", srcPath+file
+        print("\nRelating injections to source code in file: ", srcPath+file)
         FILE = open(srcPath+file, "r")
         function = FILE.readlines()[minimum:maximum]
         FILE.close()
-        
+
 
         for i in range(1,len(function)):
             color = "bgcolor=\"" + getColor(values[i]) +"\""
@@ -329,7 +342,7 @@ def visInjectionsInCode(c, functions):
                 "</td>\n<td><code>" + str2html(function[i-1]) + "</code></td>\n<td>"\
                 + str(values[i]) + "</td>\n</tr>\n")
         outfile.write("</table>\n")
-        
+
     outfile.write("</body>\n</html>\n")
     outfile.close()
 
@@ -344,8 +357,8 @@ def str2html(s):
     return s.replace("&", "&amp;").replace(">", "&gt;").replace("<", "&lt;")
 
 def getColor(x):
-    """Selects an html color based on 0 <= x <= 100 
-    
+    """Selects an html color based on 0 <= x <= 100
+
     Parameters
     ----------
     x : float
@@ -371,12 +384,12 @@ def getColor(x):
 def visCrashes(c):
     """Graph percentage of trials that crashed, and bit location and type
     of the corresponding injection
-    
+
     Parameters
     ----------
     c : object
         sqlite3 database handle that is open to a valid filled database
-    
+
     Notes
     ----------
     Only considers trials with injections when calculating percentages
@@ -394,27 +407,27 @@ def visCrashes(c):
         #bits[typeIdx[type]][bit] += 1
         idx = typeIdx[type]
         if idx == 6:
-            print "Warning: mapping type ( Control ) to type "\
-            "( Control-Branch )"
+            print("Warning: mapping type ( Control ) to type "\
+            "( Control-Branch )")
             idx = 4
         bits[idx][bit] += 1
-    
+
     piechart([(numTrialsInj - crashed)/numTrialsInj, crashed/numTrialsInj],\
-         ["Didn't Crash", "Crashed"], "Unexpected Termination") 
-    barchart(np.linspace(0,64,num=64), bits, "Bit Location", "Frequency", "Unexpected Termination: Injected bit", TYPES) 
+         ["Didn't Crash", "Crashed"], "Unexpected Termination")
+    barchart(np.linspace(0,64,num=64), bits, "Bit Location", "Frequency", "Unexpected Termination: Injected bit", TYPES)
     plot.legend(loc='upper left', fancybox = True, shadow=True)
     plot.xlim((0,64))
-   
+
     for i in range(nClassifications):
         if np.sum(bits[i][:]) > 0:
             histo(bits[i][:], np.linspace(0, 64, num=64), "Bit Location", "Frequency", "Unexpected Termination", None, TYPES[i], colors[i])
             plot.xlim((0,64))
             #plot.legend('upper left')
 
-# graphs percent of trials that threw at least 1 assert 
+# graphs percent of trials that threw at least 1 assert
 def visAsserts(c):
     """Graphs percent of trials that threw at least 1 assert
-    
+
     Parameters
     ----------
     c : object
@@ -423,7 +436,7 @@ def visAsserts(c):
     ----------
     Only considers trials with injections when calculating percentages
     """
-    c.execute("SELECT DISTINCT trial from signal WHERE num == 6") 
+    c.execute("SELECT DISTINCT trial from signal WHERE num == 6")
     asserts = len(c.fetchall())
     piechart([asserts/numTrialsInj, (numTrials - asserts)/numTrialsInj],\
          ["Failed Assert(s)", "Didn't Assert"], "Trials with Injections Asserting")
@@ -432,18 +445,18 @@ def visAsserts(c):
 def visSignals(c):
     """Graphs the percent of trials that generated a certian signal type
     reported in the output file
-    
+
     Parameters
     ----------
     c : object
         sqlite3 database handle that is open to a valid filled database
-    
+
     Notes
     ----------
     If a trial generates multiple signals, e.g. each rank asserts, we regard
     this as a single signal for the trial.
     """
-    numSigs = 0.   
+    numSigs = 0.
     sigs = {}
 
     c.execute("SELECT DISTINCT trial, num FROM signals")
@@ -456,19 +469,19 @@ def visSignals(c):
             sigs[s] += 1
         else:
             sigs[s] = 1.
-    
+
     fracs = [(numTrials - numSigs)/numTrialsInj]
     labels = ["No Signal"]
     for s in sigs:
         fracs.append(sigs[s]/numTrialsInj)
         labels.append("Signal " + str(s))
-    c.execute("SELECT DISTINCT trial from signals") 
+    c.execute("SELECT DISTINCT trial from signals")
     unique = len(c.fetchall())
     piechart(fracs, labels, str(unique) + " Trials Signaling")
 
 def visDetections(c, moreDetail=None):
-    """Graphs the percentage of trials that generate detection 
-    
+    """Graphs the percentage of trials that generate detection
+
     Parameters
     ----------
     c : object
@@ -486,14 +499,14 @@ def visDetections(c, moreDetail=None):
     detected = float(c.fetchone()[0])
     c.execute("SELECT SUM(numInj) FROM trials")
     numInj = float(c.fetchone()[0])
-    
+
     piechart([detected/numInj, (numInj - detected)/numInj],\
     ["Detected", "Didn't Detect"], "Number of Trials with Detection ("+str(detected)+")")
 
 
 def visDetectedInjections(c, moreDetail=None):
     """Graphs bit locations and type of what injections were detected
-    
+
     Parameters
     ----------
     c : object
@@ -515,7 +528,7 @@ def visDetectedInjections(c, moreDetail=None):
     injs = c.fetchall()
     c.execute("SELECT type FROM sites INNER JOIN injections ON sites.site = injections.site INNER JOIN trials ON injections.trial = trials.trial AND trials.detection = 1")
     types = c.fetchall()
-    
+
     for i in range(len(injs)):
         type = types[i][0]
         site = injs[i][0]
@@ -523,26 +536,26 @@ def visDetectedInjections(c, moreDetail=None):
         #bits[typeIdx[type]][bit] += 1
         idx = typeIdx[type]
         if idx == 6:
-            print "Warning: mapping type ( Control ) to type "\
-            "( Control-Branch )"
+            print("Warning: mapping type ( Control ) to type "\
+            "( Control-Branch )")
             idx = 4
         bits[idx][bit] += 1
 
-    barchart(np.linspace(0,64,num=64), bits, "Injected bit", "Frequency", "Detected Injection Bit Location",  TYPES) 
+    barchart(np.linspace(0,64,num=64), bits, "Injected bit", "Frequency", "Detected Injection Bit Location",  TYPES)
     plot.xlim((0,64))
 
-    
+
 
 def visDetectionLatency(c):
     """Visualizes the detection latency of an injection in the form of
     a bar chart with the x-axis as number of instruction executed after
     injection.
-    
+
     Parameters
     ----------
     c : object
         sqlite3 database handle that is open to a valid filled database
-    
+
     Notes
     ----------
     Assumes the user modifed the latency value in the detections table. It can
@@ -564,4 +577,3 @@ def visDetectionLatency(c):
     ticks = ["-1", "0", "1", "2", "3", "4", "5->", "10->", "1e2->", "1e3->", "1e9->"]
     bins = np.arange(0,11)
     histo(values, bins, xlabel, ylabel, title, ticks)
-

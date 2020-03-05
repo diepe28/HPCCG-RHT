@@ -20,17 +20,17 @@ def init(db, LLVMPath, trialPath, customFuncs = None):
         should a seperate fault injection run of the application.
     customFuncs : tuple of function pointers
         Tuple of customs parsing functions (initcustomparsing(), customparser())
-    
+
     Return
     ---------
     sqlite3 database connection handle that is open
-    
+
     Notes
     ----------
     Searched recursively in LLVMPath for log files.
     customFuncs can be None. In that case, no user parseing is done.
     """
-    
+
     if rebuild_database:
         os.system("rm -rf " + db)
     exists = os.path.isfile(db)
@@ -47,7 +47,7 @@ def init(db, LLVMPath, trialPath, customFuncs = None):
             readTrials(c, trialPath, customFuncs[1])
         else:
             readTrials(c, trialPath)
-    
+
         c.execute("SELECT name FROM sqlite_master WHERE type='table';")
     conn.commit()
     return c
@@ -70,7 +70,7 @@ def createTables(c):
 def readLLVM(c, LLVMPath):
     """Searches through the directory structure and collect
     fault injection site information and add it to the database
-    
+
     Parameters
     ----------
     c : object
@@ -90,7 +90,7 @@ def readLLVM(c, LLVMPath):
                     parseBinaryLogFile(c, os.path.join(path, name))
                 else:
                     parseInjLog(c, path, name)
-    
+
 
 def parseInjLog(c, path,  file):
     """Reads FLipIt LLVM log file and adds fault injection site
@@ -107,21 +107,21 @@ def parseInjLog(c, path,  file):
 
     fullPath = os.path.join(path, file)
     rawlog = open(fullPath).readlines()
-    funcName = ""   
+    funcName = ""
 
     for i in range(0, len(rawlog)):
         if "Function Name: " in rawlog[i]:
             funcName = rawlog[i].split(" ")[-1].strip()
-        
+
         if rawlog[i][0] == "#":
-            # break line: "#NUM TYPE TXT TXT" to grab NUM  
+            # break line: "#NUM TYPE TXT TXT" to grab NUM
             split = rawlog[i].split("\t")
             site = int( split[0][1:] )
             type = split[1]
             comment = split[-2]
             line = split[-1]
             srcLine = 0
-        
+
             # compiled with -g and we know the src line number
             if ":" in line:
                 split = line.split(":")
@@ -132,8 +132,8 @@ def parseInjLog(c, path,  file):
 
 def readTrials(c, filePrefix, customParser = None):
     """Parses an output file of a fault injection trial for injections,
-    detections, and system level events such as raised signals. 
-    
+    detections, and system level events such as raised signals.
+
     Parameters
     ----------
     c : object
@@ -149,34 +149,38 @@ def readTrials(c, filePrefix, customParser = None):
     for trial in range(0, int(numTrials)):
 
         # determine if trial exists
-        path = filePrefix + "_" + str(trial)#".txt"
+        path = filePrefix + "_" + str(trial)# + ".txt"
 
         if not os.path.exists(path):
             path += ".txt"
             if not os.path.exists(path):
                 continue
-        print "\t", path
-        
+        #print "\t Searching in: ", path
+
         # grab information about the injection(s)
         t = open(path).readlines()
         llvmInj = injCount = crashed = detected = signal = arithFP = 0
-       
+
         c.execute("INSERT INTO trials(trial,path) VALUES (?,?)", (trial, path))
         # look at certain lines in output
         i = 0
+        #print "We will search for: siteMessage: ", siteMessage, "detectMessage: ", detectMessage
         while i < len(t):
-            l = t[i]
-            if siteMessage in l:
+            line = t[i]
+            #print "This is the line: ",  line
+
+            if siteMessage in line:
+                #print "Found site message on line: \n"
                 injCount += 1
                 inj = []
                 i += 1
-                l = t[i]
-                while siteEndMessage not in l:
-                    if l != "\n":
-                        inj.append(l.split(" "))
+                line = t[i]
+                while siteEndMessage not in line:
+                    if line != "\n":
+                        inj.append(line.split(" "))
                     i += 1
-                    l = t[i]
- 
+                    line = t[i]
+
                 # grab info stored in  'inj'
                 arithFP = 0
                 if "IEEE" in " ".join(inj[0]):
@@ -200,40 +204,42 @@ def readTrials(c, filePrefix, customParser = None):
                 llvmInj = int(inj[7][-1])
                 dynCycle = llvmInj
                 c.execute("INSERT INTO injections VALUES (?,?,?,?,?,?,?)", (trial, site, rank, prob, bit, dynCycle, 'NULL'))
-               
-                for j in range(8, len(inj)): 
+
+                for j in range(8, len(inj)):
                     customParser(c, " ".join(inj[j]), trial)
 
 
-            if detectMessage in l:
+            if detectMessage in line:
+                #print "Found detect Message: \n"
                 detected = True
                 c.execute("SELECT * FROM DETECTIONS WHERE trial = ?", (trial,))
                 if c.fetchall() == []:
                     c.execute("INSERT INTO detections VALUES (?,?,?)", (trial, -1, "---"))
 
-            if assertMessage in l:
+            if assertMessage in line:
                 signal = True
                 crashed = True
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, 6))
-            
-            if busError in l:
+
+            if busError in line:
                 signal = True
                 crashed = True
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, 10))
 
-            if segError in l:
+            if segError in line:
                 signal = True
                 crashed = True
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, 11))
-             
+
             if customParser != None:
-                customParser(c, l, trial)
+                customParser(c, line, trial)
 
             i += 1
         c.execute("UPDATE trials SET numInj=? WHERE trials.trial=?", (injCount, trial))
         c.execute("UPDATE trials SET crashed=? WHERE trials.trial=?", (crashed, trial))
         c.execute("UPDATE trials SET detection=? WHERE trials.trial=?", (detected, trial))
         c.execute("UPDATE trials SET signal=? WHERE trials.trial=?", (signal, trial))
+        print "Summary -- numInj: ", injCount, " crashed: ", crashed, " detected: ", detected, " signal: ", signal
 
 def finalize():
     """Cleans up fault injection visualization
