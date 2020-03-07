@@ -70,18 +70,14 @@ more_detail_funcs = ["ddot", "ddot_producer"]
 """Snipits of system generated messages. These SHOULD be changed based on
     your system
 """
-#busError = "exit signal Bus error"
 busError = "BAD TERMINATION"
-#assertMessage = "Assertion"
 assertMessage = "EXIT CODE: 11"
-#segError = "Sig 11"
 segError = "signal 11"
 
 """Snipit of a detection message. This SHOULD be changed based on your
     detection scheme
 """
-#detectMessage = "SOFT ERROR DETECTED"
-detectMessage = "Final result"
+detectMessage = "SOFT ERROR DETECTED"
 
 """FlipIt Injection markers. You SHOULD NOT need to change these.
 """

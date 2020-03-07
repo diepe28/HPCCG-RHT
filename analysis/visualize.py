@@ -14,12 +14,13 @@ TYPES_LONG = ["Floating-Point", "Pointer", "Fixed-Point", "Control-Loop", "Contr
 #typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4}
 typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4
 ,
- "Load":1,
+ "Load":0,
  "FMul":0,
  "FAdd":0,
  "Add":0,
- "Store":1,
- "Call":1
+ "Store":0,
+ "Call":2,
+ "SRem":0
   }
 
 
