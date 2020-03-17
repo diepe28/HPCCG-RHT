@@ -10,8 +10,8 @@ numTrials = 0
 numTrialsInj = 0
 colors = ['g','b', 'y', 'm', 'c', 'r']
 TYPES = ["Arith-FP", "Pointer", "Arith-Fix", "Ctrl-Loop", "Ctrl-Branch"]
+
 TYPES_LONG = ["Floating-Point", "Pointer", "Fixed-Point", "Control-Loop", "Control-Branch"]
-#typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4}
 typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4
 ,
  "Load":0,
@@ -23,7 +23,7 @@ typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2
  "SRem":0
   }
 
-
+#typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4}
 nClassifications = len(TYPES)
 
 def initVis(c):
@@ -242,10 +242,10 @@ def visFunctions(c, moreDetail=None):
         tot = float(len(types))
         per = np.zeros(nClassifications)
         per = [ 0 for i in xrange(nClassifications)]
-        print "Types: ", types
+        #print "Types: ", types
         for t in types:
             #per[typeIdx[t[0]]] += 1.
-            print "t: ", t, " t[0]: ", t[0]
+            #print "t: ", t, " t[0]: ", t[0]
             idx = typeIdx[t[0]]
             if idx == 6:
                 print("Warning: mapping type ( Control ) to type "\
@@ -460,7 +460,8 @@ def visSignals(c):
     numSigs = 0.
     sigs = {}
 
-    c.execute("SELECT DISTINCT trial, num FROM signals")
+    #dperez, old c.execute("SELECT DISTINCT trial, num FROM signals")
+    c.execute("SELECT DISTINCT trial, name FROM signals")
     #build histogram for what signals were raised
     signals =  c.fetchall()
     for pair in signals:

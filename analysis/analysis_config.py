@@ -56,7 +56,7 @@ srcPath = "../"
 """Number of fault injection trials to read
 """
 #numTrials = 20.
-numTrials = 500.
+numTrials = 50.
 
 """Names of functions that a more detailed analysis should be conducted for
 
@@ -65,7 +65,8 @@ numTrials = 500.
     A more detailed analysis includes color coding source code based on
     injection frequency
 """
-more_detail_funcs = ["ddot", "ddot_producer"]
+#more_detail_funcs = ["ddot", "ddot_producer"]
+more_detail_funcs = ["ddot_producer"]
 
 """Snipits of system generated messages. These SHOULD be changed based on
     your system
@@ -78,6 +79,8 @@ segError = "signal 11"
     detection scheme
 """
 detectMessage = "SOFT ERROR DETECTED"
+hungMessage = "Application got stuck!"
+corruptedMessage = "Corrupted execution!"
 
 """FlipIt Injection markers. You SHOULD NOT need to change these.
 """
