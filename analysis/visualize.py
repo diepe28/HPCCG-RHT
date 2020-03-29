@@ -20,7 +20,8 @@ typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2
  "Add":0,
  "Store":0,
  "Call":2,
- "SRem":0
+ "SRem":0,
+ "ICmp":4
   }
 
 #typeIdx= {"Arith-FP":0, "Arithmetic":0, "Control": 6, "Pointer":1, "Arith-Fix":2, "Control-Loop":3, "Control-Branch":4}
@@ -88,6 +89,7 @@ def barchart(bins, values, xlabel, ylabel, title, name=None, ticks=None):
     plot.tight_layout()
     numFigs += 1
 
+
 def piechart(percents, labels, title):
     """Wrapper around the matplotlib function pie
 
@@ -114,6 +116,7 @@ def piechart(percents, labels, title):
     plot.axis(v)
     plot.tight_layout()
     numFigs += 1
+
 
 def histo(values, bins, xlabel, ylabel, title, ticks=None, label=None, c=None):
     """Wrapper around the matplotlib function bar. Useful for a single trend
@@ -157,6 +160,7 @@ def histo(values, bins, xlabel, ylabel, title, ticks=None, label=None, c=None):
     plot.title(title)
     plot.tight_layout()
     numFigs += 1
+
 
 def visClassifications(c, moreDetail=None):
     """Graphs of what types of faults were injected. Classification based
@@ -204,9 +208,14 @@ def visClassifications(c, moreDetail=None):
             print "VIZ: not classified = ", i
             typeBuckets[nClassifications] += 1
     fracs = typeBuckets/np.sum(typeBuckets)
-    piechart(fracs[0:-1], TYPES_LONG, "Classification of Injections Based on Type")
-    barchart(np.linspace(0,64,num=64), bits, "Bit Location", "Frequency",  "Injected bit", TYPES)
+    plotTitle = "Classification of Injections Based on Type"
+    piechart(fracs[0:-1], TYPES_LONG, plotTitle)
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
+
+    plotTitle = "Injected bit"
+    barchart(np.linspace(0,64,num=64), bits, "Bit Location" , "Frequency", plotTitle, TYPES)
     plot.xlim((0,64))
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
 
 
 
@@ -228,7 +237,10 @@ def visFunctions(c, moreDetail=None):
     for i in funcs:
         c.execute("SELECT COUNT(trial) FROM injections INNER JOIN sites ON sites.site = injections.site AND sites.function = ?", i)
         values.append(1. * c.fetchone()[0])
-    piechart(np.array(values)/sum(values), [i[0] for i in funcs], "Injected Functions")
+
+    plotTitle = "Injected Functions"
+    piechart(np.array(values)/sum(values), [i[0] for i in funcs], plotTitle)
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
 
     ind = 0
     width = .5
@@ -267,6 +279,7 @@ def visFunctions(c, moreDetail=None):
     ax.set_ylim((0,100))
     ax.set_ylabel("Percent")
 
+    plotTitle = "Breakdown of Injection Type per Function"
     # shrink graph to add legend and title at top
     plot.tight_layout()
     box = ax.get_position()
@@ -275,13 +288,15 @@ def visFunctions(c, moreDetail=None):
     ax.legend(legend, TYPES, loc='upper center', bbox_to_anchor=(0.5, 1.15),
           fancybox=True, shadow=True, ncol=5)
     plot.setp(plot.gca().get_legend().get_texts(), fontsize='x-small')
-    plot.text(0.5, 1.15, "Breakdown of Injection Type per Function",
+    plot.text(0.5, 1.15, plotTitle,
     horizontalalignment='center', fontsize=14, transform = ax.transAxes)
 
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
     # more detail for a function creates an html file with the source
     # code colored based on injection percentatge
     if moreDetail != None:
         visInjectionsInCode(c, moreDetail)
+
 
 def visInjectionsInCode(c, functions):
     """Creates an html file with the source code colored based on injection
@@ -317,8 +332,10 @@ def visInjectionsInCode(c, functions):
         values, bins = np.histogram(lines, bins, density=False) # <------------ check here
         bins = np.arange(minimum, maximum)
         values = 1.*values/np.sum(values)*100 # percents
+        plotTitle = "Injections mapped to source line numbers for function "
         histo(values, bins, "Source Line Number", "Percent",\
-        "Injections mapped to source line numbers for function: " + func)
+        plotTitle + func)
+        plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
 
         outfile.write("<h1>" + func + "()</h1>\n<table>\n")
         if minimum == 0:
@@ -326,6 +343,10 @@ def visInjectionsInCode(c, functions):
             minimum = np.min(np.trim_zeros(lines)) - 1
             values = values[minimum:]
         outfile.write("<table>\n")
+
+        #dperez, hardcoding file
+        file = "/home/diego/Documents/workspace/HPCCG-RHT/ddot.cpp"
+
         if os.path.isfile(file):
             srcPath = ""
         if not os.path.isfile(srcPath+file):
@@ -413,9 +434,13 @@ def visCrashes(c):
             idx = 4
         bits[idx][bit] += 1
 
+    plotTitle = "Unexpected Termination"
     piechart([(numTrialsInj - crashed)/numTrialsInj, crashed/numTrialsInj],\
-         ["Didn't Crash", "Crashed"], "Unexpected Termination")
-    barchart(np.linspace(0,64,num=64), bits, "Bit Location", "Frequency", "Unexpected Termination: Injected bit", TYPES)
+         ["Didn't Crash", "Crashed"], plotTitle)
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
+
+    plotTitle = "Unexpected Termination: Injected bit"
+    barchart(np.linspace(0,64,num=64), bits, "Bit Location", "Frequency", plotTitle, TYPES)
     plot.legend(loc='upper left', fancybox = True, shadow=True)
     plot.xlim((0,64))
 
@@ -424,6 +449,8 @@ def visCrashes(c):
             histo(bits[i][:], np.linspace(0, 64, num=64), "Bit Location", "Frequency", "Unexpected Termination", None, TYPES[i], colors[i])
             plot.xlim((0,64))
             #plot.legend('upper left')
+
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
 
 # graphs percent of trials that threw at least 1 assert
 def visAsserts(c):
@@ -439,8 +466,10 @@ def visAsserts(c):
     """
     c.execute("SELECT DISTINCT trial from signal WHERE num == 6")
     asserts = len(c.fetchall())
+    plotTitle = "Trials with Injections Asserting"
     piechart([asserts/numTrialsInj, (numTrials - asserts)/numTrialsInj],\
-         ["Failed Assert(s)", "Didn't Assert"], "Trials with Injections Asserting")
+         ["Failed Assert(s)", "Didn't Assert"], plotTitle)
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
 
 # graphs percent of trials that generated at a certian signal type that is reported in the output file
 def visSignals(c):
@@ -479,7 +508,10 @@ def visSignals(c):
         labels.append("Signal " + str(s))
     c.execute("SELECT DISTINCT trial from signals")
     unique = len(c.fetchall())
-    piechart(fracs, labels, str(unique) + " Trials Signaling")
+    plotTitle = " Trials Signaling"
+    piechart(fracs, labels, str(unique) + plotTitle)
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
+
 
 def visDetections(c, moreDetail=None):
     """Graphs the percentage of trials that generate detection
@@ -502,8 +534,10 @@ def visDetections(c, moreDetail=None):
     c.execute("SELECT SUM(numInj) FROM trials")
     numInj = float(c.fetchone()[0])
 
+    plotTitle = "Number of Trials with Detection "
     piechart([detected/numInj, (numInj - detected)/numInj],\
-    ["Detected", "Didn't Detect"], "Number of Trials with Detection ("+str(detected)+")")
+    ["Detected", "Didn't Detect"], plotTitle + "("+str(detected)+")")
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
 
 
 def visDetectedInjections(c, moreDetail=None):
@@ -543,8 +577,10 @@ def visDetectedInjections(c, moreDetail=None):
             idx = 4
         bits[idx][bit] += 1
 
-    barchart(np.linspace(0,64,num=64), bits, "Injected bit", "Frequency", "Detected Injection Bit Location",  TYPES)
+    plotTitle = "Detected Injection Bit Location"
+    barchart(np.linspace(0,64,num=64), bits, "Injected bit", "Frequency", plotTitle,  TYPES)
     plot.xlim((0,64))
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)
 
 
 
@@ -575,7 +611,8 @@ def visDetectionLatency(c):
     values, bins = np.histogram(data, buckets, normed=False)
     xlabel = "# of instrumented LLVM instructions till detection"
     ylabel = "Frequency"
-    title = "Detection Latency"
+    plotTitle = "Detection Latency"
     ticks = ["-1", "0", "1", "2", "3", "4", "5->", "10->", "1e2->", "1e3->", "1e9->"]
     bins = np.arange(0,11)
-    histo(values, bins, xlabel, ylabel, title, ticks)
+    histo(values, bins, xlabel, ylabel, plotTitle, ticks)
+    plot.savefig(MAIN_PATH + "Plots/" + plotTitle)

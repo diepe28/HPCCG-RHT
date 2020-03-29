@@ -13,8 +13,9 @@ rebuild_database = True
     ----
     analysis scripts recursilvely search this directory for the logs
 """
-#LLVM_log_path = "../llvm"
-LLVM_log_path = "../"
+
+MAIN_PATH = "../../reliabilityExperiments/Friday27March_reliability-results/7_NOPdcDrt_arithmetic_control_runWangJV/"
+LLVM_log_path =  MAIN_PATH + "runWangJV/"
 
 """Determines what type of log files to look for and parse.
 
@@ -37,13 +38,13 @@ LLVM_log_type = "ASCII"
     --------
     migrate.py to suffix _# or _#.txt to existing run output files
 """
-trial_path = "../../App-Executer/Execution-Wang/Output"
+#trial_path = "../../App-Executer/Execution-Wang/Output"
 #trial_path = "../../reliabilityExperiments/results-6-August/0_MPI_NOPdcDrt_allErrorsrunNotReplicated/runNotReplicated/bck/readyFiles/output"
+trial_path = LLVM_log_path + "Output"
 
 """Begining of the trial file name e.g. foo for trials foo_1 or foo_1.txt
 """
-#trial_prefix = "Output"
-trial_prefix = "output"
+trial_prefix = "Output"
 
 """Path to source code.
 
@@ -56,7 +57,7 @@ srcPath = "../"
 """Number of fault injection trials to read
 """
 #numTrials = 20.
-numTrials = 50.
+numTrials = 300.
 
 """Names of functions that a more detailed analysis should be conducted for
 

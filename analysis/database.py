@@ -210,8 +210,9 @@ def readTrials(c, filePrefix, customParser = None):
 
 
             if detectMessage in line:
-                #print "Found detect Message: \n"
                 detected = True
+                #dperez, line added 
+                c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Error-Detected"))
                 c.execute("SELECT * FROM DETECTIONS WHERE trial = ?", (trial,))
                 if c.fetchall() == []:
                     c.execute("INSERT INTO detections VALUES (?,?,?)", (trial, -1, "---"))
@@ -253,7 +254,7 @@ def readTrials(c, filePrefix, customParser = None):
         c.execute("UPDATE trials SET signal=? WHERE trials.trial=?", (signal, trial))
         # dperez, todo should we add something for hung and corrupted???
 
-        print "Summary -- numInj: ", injCount, " crashed: ", crashed, " detected: ", detected, " signal: ", signal, " got hung? ", hung, " corrupted? ", corrupted , "\n"
+        #print "Summary -- numInj: ", injCount, " crashed: ", crashed, " detected: ", detected, " signal: ", signal, " got hung? ", hung, " corrupted? ", corrupted , "\n"
 
 def finalize():
     """Cleans up fault injection visualization

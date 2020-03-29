@@ -5,6 +5,7 @@ from visualize import initVis, visClassifications, visFunctions, visCrashes,\
 from custom import customInit, customParser
 #import analysis_config
 from analysis_config import *
+import os
 
 def visualize (c, more_detail_funcs = None):
     """Driver function to visualize a fault injection campaign.
@@ -19,6 +20,12 @@ def visualize (c, more_detail_funcs = None):
     ----------
     Allows for user custom visualzations after first 'plot.show()'
     """
+
+    try:
+        os.mkdir(MAIN_PATH + "Plots/")
+    except OSError:
+        print ("Failed creating plot directory in %s " % MAIN_PATH)
+
     initVis(c)
     visClassifications(c, more_detail_funcs)
     visFunctions(c, more_detail_funcs)
@@ -27,10 +34,10 @@ def visualize (c, more_detail_funcs = None):
     visDetections(c, more_detail_funcs)
     visDetectedInjections(c)
     visDetectionLatency(c)
-    plot.show()
+    #dperez, plot.show()
 
     # add custom plotting function below
-    plot.show()
+    #dperez, plot.show()
 
 
 if __name__ == "__main__":
