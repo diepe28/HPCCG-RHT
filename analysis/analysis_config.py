@@ -14,8 +14,12 @@ rebuild_database = True
     analysis scripts recursilvely search this directory for the logs
 """
 
-MAIN_PATH = "../../reliabilityExperiments/Friday27March_reliability-results/7_NOPdcDrt_arithmetic_control_runWangJV/"
-LLVM_log_path =  MAIN_PATH + "runWangJV/"
+#MAIN_PATH = "../../reliabilityExperiments/Friday27March_reliability-results/7_NOPdcDrt_arithmetic_control_runWangJV/"
+MAIN_PATH = "../../reliabilityExperiments/Friday27March_reliability-results/"
+#CAMPAIGN_NAME = "11_NOPdcDrt_arithmetic_runWangJV"
+#CAMPAIGN_NAME = "5_NOPdcDrt_arithmetic_control_runWang"
+CAMPAIGN_NAME = "6_NOPdcDrt_arithmetic_control_runWangVG"
+LLVM_log_path =  MAIN_PATH + CAMPAIGN_NAME + "/output/"
 
 """Determines what type of log files to look for and parse.
 

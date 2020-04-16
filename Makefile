@@ -66,6 +66,7 @@ MPI_INC = -I/usr/MPICH/SDK.gcc/include
 #CPP_OPT_FLAGS = -O3 -funroll-all-loops -malign-double
 #CPP_OPT_FLAGS = -O3 -ftree-vectorize -ftree-vectorizer-verbose=2
 #CPP_OPT_FLAGS = -O3 -std=c++11
+# No compiler optimizations
 CPP_OPT_FLAGS = -std=c++11 -g
 #
 # 4) MPI library:

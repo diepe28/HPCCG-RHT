@@ -62,8 +62,7 @@ def createTables(c):
     c.execute("CREATE TABLE sites (site int, type text, comment text, file text, function text, line int, opcode text)")
     c.execute("CREATE TABLE trials (trial int, numInj int, crashed int, detection int, path text, signal int)")
     c.execute("CREATE TABLE injections (trial int, site int, rank int, prob double, bit int, cycle int, notes text)")
-    #dperez, old: c.execute("CREATE TABLE signals (trial int, num int)")
-    c.execute("CREATE TABLE signals (trial int, name text)")
+    c.execute("CREATE TABLE signals (trial int, num text)")
     c.execute("CREATE TABLE detections (trial int, latency int, detector text)")
     #c.execute("CREATE TABLE ()")
 
@@ -150,13 +149,13 @@ def readTrials(c, filePrefix, customParser = None):
     for trial in range(0, int(numTrials)):
 
         # determine if trial exists
-        path = filePrefix + "_" + str(trial)# + ".txt"
+        path = filePrefix + "_" + str(trial)#".txt"
 
         if not os.path.exists(path):
             path += ".txt"
             if not os.path.exists(path):
                 continue
-        #print "\t Searching in: ", path
+        print "\t", path
 
         # grab information about the injection(s)
         t = open(path).readlines()
@@ -167,10 +166,7 @@ def readTrials(c, filePrefix, customParser = None):
         i = 0
         while i < len(t):
             line = t[i]
-            #print "This is the line: ",  line
-
             if siteMessage in line:
-                #print "Found site message on line: \n"
                 injCount += 1
                 inj = []
                 i += 1
@@ -211,33 +207,17 @@ def readTrials(c, filePrefix, customParser = None):
 
             if detectMessage in line:
                 detected = True
-                #dperez, line added 
-                c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Error-Detected"))
                 c.execute("SELECT * FROM DETECTIONS WHERE trial = ?", (trial,))
                 if c.fetchall() == []:
                     c.execute("INSERT INTO detections VALUES (?,?,?)", (trial, -1, "---"))
 
-            if assertMessage in line:
+            if assertMessage in line or busError in line or segError in line:
                 signal = True
                 crashed = True
-                #dperez,old: c.execute("INSERT INTO signals VALUES (?,?)", (trial, 6))
-                c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Crashed"))
-
-            if busError in line:
-                signal = True
-                crashed = True
-                #dperez,old: c.execute("INSERT INTO signals VALUES (?,?)", (trial, 10))
-                c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Crashed"))
-
-            if segError in line:
-                signal = True
-                crashed = True
-                #dperez,old: c.execute("INSERT INTO signals VALUES (?,?)", (trial, 11))
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Crashed"))
 
             if hungMessage in line:
                 hung = True
-                #dperez,old: c.execute("INSERT INTO signals VALUES (?,?)", (trial, 15))
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Hung"))
 
             if corruptedMessage in line:
@@ -248,13 +228,12 @@ def readTrials(c, filePrefix, customParser = None):
                 customParser(c, line, trial)
 
             i += 1
+
         c.execute("UPDATE trials SET numInj=? WHERE trials.trial=?", (injCount, trial))
         c.execute("UPDATE trials SET crashed=? WHERE trials.trial=?", (crashed, trial))
         c.execute("UPDATE trials SET detection=? WHERE trials.trial=?", (detected, trial))
         c.execute("UPDATE trials SET signal=? WHERE trials.trial=?", (signal, trial))
-        # dperez, todo should we add something for hung and corrupted???
 
-        #print "Summary -- numInj: ", injCount, " crashed: ", crashed, " detected: ", detected, " signal: ", signal, " got hung? ", hung, " corrupted? ", corrupted , "\n"
 
 def finalize():
     """Cleans up fault injection visualization

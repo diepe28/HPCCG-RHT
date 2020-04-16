@@ -22,7 +22,7 @@ def visualize (c, more_detail_funcs = None):
     """
 
     try:
-        os.mkdir(MAIN_PATH + "Plots/")
+        os.mkdir(MAIN_PATH + CAMPAIGN_NAME + "/Plots/")
     except OSError:
         print ("Failed creating plot directory in %s " % MAIN_PATH)
 
