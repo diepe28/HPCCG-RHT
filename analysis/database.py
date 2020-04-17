@@ -85,7 +85,7 @@ def readLLVM(c, LLVMPath):
     for path, subdirs, files in os.walk(LLVMPath):
         for name in files:
             if str(name).endswith(end):
-                print "\t", name
+                #print "\t", name
                 if LLVM_log_type == "Binary":
                     parseBinaryLogFile(c, os.path.join(path, name))
                 else:
@@ -164,8 +164,13 @@ def readTrials(c, filePrefix, customParser = None):
         c.execute("INSERT INTO trials(trial,path) VALUES (?,?)", (trial, path))
         # look at certain lines in output
         i = 0
+        # dperez, this is wrong, we are hardcoding a value but is because of the same problem
+        # that the crash information is not printed in the output log
+        site = 22609
         while i < len(t):
             line = t[i]
+            #dperez, we have a problem here. For the crashes, the flipIp information
+            #is not printed, and therefore we can't relate these cases with other data
             if siteMessage in line:
                 injCount += 1
                 inj = []
@@ -199,6 +204,8 @@ def readTrials(c, filePrefix, customParser = None):
                     c.execute("UPDATE sites SET type = ? WHERE site=?", (ty,site))
                 llvmInj = int(inj[7][-1])
                 dynCycle = llvmInj
+
+                print "Injections trialId: " + str(trial) + " being updated with site: " + str(site)
                 c.execute("INSERT INTO injections VALUES (?,?,?,?,?,?,?)", (trial, site, rank, prob, bit, dynCycle, 'NULL'))
 
                 for j in range(8, len(inj)):
@@ -211,7 +218,8 @@ def readTrials(c, filePrefix, customParser = None):
                 if c.fetchall() == []:
                     c.execute("INSERT INTO detections VALUES (?,?,?)", (trial, -1, "---"))
 
-            if assertMessage in line or busError in line or segError in line:
+            #if assertMessage in line or busError in line or segError in line:
+            if assertMessage in line:
                 signal = True
                 crashed = True
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Crashed"))
@@ -229,11 +237,16 @@ def readTrials(c, filePrefix, customParser = None):
 
             i += 1
 
+        #dperez, manual correction
+        if crashed == True:
+            injCount = 1
+            c.execute("INSERT INTO injections VALUES (?,?,?,?,?,?,?)", (trial, site, 0, 0, 0, 0, 'NULL'))
+
         c.execute("UPDATE trials SET numInj=? WHERE trials.trial=?", (injCount, trial))
         c.execute("UPDATE trials SET crashed=? WHERE trials.trial=?", (crashed, trial))
         c.execute("UPDATE trials SET detection=? WHERE trials.trial=?", (detected, trial))
         c.execute("UPDATE trials SET signal=? WHERE trials.trial=?", (signal, trial))
-
+        print "Updating from trialId " + str(trial) + " - injCount: " + str(injCount) + " - site: " + str(site) + " - signal: " + str(signal) + " - crashed??: " + str(crashed)
 
 def finalize():
     """Cleans up fault injection visualization

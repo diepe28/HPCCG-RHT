@@ -2,6 +2,7 @@ import os, sys
 from matplotlib import pyplot as plot
 import numpy as np
 import matplotlib
+import shutil
 from analysis_config import *
 
 
@@ -309,7 +310,8 @@ def visInjectionsInCode(c, functions):
     functions : list of str
         function names to generate extra analysis of injections inside them
     """
-    outfile = open("more.html", 'w')
+    coloredSourceFile = "colorDDotProducer.html"
+    outfile = open(coloredSourceFile, 'w')
     outfile.write("<!DOCTYPE html>\n<html>\n<body>\n")
     for func in functions:
         # grab all injections in this function
@@ -367,6 +369,9 @@ def visInjectionsInCode(c, functions):
 
     outfile.write("</body>\n</html>\n")
     outfile.close()
+    #copy the colored code to output path
+    outputColoredDDot = MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + coloredSourceFile
+    shutil.copy2(coloredSourceFile, outputColoredDDot)
 
 def str2html(s):
     """Replaces '<', '>', and '&' with html equlivants
@@ -418,6 +423,15 @@ def visCrashes(c):
     """
 
     bits =  np.zeros((nClassifications, 64))
+
+    ##############
+    c.execute("SELECT trial FROM trials where trials.crashed = 1")
+    crash = c.fetchall()
+    crashed = float(len(crash))
+    print "Whatever this is: " + str(crash)
+    print "Number of crashes are: " + str(crashed)
+    ##############
+
     c.execute("SELECT type FROM sites INNER JOIN injections ON sites.site = injections.site INNER JOIN trials ON trials.trial = injections.trial AND trials.crashed = 1")
     crash = c.fetchall()
     crashed = float(len(crash))
