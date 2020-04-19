@@ -62,7 +62,7 @@ def createTables(c):
     c.execute("CREATE TABLE sites (site int, type text, comment text, file text, function text, line int, opcode text)")
     c.execute("CREATE TABLE trials (trial int, numInj int, crashed int, detection int, path text, signal int)")
     c.execute("CREATE TABLE injections (trial int, site int, rank int, prob double, bit int, cycle int, notes text)")
-    c.execute("CREATE TABLE signals (trial int, num text)")
+    c.execute("CREATE TABLE signals (trial int, name text)")
     c.execute("CREATE TABLE detections (trial int, latency int, detector text)")
     #c.execute("CREATE TABLE ()")
 
@@ -214,21 +214,18 @@ def readTrials(c, filePrefix, customParser = None):
 
             if detectMessage in line:
                 detected = True
+                c.execute("INSERT INTO signals VALUES (?,?)", (trial, "ErrorDetected"))
                 c.execute("SELECT * FROM DETECTIONS WHERE trial = ?", (trial,))
                 if c.fetchall() == []:
                     c.execute("INSERT INTO detections VALUES (?,?,?)", (trial, -1, "---"))
-
-            #if assertMessage in line or busError in line or segError in line:
-            if assertMessage in line:
+            elif assertMessage in line or busError in line or segError in line:
                 signal = True
                 crashed = True
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Crashed"))
-
-            if hungMessage in line:
+            elif hungMessage in line:
                 hung = True
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Hung"))
-
-            if corruptedMessage in line:
+            elif corruptedMessage in line:
                 corrupted = True
                 c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Corrupted"))
 
@@ -241,6 +238,10 @@ def readTrials(c, filePrefix, customParser = None):
         if crashed == True:
             injCount = 1
             c.execute("INSERT INTO injections VALUES (?,?,?,?,?,?,?)", (trial, site, 0, 0, 0, 0, 'NULL'))
+        elif not detected and not signal and not hung and not corrupted:
+            #correct execution
+            #signal = True
+            c.execute("INSERT INTO signals VALUES (?,?)", (trial, "Correct"))
 
         c.execute("UPDATE trials SET numInj=? WHERE trials.trial=?", (injCount, trial))
         c.execute("UPDATE trials SET crashed=? WHERE trials.trial=?", (crashed, trial))

@@ -315,6 +315,7 @@ def visInjectionsInCode(c, functions):
     outfile.write("<!DOCTYPE html>\n<html>\n<body>\n")
     for func in functions:
         # grab all injections in this function
+        #c.execute("SELECT file, line FROM sites INNER JOIN injections ON sites.site = injections.site AND sites.function = ?", (func,))
         c.execute("SELECT file, line FROM sites INNER JOIN injections ON sites.site = injections.site AND sites.function = ?", (func,))
         result = c.fetchall()
         if len(result) == 0:
@@ -503,8 +504,7 @@ def visSignals(c):
     numSigs = 0.
     sigs = {}
 
-    c.execute("SELECT DISTINCT trial, num FROM signals")
-    #c.execute("SELECT DISTINCT trial, name FROM signals")
+    c.execute("SELECT DISTINCT trial, name FROM signals")
     #build histogram for what signals were raised
     signals =  c.fetchall()
     for pair in signals:
@@ -519,7 +519,8 @@ def visSignals(c):
     labels = ["No Signal"]
     for s in sigs:
         fracs.append(sigs[s]/numTrialsInj)
-        labels.append("Signal " + str(s))
+        #dperez, labels.append("Signal " + str(s))
+        labels.append(str(s))
     c.execute("SELECT DISTINCT trial from signals")
     unique = len(c.fetchall())
     plotTitle = " Trials Signaling"
