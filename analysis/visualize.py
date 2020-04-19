@@ -296,10 +296,15 @@ def visFunctions(c, moreDetail=None):
     # more detail for a function creates an html file with the source
     # code colored based on injection percentatge
     if moreDetail != None:
-        visInjectionsInCode(c, moreDetail)
+        visInjectionsInCode(c, moreDetail, "all")
+        visInjectionsInCode(c, moreDetail, "Corrupted")
+        visInjectionsInCode(c, moreDetail, "ErrorDetected")
+        visInjectionsInCode(c, moreDetail, "Hung")
+        visInjectionsInCode(c, moreDetail, "Correct")
+        #not working visInjectionsInCode(c, moreDetail, "Crashed")
 
 
-def visInjectionsInCode(c, functions):
+def visInjectionsInCode(c, functions, state):
     """Creates an html file with the source code colored based on injection
     percentages
 
@@ -313,11 +318,20 @@ def visInjectionsInCode(c, functions):
     coloredSourceFile = "colorDDotProducer.html"
     outfile = open(coloredSourceFile, 'w')
     outfile.write("<!DOCTYPE html>\n<html>\n<body>\n")
+
     for func in functions:
         # grab all injections in this function
-        #c.execute("SELECT file, line FROM sites INNER JOIN injections ON sites.site = injections.site AND sites.function = ?", (func,))
-        c.execute("SELECT file, line FROM sites INNER JOIN injections ON sites.site = injections.site AND sites.function = ?", (func,))
+        if state == "all":
+            c.execute("SELECT file, line FROM sites INNER JOIN injections ON sites.site = injections.site AND sites.function = ?", (func,))
+        else:
+            c.execute(""" SELECT file, line FROM sites INNER JOIN injections ON
+                        sites.site = injections.site AND sites.function = ?
+                        INNER JOIN signals on injections.trial = signals.trial AND
+                        signals.name = ? """,
+                        (func,state, ))
         result = c.fetchall()
+        num = float(len(result))
+        print "Number of " + state + " is " + str(num)
         if len(result) == 0:
             print("Warning (visInjectionsInCode): no injections in target function -- ", func)
             continue
@@ -340,7 +354,7 @@ def visInjectionsInCode(c, functions):
         plotTitle + func)
         plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
 
-        outfile.write("<h1>" + func + "()</h1>\n<table>\n")
+        outfile.write("<h1>" + func + "-" + state + "()</h1>\n<table>\n")
         if minimum == 0:
             outfile.write("Unable to assign " + str(values[0]) + "\% of injections to source code.\n")
             minimum = np.min(np.trim_zeros(lines)) - 1
@@ -371,7 +385,7 @@ def visInjectionsInCode(c, functions):
     outfile.write("</body>\n</html>\n")
     outfile.close()
     #copy the colored code to output path
-    outputColoredDDot = MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + coloredSourceFile
+    outputColoredDDot = MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + state + "-" + coloredSourceFile
     shutil.copy2(coloredSourceFile, outputColoredDDot)
 
 def str2html(s):
@@ -429,8 +443,6 @@ def visCrashes(c):
     c.execute("SELECT trial FROM trials where trials.crashed = 1")
     crash = c.fetchall()
     crashed = float(len(crash))
-    print "Whatever this is: " + str(crash)
-    print "Number of crashes are: " + str(crashed)
     ##############
 
     c.execute("SELECT type FROM sites INNER JOIN injections ON sites.site = injections.site INNER JOIN trials ON trials.trial = injections.trial AND trials.crashed = 1")

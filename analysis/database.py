@@ -64,7 +64,6 @@ def createTables(c):
     c.execute("CREATE TABLE injections (trial int, site int, rank int, prob double, bit int, cycle int, notes text)")
     c.execute("CREATE TABLE signals (trial int, name text)")
     c.execute("CREATE TABLE detections (trial int, latency int, detector text)")
-    #c.execute("CREATE TABLE ()")
 
 
 def readLLVM(c, LLVMPath):
@@ -155,7 +154,7 @@ def readTrials(c, filePrefix, customParser = None):
             path += ".txt"
             if not os.path.exists(path):
                 continue
-        print "\t", path
+        #dperez,  print "\t", path
 
         # grab information about the injection(s)
         t = open(path).readlines()
@@ -205,7 +204,7 @@ def readTrials(c, filePrefix, customParser = None):
                 llvmInj = int(inj[7][-1])
                 dynCycle = llvmInj
 
-                print "Injections trialId: " + str(trial) + " being updated with site: " + str(site)
+                #print "Injections trialId: " + str(trial) + " being updated with site: " + str(site)
                 c.execute("INSERT INTO injections VALUES (?,?,?,?,?,?,?)", (trial, site, rank, prob, bit, dynCycle, 'NULL'))
 
                 for j in range(8, len(inj)):
@@ -247,7 +246,7 @@ def readTrials(c, filePrefix, customParser = None):
         c.execute("UPDATE trials SET crashed=? WHERE trials.trial=?", (crashed, trial))
         c.execute("UPDATE trials SET detection=? WHERE trials.trial=?", (detected, trial))
         c.execute("UPDATE trials SET signal=? WHERE trials.trial=?", (signal, trial))
-        print "Updating from trialId " + str(trial) + " - injCount: " + str(injCount) + " - site: " + str(site) + " - signal: " + str(signal) + " - crashed??: " + str(crashed)
+        #print "Updating from trialId " + str(trial) + " - injCount: " + str(injCount) + " - site: " + str(site) + " - signal: " + str(signal) + " - crashed??: " + str(crashed)
 
 def finalize():
     """Cleans up fault injection visualization
