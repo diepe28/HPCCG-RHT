@@ -211,12 +211,12 @@ def visClassifications(c, moreDetail=None):
     fracs = typeBuckets/np.sum(typeBuckets)
     plotTitle = "Classification of Injections Based on Type"
     piechart(fracs[0:-1], TYPES_LONG, plotTitle)
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
     plotTitle = "Injected bit"
     barchart(np.linspace(0,64,num=64), bits, "Bit Location" , "Frequency", plotTitle, TYPES)
     plot.xlim((0,64))
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
 
 
@@ -241,7 +241,7 @@ def visFunctions(c, moreDetail=None):
 
     plotTitle = "Injected Functions"
     piechart(np.array(values)/sum(values), [i[0] for i in funcs], plotTitle)
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
     ind = 0
     width = .5
@@ -292,7 +292,7 @@ def visFunctions(c, moreDetail=None):
     plot.text(0.5, 1.15, plotTitle,
     horizontalalignment='center', fontsize=14, transform = ax.transAxes)
 
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
     # more detail for a function creates an html file with the source
     # code colored based on injection percentatge
     if moreDetail != None:
@@ -302,6 +302,27 @@ def visFunctions(c, moreDetail=None):
         visInjectionsInCode(c, moreDetail, "Hung")
         visInjectionsInCode(c, moreDetail, "Correct")
         #not working visInjectionsInCode(c, moreDetail, "Crashed")
+
+
+def getHtmlTitle():
+    if CAMPAIGN_NAME == "4_arithmetic_control_runNotReplicated":
+        return "AC-notReplicated"
+    if CAMPAIGN_NAME == "5_arithmetic_control_runWang":
+        return "AC-Wang"
+    if CAMPAIGN_NAME == "6_arithmetic_control_runWangVG":
+        return "AC-VG"
+    if CAMPAIGN_NAME == "7_arithmetic_control_runWangJV":
+        return "AC-JV"
+    if CAMPAIGN_NAME == "8_arithmetic_runNotReplicated":
+        return "A-notReplicated"
+    if CAMPAIGN_NAME == "9_arithmetic_runWang":
+        return "A-Wang"
+    if CAMPAIGN_NAME == "10_arithmetic_runWangVG":
+        return "A-VG"
+    if CAMPAIGN_NAME == "11_arithmetic_runWangJV":
+        return "A-JV"
+
+    return "ddot"
 
 
 def visInjectionsInCode(c, functions, state):
@@ -352,9 +373,9 @@ def visInjectionsInCode(c, functions, state):
         plotTitle = "Injections mapped to source line numbers for function "
         histo(values, bins, "Source Line Number", "Percent",\
         plotTitle + func)
-        plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+        plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
-        outfile.write("<h1>" + func + "-" + state + "()</h1>\n<table>\n")
+        outfile.write("<h1>" + getHtmlTitle() + "-" + state + "</h1>\n<table>\n")
         if minimum == 0:
             outfile.write("Unable to assign " + str(values[0]) + "\% of injections to source code.\n")
             minimum = np.min(np.trim_zeros(lines)) - 1
@@ -385,16 +406,13 @@ def visInjectionsInCode(c, functions, state):
     outfile.write("</body>\n</html>\n")
     outfile.close()
     #copy the colored code to output path
-    outputColoredDDot = MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + state + "-" + coloredSourceFile
+    outputColoredDDot = MAIN_PATH + CAMPAIGN_NAME + "/Plots/a_ColoredCode-" + state + ".html"
     shutil.copy2(coloredSourceFile, outputColoredDDot)
 
 def str2html(s):
-    """Replaces '<', '>', and '&' with html equlivants
+    """Replaces '<', '>', and '&' with html equlivants11
 
-    Parameters
-    ----------
-    s : str
-        string to convert to a vaild html string to display properly
+    Parameters1
     """
     return s.replace("&", "&amp;").replace(">", "&gt;").replace("<", "&lt;")
 
@@ -464,7 +482,7 @@ def visCrashes(c):
     plotTitle = "Unexpected Termination"
     piechart([(numTrialsInj - crashed)/numTrialsInj, crashed/numTrialsInj],\
          ["Didn't Crash", "Crashed"], plotTitle)
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
     plotTitle = "Unexpected Termination: Injected bit"
     barchart(np.linspace(0,64,num=64), bits, "Bit Location", "Frequency", plotTitle, TYPES)
@@ -477,7 +495,7 @@ def visCrashes(c):
             plot.xlim((0,64))
             #plot.legend('upper left')
 
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
 # graphs percent of trials that threw at least 1 assert
 def visAsserts(c):
@@ -496,7 +514,7 @@ def visAsserts(c):
     plotTitle = "Trials with Injections Asserting"
     piechart([asserts/numTrialsInj, (numTrials - asserts)/numTrialsInj],\
          ["Failed Assert(s)", "Didn't Assert"], plotTitle)
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
 # graphs percent of trials that generated at a certian signal type that is reported in the output file
 def visSignals(c):
@@ -537,7 +555,7 @@ def visSignals(c):
     unique = len(c.fetchall())
     plotTitle = " Trials Signaling"
     piechart(fracs, labels, str(unique) + plotTitle)
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
 
 def visDetections(c, moreDetail=None):
@@ -566,7 +584,7 @@ def visDetections(c, moreDetail=None):
     plotTitle = "Number of Trials with Detection "
     piechart([detected/numInj, (numInj - detected)/numInj],\
     ["Detected", "Didn't Detect"], plotTitle + "("+str(detected)+")")
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
 
 def visDetectedInjections(c, moreDetail=None):
@@ -609,7 +627,7 @@ def visDetectedInjections(c, moreDetail=None):
     plotTitle = "Detected Injection Bit Location"
     barchart(np.linspace(0,64,num=64), bits, "Injected bit", "Frequency", plotTitle,  TYPES)
     plot.xlim((0,64))
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
 
 
 
@@ -644,4 +662,4 @@ def visDetectionLatency(c):
     ticks = ["-1", "0", "1", "2", "3", "4", "5->", "10->", "1e2->", "1e3->", "1e9->"]
     bins = np.arange(0,11)
     histo(values, bins, xlabel, ylabel, plotTitle, ticks)
-    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + CAMPAIGN_NAME + "-" + plotTitle)
+    plot.savefig(MAIN_PATH + CAMPAIGN_NAME + "/Plots/" + plotTitle)
