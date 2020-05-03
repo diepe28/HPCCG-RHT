@@ -24,15 +24,15 @@ rebuild_database = True
 #CAMPAIGN_NAME = "11_NOPdcDrt_arithmetic_runWangJV"
 
 #YES MPI
-MAIN_PATH = "../../reliabilityExperiments/2-Sunday26April_reliability-results(NOMPI)/"
-CAMPAIGN_NAME = "4_arithmetic_control_runNotReplicated"
+MAIN_PATH = "../../reliabilityExperiments/3-Thursday30April(NO_MPI_errorsOnRhtLib_noProduceForJV))/"
+#CAMPAIGN_NAME = "4_arithmetic_control_runNotReplicated"
 #CAMPAIGN_NAME = "5_arithmetic_control_runWang"
 #CAMPAIGN_NAME = "6_arithmetic_control_runWangVG"
 #CAMPAIGN_NAME = "7_arithmetic_control_runWangJV"
 #CAMPAIGN_NAME = "8_arithmetic_runNotReplicated"
 #CAMPAIGN_NAME = "9_arithmetic_runWang"
 #CAMPAIGN_NAME = "10_arithmetic_runWangVG"
-#CAMPAIGN_NAME = "11_arithmetic_runWangJV"
+CAMPAIGN_NAME = "11_arithmetic_runWangJV"
 
 LLVM_log_path =  MAIN_PATH + CAMPAIGN_NAME + "/output/"
 
@@ -84,8 +84,8 @@ numTrials = 500
     A more detailed analysis includes color coding source code based on
     injection frequency
 """
-#more_detail_funcs = ["ddot", "ddot_producer"]
-more_detail_funcs = ["ddot_producer"]
+more_detail_funcs = ["ddot", "ddot_producer"]
+#more_detail_funcs = ["ddot_producer", "RHT_Produce", "Wang_Produce", "VG_Produce"]
 
 """Snipits of system generated messages. These SHOULD be changed based on
     your system

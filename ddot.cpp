@@ -79,16 +79,16 @@ int ddot_producer(const int n, const double *const x, const double *const y,
     if (y == x)
         for (int i = 0; i < n; i++) {
             local_result += x[i] * x[i];
-#if JUST_VOLATILES != 1
-            RHT_Produce(local_result);
-#endif
+            FLIPIT_SetInjector(FLIPIT_OFF);
+            	RHT_Produce(local_result);
+            FLIPIT_SetInjector(FLIPIT_ON);
         }
     else
         for (int i = 0; i < n; i++) {
             local_result += x[i] * y[i];
-#if JUST_VOLATILES != 1
-            RHT_Produce(local_result);
-#endif
+            FLIPIT_SetInjector(FLIPIT_OFF);
+            	RHT_Produce(local_result);
+            FLIPIT_SetInjector(FLIPIT_ON);
         }
 
 #ifdef USING_MPI

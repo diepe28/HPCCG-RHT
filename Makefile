@@ -44,8 +44,8 @@ LINKER=mpicxx
 #    If you want to run the program with MPI, make sure USE_MPI is set
 #    to -DUSING_MPI
 
-#USE_MPI =
-USE_MPI = -DUSING_MPI
+USE_MPI =
+#USE_MPI = -DUSING_MPI
 
 
 # 2) MPI headers:

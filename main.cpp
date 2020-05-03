@@ -67,7 +67,7 @@ using std::endl;
 #include <cmath>
 #ifdef USING_MPI
 #include <mpi.h> // If this routine is compiled with -DUSING_MPI
-// then include mpi.h
+                 // then include mpi.h
 #include "make_local_matrix.h" // Also include this function
 #include "readerwriterqueue.h"
 #endif

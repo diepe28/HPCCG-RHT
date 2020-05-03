@@ -15,7 +15,8 @@
 
 config = "HPCCG-RHT.config"
 #funcList = "\"\""
-funcList = "\"ddot ddot_producer RHT_Produce Wang_Produce VG_Produce\""
+#funcList = "\"ddot ddot_producer RHT_Produce Wang_Produce VG_Produce\""
+funcList = "\"ddot ddot_producer\""
 prob = 1e-7
 byte = 3
 bit = -1
@@ -56,8 +57,8 @@ notInject = [
 			 "exchange_externals.cpp",
 			 "YAML_Element.cpp",
 			 "YAML_Doc.cpp",
-			 #"RHT.cpp",
-			 #"RHT.h",
+			 "RHT.cpp",
+			 "RHT.h",
 			 "QueueStressTest.cpp"
 			 ]
 
