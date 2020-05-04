@@ -49,12 +49,14 @@ int ddot (const int n, const double * const x, const double * const y,
 #ifdef USING_OMP
 #pragma omp parallel for reduction (+:local_result)
 #endif
-        for (int i = 0; i < n; i++) local_result += x[i] * x[i];
+        for (int i = 0; i < n; i++)
+					local_result += x[i] * x[i];
     else
 #ifdef USING_OMP
 #pragma omp parallel for reduction (+:local_result)
 #endif
-        for (int i = 0; i < n; i++) local_result += x[i] * y[i];
+        for (int i = 0; i < n; i++)
+					local_result += x[i] * y[i];
 
 #ifdef USING_MPI
     // Use MPI's reduce function to collect all partial sums
@@ -110,7 +112,9 @@ int ddot_producer(const int n, const double *const x, const double *const y,
     *result = local_result;
 #endif
 
+		FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(*result);
+		FLIPIT_SetInjector(FLIPIT_ON);
     return (0);
 }
 
