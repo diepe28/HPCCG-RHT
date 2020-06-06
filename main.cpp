@@ -116,17 +116,17 @@ void consumer_thread_func(void * args);
 #define myTimes 100
 
 int main(int argc, char *argv[]) {
-    int lower = 1, upper = 1000;
     // Use current time as seed for random generator
+    int lower = 1, upper = 1000;
     srand(time(0));
     int randomNumber = (rand() % (upper - lower + 1)) + lower;
-
+    int seedFromArguments;
     HPC_Sparse_Matrix *sparseMatrix;
 
     double *x, *b, *xexact, *x2, *b2, *xexact2;
     double norm, d;
     int ierr = 0, numRuns = 1;
-    int i, j, iterator, flipIpSeed = randomNumber;
+    int i, j, iterator, flipIpSeed;
     int ione = 1;
     double times[7];
     double t6 = 0.0;
@@ -136,26 +136,19 @@ int main(int argc, char *argv[]) {
     double t4min = 0.0;
     double t4max = 0.0;
     double t4avg = 0.0;
-
     double meanBaseline, sdBaseline, producerMean, consumerMean;
     double meanRHT, sdRHT;
-
-    FLIPIT_Init(0, argc, argv, flipIpSeed);
+    double *timesBaseline, *timesRHT;
 
 #ifdef USING_MPI
-
     MPI_Init(&argc, &argv);
     int size, rank; // Number of MPI processes, My process ID
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     //  if (size < 100) cout << "Process "<<rank<<" of "<<size<<" is alive." <<endl;
-
 #else
-
     int size = 1; // Serial case (not using MPI)
     int rank = 0;
-
 #endif
 
 #ifdef DEBUG
@@ -179,35 +172,42 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    double *timesBaseline, *timesRHT;
-
-    if (argc == 5) { // original number
-        nx = atoi(argv[1]);
-        ny = atoi(argv[2]);
-        nz = atoi(argv[3]);
-        numRuns = atoi(argv[4]);
+    printf("Arg count %d, %s\n", argc, *argv);
+    // Parsing cmd arguments
+    if (argc == 6) { // non-replicated-execution args
         replicated = 0;
+        seedFromArguments = atoi(argv[1]);
+        nx = atoi(argv[2]);
+        ny = atoi(argv[3]);
+        nz = atoi(argv[4]);
+        numRuns = atoi(argv[5]);
         timesBaseline = new double[numRuns];
     } else {
-        if (argc > 5) { // dperez, for our purposes
+        if (argc > 6) { // replicated-execution args
             replicated = 1;
-            nx = atoi(argv[1]);
-            ny = atoi(argv[2]);
-            nz = atoi(argv[3]);
-            numRuns = atoi(argv[4]);
-            numThreads = atoi(argv[5]); // should -np * 2
+            seedFromArguments = atoi(argv[1]);
+            nx = atoi(argv[2]);
+            ny = atoi(argv[3]);
+            nz = atoi(argv[4]);
+            numRuns = atoi(argv[5]);
+            numThreads = atoi(argv[6]); // should -np * 2
             coreNumbers = new int[numThreads];
             for (int i = 0; i < numThreads; i++) {
                 // Each pair is the producer and consumer core for each MPI process.
                 // Example 2 0 2 1 3: means 2 MPI processes the first one runs on core 0,2 and
                 // the second one is cores 1,3. Depending on the machine config it may be HT or not.
-                coreNumbers[i] = atoi(argv[6 + i]);
+                coreNumbers[i] = atoi(argv[7 + i]);
             }
             timesRHT = new double[numRuns];
         } else {
-            read_HPC_row(argv[1], &sparseMatrix, &x, &b, &xexact);
+            read_HPC_row(argv[2], &sparseMatrix, &x, &b, &xexact);
         }
     }
+
+    //flipIpSeed = randomNumber;
+    flipIpSeed = seedFromArguments;
+
+    FLIPIT_Init(0, argc, argv, flipIpSeed);
 
     if(rank == 0) {
         printf("\n-------- Will execute %d times the %s version --------\n", numRuns,
