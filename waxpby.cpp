@@ -47,7 +47,7 @@
 #include "waxpby.h"
 #include "RHT.h"
 
-int waxpby(const int n, const double alpha, const double * const x, 
+int waxpby(const int n, const double alpha, const double * const x,
 	    const double beta, const double * const y,
 		     double * const w) {
     if (alpha == 1.0) {
@@ -77,17 +77,23 @@ int waxpby_producer(const int n, const double alpha, const double *const x,
     if (alpha == 1.0) {
         for (i = 0; i < n; i++) {
             w[i] = x[i] + beta * y[i];
+						FLIPIT_SetInjector(FLIPIT_OFF);
             /*-- RHT -- */ RHT_Produce(w[i]);
+						FLIPIT_SetInjector(FLIPIT_ON);
         }
     } else if (beta == 1.0) {
         for (i = 0; i < n; i++) {
             w[i] = alpha * x[i] + y[i];
+						FLIPIT_SetInjector(FLIPIT_OFF);
             /*-- RHT -- */ RHT_Produce(w[i]);
+						FLIPIT_SetInjector(FLIPIT_ON);
         }
     } else {
         for (i = 0; i < n; i++) {
             w[i] = alpha * x[i] + beta * y[i];
+						FLIPIT_SetInjector(FLIPIT_OFF);
             /*-- RHT -- */ RHT_Produce(w[i]);
+						FLIPIT_SetInjector(FLIPIT_ON);
         }
     }
     return (0);

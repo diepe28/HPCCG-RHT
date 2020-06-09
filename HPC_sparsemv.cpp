@@ -1,29 +1,29 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               HPCCG: Simple Conjugate Gradient Benchmark Code
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -32,7 +32,7 @@
 // Routine to compute matrix vector product y = Ax where:
 // First call exchange_externals to get off-processor values of x
 
-// A - known matrix 
+// A - known matrix
 // x - known vector
 // y - On exit contains Ax.
 
@@ -80,30 +80,44 @@ int HPC_sparsemv_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
                           const double *const x, double *const y) {
 
     const int nrow = (const int) hpc_sparse_matrix->local_nrow;
+		FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(nrow);
+		FLIPIT_SetInjector(FLIPIT_ON);
 #ifdef USING_OMP
 #pragma omp parallel for
 #endif
     for (int i = 0; i < nrow; i++) {
         double sum = 0.0;
+				FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(sum);
+				FLIPIT_SetInjector(FLIPIT_ON);
 
         const double *const cur_vals = (const double *const) hpc_sparse_matrix->ptr_to_vals_in_row[i];
+				FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(*cur_vals);
+				FLIPIT_SetInjector(FLIPIT_ON);
 
         const int *const cur_inds = (const int *const) hpc_sparse_matrix->ptr_to_inds_in_row[i];
+				FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(*cur_inds);
+				FLIPIT_SetInjector(FLIPIT_ON);
 
         const int cur_nnz = (const int) hpc_sparse_matrix->nnz_in_row[i];
+				FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(cur_nnz);
+				FLIPIT_SetInjector(FLIPIT_ON);
 
         for (int j = 0; j < cur_nnz; j++) {
             sum += cur_vals[j] * x[cur_inds[j]];
+						FLIPIT_SetInjector(FLIPIT_OFF);
             /*-- RHT -- */ RHT_Produce(sum);
+						FLIPIT_SetInjector(FLIPIT_ON);
         }
 
         y[i] = sum;
+				FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(y[i]);
+				FLIPIT_SetInjector(FLIPIT_ON);
     }
     return (0);
 }
@@ -139,5 +153,3 @@ int HPC_sparsemv_consumer( HPC_Sparse_Matrix *hpc_sparse_matrix,
     }
     return (0);
 }
-
-

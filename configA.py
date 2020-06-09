@@ -15,10 +15,9 @@
 
 config = "HPCCG-RHT.config"
 #funcList = "\"\""
-#funcList = "\"ddot ddot_producer RHT_Produce Wang_Produce VG_Produce\""
-funcList = "\"ddot ddot_producer\""
+funcList = "\"ddot ddot_producer waxpby waxpby_producer HPC_sparsemv HPC_sparsemv_producer HPCCG HPCCG_producer\""
 prob = 1e-7
-byte = 3
+byte = -1
 bit = -1
 ptr = 0
 arith = 1
@@ -49,9 +48,9 @@ notInject = [
 			 "compute_residual.cpp",
 			 "mytimer.cpp",
 			 "dump_matlab_matrix.cpp",
-			 "HPC_sparsemv.cpp",
-			 "HPCCG.cpp",
-			 "waxpby.cpp",
+			 #"HPC_sparsemv.cpp",
+			 #"HPCCG.cpp",
+			 #"waxpby.cpp",
 			 #"ddot.cpp",
 			 "make_local_matrix.cpp",
 			 "exchange_externals.cpp",

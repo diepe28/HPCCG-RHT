@@ -301,7 +301,7 @@ def visFunctions(c, moreDetail=None):
         visInjectionsInCode(c, moreDetail, "ErrorDetected")
         visInjectionsInCode(c, moreDetail, "Hung")
         visInjectionsInCode(c, moreDetail, "Correct")
-        #not working visInjectionsInCode(c, moreDetail, "Crashed")
+        visInjectionsInCode(c, moreDetail, "Crashed")
 
 
 def getHtmlTitle():

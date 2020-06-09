@@ -186,26 +186,32 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
     //double t_begin = mytimer();  // Start timing right away
 
     double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;
+    FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(t0);
     /*-- RHT -- */ RHT_Produce(t1);
     /*-- RHT -- */ RHT_Produce(t2);
     /*-- RHT -- */ RHT_Produce(t3);
     /*-- RHT -- */ RHT_Produce(t4);
+    FLIPIT_SetInjector(FLIPIT_ON);
 
 #ifdef USING_MPI
     double t5 = 0.0;
+    FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(t5);
+    FLIPIT_SetInjector(FLIPIT_ON);
 #endif
 
     int nrow = hpc_sparse_matrix->local_nrow;
     int ncol = hpc_sparse_matrix->local_ncol;
 
+    FLIPIT_SetInjector(FLIPIT_OFF);
 #if JUST_VOLATILES == 1
     /*-- RHT -- */ RHT_Produce_Volatile(nrow);
 #else
     /*-- RHT -- */ RHT_Produce(nrow);
 #endif
     /*-- RHT -- */ RHT_Produce_Volatile(ncol);
+    FLIPIT_SetInjector(FLIPIT_ON);
 
     double *r = new double[nrow];
     double *p = new double[ncol]; // In parallel case, hpc_sparse_matrix is rectangular
@@ -214,26 +220,34 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
     normr = 0.0;
     double rtrans = 0.0;
     double oldrtrans = 0.0;
+    FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(normr);
     /*-- RHT -- */ RHT_Produce(rtrans);
     /*-- RHT -- */ RHT_Produce(oldrtrans);
+    FLIPIT_SetInjector(FLIPIT_ON);
 
 #ifdef USING_MPI
     int rank; // Number of MPI processes, My process ID
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    FLIPIT_SetInjector(FLIPIT_OFF);
 		/*-- RHT -- */ RHT_Produce_NoCheck(rank);
+    FLIPIT_SetInjector(FLIPIT_ON);
 
 #else
     int rank = 0; // Serial case (not using MPI)
 #endif
 
     int print_freq = max_iter / 10;
+    FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(print_freq);
+    FLIPIT_SetInjector(FLIPIT_ON);
 
     if (print_freq > 50) print_freq = 50;
     if (print_freq < 1) print_freq = 1;
 
+    FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(print_freq);
+    FLIPIT_SetInjector(FLIPIT_ON);
     // p is of length ncols, copy x to p for sparse MV operation
     TICK();
     waxpby_producer(nrow, 1.0, x, 0.0, x, p);
@@ -261,8 +275,10 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 
     normr = sqrt(rtrans);
 
+    FLIPIT_SetInjector(FLIPIT_OFF);
     /*-- RHT -- */ RHT_Produce(rank);
     /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
+    FLIPIT_SetInjector(FLIPIT_ON);
 #if PRINT_OUTPUT == 1
     if (rank == 0) cout << "Initial Residual = " << normr << endl;
 #endif
@@ -277,23 +293,28 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
     goto inFor;
     for (; k < max_iter && normr > tolerance; k++) {
         oldrtrans = rtrans;
+        FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(print_freq);
+        FLIPIT_SetInjector(FLIPIT_ON);
 
         TICK();
         ddot_producer(nrow, r, r, &rtrans, t4);
         TOCK(t1);// 2*nrow ops
 
         beta = rtrans / oldrtrans;
+        FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(beta);
+        FLIPIT_SetInjector(FLIPIT_ON);
 
         TICK();
         waxpby_producer(nrow, 1.0, r, beta, p, p);
         TOCK(t2);// 2*nrow ops
 
-        inFor:
+    inFor:
 
         normr = sqrt(rtrans);
 
+        FLIPIT_SetInjector(FLIPIT_OFF);
 #if JUST_VOLATILES == 1
         /*-- RHT -- */ RHT_Produce_Volatile(k);
         /*-- RHT -- */ RHT_Produce_Volatile(rank);
@@ -307,6 +328,7 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
 #endif
 
         /*-- RHT Volatile -- */ RHT_Produce_Volatile(normr);
+        FLIPIT_SetInjector(FLIPIT_ON);
 
 #if PRINT_OUTPUT == 1
         if (rank == 0 && (k % print_freq == 0 || k + 1 == max_iter))
@@ -323,14 +345,18 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
         HPC_sparsemv_producer(hpc_sparse_matrix, p, Ap);
         TOCK(t3); // 2*nnz ops
         double alpha = 0.0;
+        FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(alpha);
+        FLIPIT_SetInjector(FLIPIT_ON);
 
         TICK();
         ddot_producer(nrow, p, Ap, &alpha, t4);
         TOCK(t1); // 2*nrow ops
 
         alpha = rtrans / alpha;
+        FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(alpha);
+        FLIPIT_SetInjector(FLIPIT_ON);
 
         TICK();
         waxpby_producer(nrow, 1.0, x, alpha, p, x);// 2*nrow ops
@@ -338,7 +364,9 @@ int HPCCG_producer(HPC_Sparse_Matrix *hpc_sparse_matrix,
         TOCK(t2);// 2*nrow ops
 
         niters = k;
+        FLIPIT_SetInjector(FLIPIT_OFF);
         /*-- RHT -- */ RHT_Produce(niters);
+        FLIPIT_SetInjector(FLIPIT_ON);
     }
 
     #if APPROACH_WANG == 1

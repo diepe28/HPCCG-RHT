@@ -14,17 +14,7 @@ rebuild_database = True
     analysis scripts recursilvely search this directory for the logs
 """
 
-#NO MPI
-#MAIN_PATH = "../../reliabilityExperiments/Friday27March_reliability-results/"
-#CAMPAIGN_NAME = "5_NOPdcDrt_arithmetic_control_runWang"
-#CAMPAIGN_NAME = "6_NOPdcDrt_arithmetic_control_runWangVG"
-#CAMPAIGN_NAME = "7_NOPdcDrt_arithmetic_control_runWangJV"
-#CAMPAIGN_NAME = "9_NOPdcDrt_arithmetic_runWang"
-#CAMPAIGN_NAME = "10_NOPdcDrt_arithmetic_runWangVG"
-#CAMPAIGN_NAME = "11_NOPdcDrt_arithmetic_runWangJV"
-
-#YES MPI
-MAIN_PATH = "../../reliabilityExperiments/3-Thursday30April(NO_MPI_errorsOnRhtLib_noProduceForJV))/"
+MAIN_PATH = "../../reliabilityExperiments/9-Sunday07June-flipItUpdated/"
 #CAMPAIGN_NAME = "4_arithmetic_control_runNotReplicated"
 #CAMPAIGN_NAME = "5_arithmetic_control_runWang"
 #CAMPAIGN_NAME = "6_arithmetic_control_runWangVG"
@@ -75,7 +65,7 @@ srcPath = "../"
 
 """Number of fault injection trials to read
 """
-numTrials = 500
+numTrials = 5000
 
 """Names of functions that a more detailed analysis should be conducted for
 

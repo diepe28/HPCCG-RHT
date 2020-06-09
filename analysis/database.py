@@ -154,7 +154,7 @@ def readTrials(c, filePrefix, customParser = None):
             path += ".txt"
             if not os.path.exists(path):
                 continue
-        #dperez,  print "\t", path
+        #dperez print "\t", path
 
         # grab information about the injection(s)
         t = open(path).readlines()
@@ -163,18 +163,14 @@ def readTrials(c, filePrefix, customParser = None):
         c.execute("INSERT INTO trials(trial,path) VALUES (?,?)", (trial, path))
         # look at certain lines in output
         i = 0
-        # dperez, this is wrong, we are hardcoding a value but is because of the same problem
-        # that the crash information is not printed in the output log
-        site = 22609
         while i < len(t):
             line = t[i]
-            #dperez, we have a problem here. For the crashes, the flipIp information
-            #is not printed, and therefore we can't relate these cases with other data
             if siteMessage in line:
                 injCount += 1
                 inj = []
                 i += 1
                 line = t[i]
+                #print "t is: " + str(t) +"len(t): " + str(len(t))
                 while siteEndMessage not in line:
                     if line != "\n":
                         inj.append(line.split(" "))
@@ -233,10 +229,8 @@ def readTrials(c, filePrefix, customParser = None):
 
             i += 1
 
-        #dperez, manual correction
         if crashed == True:
             injCount = 1
-            c.execute("INSERT INTO injections VALUES (?,?,?,?,?,?,?)", (trial, site, 0, 0, 0, 0, 'NULL'))
         elif not detected and not signal and not hung and not corrupted:
             #correct execution
             #signal = True
